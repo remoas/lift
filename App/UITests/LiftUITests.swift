@@ -45,3 +45,53 @@ final class LiftUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).containing(NSPredicate(format: "label BEGINSWITH %@", "Beat it")).firstMatch.exists)
     }
 }
+
+/// Ben, build 1.0 (2): "I've removed an exercise but it keeps coming back."
+/// Real RootView on a local on-disk store: add, log a set, remove, relaunch.
+final class RemoveExerciseTests: XCTestCase {
+    override func setUp() { continueAfterFailure = false }
+
+    private func launch(reset: Bool) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-LiftTestStore", "remove-exercise"] + (reset ? ["-LiftTestReset"] : [])
+        app.launch()
+        return app
+    }
+
+    private func add(_ name: String, in app: XCUIApplication) {
+        let add = app.buttons["Add exercise"].firstMatch
+        XCTAssertTrue(add.waitForExistence(timeout: 15))
+        add.tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText(name + "\n")   // Return adds the top result
+        XCTAssertTrue(app.buttons["\(name) options"].waitForExistence(timeout: 5))
+    }
+
+    func testRemovedExerciseStaysGoneAfterRelaunch() {
+        var app = launch(reset: true)
+        add("Barbell Bench Press", in: app)
+        add("Barbell Full Squat", in: app)
+        // Log one bench set so the removed exercise has history in this workout.
+        let current = app.descendants(matching: .any)["current-set"].firstMatch
+        XCTAssertTrue(current.waitForExistence(timeout: 5))
+        current.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
+        sleep(1)
+
+        let options = app.buttons["Barbell Bench Press options"]
+        options.tap()
+        let remove = app.buttons["Remove"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        remove.tap()
+        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: options)
+        wait(for: [gone], timeout: 5)
+        sleep(7)   // past the 5 s Undo window
+        XCTAssertFalse(options.exists, "still gone after the Undo window")
+
+        app.terminate()
+        app = launch(reset: false)
+        XCTAssertTrue(app.buttons["Barbell Full Squat options"].waitForExistence(timeout: 15), "the kept exercise is still there")
+        XCTAssertFalse(app.buttons["Barbell Bench Press options"].exists, "the removed exercise stays gone after relaunch")
+    }
+}

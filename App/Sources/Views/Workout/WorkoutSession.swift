@@ -284,7 +284,7 @@ final class WorkoutSession {
         guard let ex = set.exercise else { return }
         let removed = LiftStore.RemovedSet(set)
         let number = (groups.first(where: { $0.exercise === ex })?.sets.firstIndex(where: { $0 === set }) ?? 0) + 1
-        context.delete(set)
+        LiftStore.delete(set, context: context)
         _ = LiftStore.save(context)
         bestIDs = LiftStore.bestSetIDs(in: workout)
         if rest?.setID == removed.id { stopRest() }
