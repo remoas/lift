@@ -63,7 +63,7 @@ close grip pulldown,,close-grip-front-lat-pulldown,,,,
 row,,bent-over-row,seated-cable-row|dumbbell-row,rowing-machine,,ambiguous: the row family by popularity
 barbell row,,bent-over-row,,,Barbell Row,
 1 arm row,,dumbbell-row,,,Single-Arm Row,1/one/single arm are the same
-t bar,,t-bar-row,,,,
+t bar,,t-bar-row,,pendulum-row,,"T-Bar rows first; Pendulum Row out of the top 5 (T-Bar Lever Row alias removed)"
 seated row,,seated-cable-row,,,,
 press,,bench-press,barbell-shoulder-press,,,"ambiguous: the press family by popularity, no guess"
 curl,,barbell-curl,hammer-curls-2,,,ambiguous: the curl family by popularity
@@ -115,4 +115,6 @@ pendulum,,pendulum-row,,,,"Ben 5:00pm: plate-loaded pendulum row machine"
 pendulum row,,pendulum-row,,,,"Ben 5:00pm: name, exact tier"
 bent over pendulum row,,pendulum-row,,,Bent Over Pendulum Row,"Ben 5:00pm: his wording, as an alias"
 lever row,,pendulum-row,leverage-iso-row,,Lever Row,"Ben 5:00pm: lever row finds the pendulum row"
-t-bar row,,t-bar-row,,,,"T-Bar Row exact stays first after Pendulum Row's T-Bar Lever Row alias"
+t-bar row,,t-bar-row,,pendulum-row,,"T-Bar Row exact first; Pendulum Row no longer carries a T-Bar alias"
+
+lever t-bar row,,chest-supported-t-bar-row,,pendulum-row,Lever T-Bar Row,"T-Bar row first, not Pendulum Row (T-Bar Lever Row alias removed)"

@@ -77,7 +77,7 @@ final class SearchSpecTests: XCTestCase {
     func testV3Library() {
         let lib = Self.library
         XCTAssertGreaterThanOrEqual(lib.version, 3)
-        XCTAssertEqual(lib.exercises.reduce(0) { $0 + $1.aliases.count }, 926)
+        XCTAssertEqual(lib.exercises.reduce(0) { $0 + $1.aliases.count }, 925) // Pendulum Row lost "T-Bar Lever Row"
         XCTAssertEqual(lib.exercises.filter { $0.duplicateOf != nil }.count, 17)
         XCTAssertNil(lib.exercise("triceps-pushdown")?.duplicateOf)
         XCTAssertEqual(lib.exercise("bench-press")?.popularity, 5)
