@@ -360,6 +360,10 @@ final class WatchStore: NSObject {
 
     // MARK: Library
 
+    /// Catalog search sits behind ExerciseFinder so the shared LiftCore search
+    /// (spec.md §10, quicklog-qa) drops in without touching the views.
+    @ObservationIgnored var finder: any ExerciseFinder = CatalogFinder()
+
     /// A library pick in today's unit and rest default.
     func fromLibrary(_ e: LiveExercise) -> LiveExercise {
         guard let entry = WatchLibrary.entry[e.id] else { return e }
@@ -372,9 +376,9 @@ final class WatchStore: NSObject {
     func pickerRows(query: String) -> (recents: [LiveExercise], all: [LiveExercise]) {
         let inToday = Set(live.exercises.map(\.id))
         let q = query.trimmingCharacters(in: .whitespaces)
-        let recents = live.recents.filter { !inToday.contains($0.id) && (q.isEmpty || Search.fold($0.name).contains(Search.fold(q))) }
+        let recents = live.recents.filter { !inToday.contains($0.id) && (q.isEmpty || finder.matches($0.name, q)) }
         let recentIDs = Set(recents.map(\.id))
-        let all = Search.run(WatchLibrary.index, query: q).prefix(q.isEmpty ? 400 : 100).compactMap { WatchLibrary.byID[$0.id] }
+        let all = finder.find(q, limit: q.isEmpty ? 400 : 100).compactMap { WatchLibrary.byID[$0] }
             .filter { !inToday.contains($0.id) && !recentIDs.contains($0.id) }
         return (recents, Array(all))
     }
@@ -412,6 +416,25 @@ extension WatchStore: WCSessionDelegate {
     nonisolated func session(_ session: WCSession, didReceiveMessage message: [String: Any]) {
         guard let data = message["w"] as? Data else { return }
         Task { @MainActor in self.receive(data) }
+    }
+}
+
+/// How the Add exercise list searches the catalog. Swap point for the shared
+/// LiftCore search from spec.md §10; the watch keeps no ranking of its own.
+protocol ExerciseFinder {
+    /// Catalog ids, best first. Empty query = the whole list in catalog order.
+    func find(_ query: String, limit: Int) -> [UUID]
+    /// Whether a recent's name matches the query.
+    func matches(_ name: String, _ query: String) -> Bool
+}
+
+/// Interim: today's LiftCore `Search` over the bundled catalog.
+struct CatalogFinder: ExerciseFinder {
+    func find(_ query: String, limit: Int) -> [UUID] {
+        Search.run(WatchLibrary.index, query: query).prefix(limit).map(\.id)
+    }
+    func matches(_ name: String, _ query: String) -> Bool {
+        Search.fold(name).contains(Search.fold(query))
     }
 }
 
