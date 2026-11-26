@@ -102,7 +102,8 @@ enum Fixtures {
             case "25-finish-sets-left":
                 workout = b.active("Push", doneSets: 11)
             case "26-discard-toast":
-                workout = b.active("Pull", doneSets: 2)
+                // After Discard: Today with the Undo toast; the workout is pending deletion.
+                break
             case "24a-media-video":
                 exercise = b.exercise("barbell-shoulder-press")
             case "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading":
@@ -252,7 +253,7 @@ struct FixtureRoot: View {
                 // Health is written after Done now, so its error is a toast on Today.
                 if frame == "26-discard-toast" {
                     // Same call RootView makes on Discard: hidden, then deleted when the toast ends.
-                    toasts.show("Pull discarded", undo: {}, onCommit: {})
+                    toasts.show("Push discarded", undo: {}, onCommit: {})
                 }
                 if frame == "14-health-error" { toasts.show("Couldn't save to Apple Health. Your workout is safe in Lift.") }
             }

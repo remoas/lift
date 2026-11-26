@@ -62,6 +62,7 @@ final class ToastCenter {
 
 struct ToastOverlay: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.colorScheme) private var colorScheme
     @Environment(ToastCenter.self) private var toasts
 
     var body: some View {
@@ -70,28 +71,30 @@ struct ToastOverlay: View {
             if let toast = toasts.current {
                 HStack(spacing: Theme.Spacing.s3) {
                     Text(toast.message)
-                        .font(Theme.Fonts.bodyNumber)
-                        .foregroundStyle(Theme.Colors.textPrimary)
+                        .font(.subheadline.weight(.medium).monospacedDigit())
+                        .foregroundStyle(Theme.Colors.bgCanvas)
                         .lineLimit(2)
                     Spacer(minLength: 0)
                     if toast.undo != nil {
                         Button("Undo") { toasts.performUndo() }
-                            .font(.body.weight(.semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Theme.Colors.accent)
+                            .brightness(colorScheme == .dark ? -0.1 : 0.15)
+                            .frame(minWidth: Theme.Size.hit, minHeight: Theme.Size.hit)
+                            .padding(.horizontal, Theme.Spacing.s1)
                     }
                 }
-                .padding(.horizontal, Theme.Spacing.s4)
-                .padding(.vertical, Theme.Spacing.s3)
-                .frame(minHeight: Theme.Size.hit)
-                .background(Theme.Colors.bgRaised, in: .continuous(Theme.Radius.banner))
-                .overlay(RoundedRectangle(cornerRadius: Theme.Radius.banner, style: .continuous).strokeBorder(Theme.Colors.separator, lineWidth: 0.5))
-                .shadow(color: Theme.Colors.scrim.opacity(0.5), radius: 12, y: 4)
+                // Spec §3.4: textPrimary fill, radius 14, 52 pt tall.
+                .padding(.leading, Theme.Spacing.s4)
+                .padding(.trailing, Theme.Spacing.s1)
+                .frame(minHeight: 52)
+                .background(Theme.Colors.textPrimary, in: .continuous(Theme.Radius.button))
                 .padding(.horizontal, Theme.Spacing.s3)
                 .padding(.bottom, 96)
                 .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
                 .gesture(DragGesture().onEnded { if $0.translation.height > 20 { toasts.dismiss() } })
             }
         }
-        .animation(.snappy, value: toasts.current)
+        .animation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springBanner, value: toasts.current)
     }
 }
