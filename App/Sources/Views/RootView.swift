@@ -20,6 +20,8 @@ struct RootView: View {
     @State private var pendingDiscard: Workout?
     /// Which source the workout cover zooms from (iOS 18): Today's block or the mini bar.
     @State private var zoomSource: LiftTransitionID?
+    /// The mini bar appears once the cover has finished dismissing, never before (AC 57).
+    @State private var miniVisible = false
     @Namespace private var liftNS
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -82,8 +84,18 @@ struct RootView: View {
             .overlay { ToastOverlay() }
             .environment(\.liftNamespace, liftNS)
         }
-        .animation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springZoom, value: presented == nil)
+        .onChange(of: presented == nil && finishing == nil) { _, closed in
+            if closed {
+                DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.15 : 0.45) / Theme.Motion.slowFactor) {
+                    guard presented == nil, finishing == nil else { return }
+                    withAnimation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springZoom) { miniVisible = true }
+                }
+            } else {
+                miniVisible = false
+            }
+        }
         .onAppear {
+            if presented == nil, finishing == nil { miniVisible = true }
             // Reopen a workout that was in progress when the app was closed.
             guard !didRestore else { return }
             didRestore = true
@@ -116,7 +128,7 @@ struct RootView: View {
     /// "Push · 18:42 · Resume" while a workout is minimised.
     /// `tagged`: only Today's copy is the zoom / matched source, so IDs stay unique.
     @ViewBuilder private func minimisedBar(tagged: Bool) -> some View {
-        if presented == nil, finishing == nil, let w = activeWorkout {
+        if miniVisible, presented == nil, finishing == nil, let w = activeWorkout {
             Button { open(w, from: .workoutMini(w.id)) } label: {
                 HStack(spacing: Theme.Spacing.s2) {
                     Text(w.routineName.isEmpty ? "Workout" : w.routineName).font(Theme.Fonts.label)

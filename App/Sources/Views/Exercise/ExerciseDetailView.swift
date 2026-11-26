@@ -60,7 +60,8 @@ struct ExerciseDetailView: View {
             Section {
                 if let media {
                     ExerciseMediaHeader(media: media, onVisibilityChange: { headerShown = $0 })
-                        .listRowInsets(EdgeInsets(top: Theme.Spacing.s2, leading: Theme.Spacing.s5, bottom: 0, trailing: Theme.Spacing.s5))
+                        // insetGrouped already insets 20 pt, so the header is screen − 40 (QA 9).
+                        .listRowInsets(EdgeInsets(top: Theme.Spacing.s2, leading: 0, bottom: 0, trailing: 0))
                         .listRowSeparator(.hidden)
                 }
                 VStack(alignment: .leading, spacing: Theme.Spacing.s1) {
@@ -172,11 +173,15 @@ struct ExerciseDetailView: View {
             }
         }
         .chartYAxis(.hidden)
+        // Tight y range: the line fills the plot, no big empty gap (QA 14).
+        .chartYScale(domain: yDomain(points.map { value($0.e1RMKg) }))
+        .chartXScale(domain: (points.first?.date ?? Date())...max(Date(), points.last?.date ?? Date()))
         .chartXAxis {
-            AxisMarks(values: [points.first?.date, points.last?.date].compactMap { $0 }) { v in
-                AxisValueLabel {
+            // Start month on the left, "Today" on the right.
+            AxisMarks(values: [points.first?.date, Date()].compactMap { $0 }) { v in
+                AxisValueLabel(anchor: (v.index == 0) ? .topLeading : .topTrailing) {
                     if let d = v.as(Date.self) {
-                        Text(Calendar.current.isDateInToday(d) ? "Today" : d.formatted(.dateTime.month(.abbreviated)))
+                        Text(v.index == 0 ? d.formatted(.dateTime.month(.abbreviated)) : "Today")
                             .font(Theme.Fonts.caption)
                     }
                 }
@@ -187,6 +192,12 @@ struct ExerciseDetailView: View {
         .frame(height: 180)
         .overlay(alignment: .bottom) { Rectangle().fill(Theme.Colors.separator).frame(height: 0.5).padding(.bottom, 24) }
         .accessibilityLabel("Estimated max over time")
+    }
+
+    private func yDomain(_ values: [Double]) -> ClosedRange<Double> {
+        guard let lo = values.min(), let hi = values.max() else { return 0...1 }
+        let pad = max((hi - lo) * 0.15, 2.5)
+        return (lo - pad)...(hi + pad)
     }
 
     private func value(_ kg: Double) -> Double { UnitMath.convert(kg, from: .kg, to: unit) }

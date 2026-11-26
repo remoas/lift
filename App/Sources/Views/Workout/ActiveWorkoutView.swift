@@ -15,6 +15,7 @@ struct ActiveWorkoutView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(ToastCenter.self) private var toasts
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var session: WorkoutSession?
     @State private var editing: SetEntry?
     @State private var picker: ExercisePicker.Mode?
@@ -114,16 +115,19 @@ struct ActiveWorkoutView: View {
                     .frame(height: session.rest == nil && session.restDoneText == nil ? 0 : nil)
                     .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.rest == nil)
             }
-
-            if let banner = shownBanner {
-                PRBannerView(content: banner, setID: shownSetID, landed: bannerLanded, onTap: {
-                    detail = session.bannerExercise
-                    session.dismissBanner()
-                }, onDismiss: { session.dismissBanner() })
-                .padding(.top, Theme.Spacing.s2)
-                .transition(.opacity)
-                .zIndex(1)
+            .safeAreaInset(edge: .top, spacing: 0) {
+                // Under the nav, pushing the list down so it never covers a header (QA 8).
+                if let banner = shownBanner {
+                    PRBannerView(content: banner, setID: shownSetID, landed: bannerLanded, onTap: {
+                        detail = session.bannerExercise
+                        session.dismissBanner()
+                    }, onDismiss: { session.dismissBanner() })
+                    .padding(.vertical, Theme.Spacing.s2)
+                    .background(Theme.Colors.bgCanvas)
+                    .transition(.opacity)
+                }
             }
+
         }
         .onChange(of: session.banner) { _, new in bannerChanged(new, setID: session.bannerSetID) }
         .onAppear {
@@ -209,11 +213,22 @@ struct ActiveWorkoutView: View {
             } else if !ex.note.isEmpty {
                 Text(ex.note).font(Theme.Fonts.secondary.italic()).foregroundStyle(Theme.Colors.textSecondary)
             }
-            HStack {
-                Text("Last time").padding(.leading, 36)
-                Spacer().frame(width: 60)
-                Text("Today")
-                Spacer()
+            Group {
+                if typeSize.isAccessibilitySize {
+                    // Values stack (today, then last time beneath), so the heads do too.
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Today")
+                        Text("Last time")
+                    }
+                    .padding(.leading, 36)
+                } else {
+                    HStack {
+                        Text("Last time").padding(.leading, 36)
+                        Spacer().frame(width: 60)
+                        Text("Today")
+                        Spacer()
+                    }
+                }
             }
             .font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
             .padding(.top, Theme.Spacing.s2)
@@ -251,8 +266,12 @@ struct ActiveWorkoutView: View {
                 Divider()
                 Button("Discard workout", systemImage: "trash", role: .destructive) { discard() }
             } label: {
-                Image(systemName: "ellipsis.circle").frame(width: Theme.Size.hit, height: Theme.Size.hit)
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.Colors.textSecondary)
+                    .frame(width: Theme.Size.hit, height: Theme.Size.hit)
             }
+            .tint(Theme.Colors.textSecondary)
             .accessibilityLabel("Workout options")
         }
         ToolbarItem(placement: .confirmationAction) {
@@ -311,7 +330,7 @@ struct ActiveWorkoutView: View {
                 return
             }
             withAnimation(Theme.Motion.springBanner) { bannerLanded = false }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.32 / Theme.Motion.slowFactor) {
                 guard session?.banner == nil else { return }
                 withAnimation(Theme.Motion.fadeReduced) { shownBanner = nil }
             }
@@ -396,7 +415,10 @@ struct EditTodayView: View {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text("Edit today").font(.headline)
-                        Text(session.workout.routineName).font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
+                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                            Text("\(session.workout.routineName) · \(RestCountdown.format(ctx.date.timeIntervalSince(session.workout.startedAt)))")
+                                .font(Theme.Fonts.caption.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary)
+                        }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.fontWeight(.semibold) }

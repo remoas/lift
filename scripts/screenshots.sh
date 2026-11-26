@@ -16,6 +16,10 @@ UDID=$(xcrun simctl create lift-shots "iPhone 16")
 trap 'xcrun simctl delete "$UDID" >/dev/null 2>&1 || true' EXIT
 xcrun simctl boot "$UDID"
 xcrun simctl bootstatus "$UDID" -b
+# No QuickPath "slide to type" coaching card over keyboard frames (QA 6).
+xcrun simctl spawn "$UDID" defaults write com.apple.Preferences DidShowContinuousPathIntroduction -bool true || true
+xcrun simctl spawn "$UDID" defaults write com.apple.keyboard.preferences DidShowContinuousPathIntroduction -bool true || true
+xcrun simctl spawn "$UDID" defaults write com.apple.Preferences KeyboardContinuousPathEnabled -bool false || true
 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3
 xcrun simctl install "$UDID" "$APP"
 # Pre-grant notifications so no permission alert covers a frame.

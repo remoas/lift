@@ -93,14 +93,22 @@ enum Theme {
     }
 
     enum Motion {
-        static let springTick = Animation.spring(response: 0.28, dampingFraction: 0.72)
-        static let springBanner = Animation.spring(response: 0.42, dampingFraction: 0.82)
-        static let barDraw = Animation.easeOut(duration: 0.28).delay(0.12)
-        static let crossfade = Animation.easeInOut(duration: 0.2)
+        /// DEBUG recordings only: `-LiftSlowAnimations` mirrors Simulator › Slow Animations.
+        static let slowFactor: Double = {
+            #if DEBUG
+            return ProcessInfo.processInfo.arguments.contains("-LiftSlowAnimations") ? 0.1 : 1
+            #else
+            return 1
+            #endif
+        }()
+        static let springTick = Animation.spring(response: 0.28, dampingFraction: 0.72).speed(slowFactor)
+        static let springBanner = Animation.spring(response: 0.42, dampingFraction: 0.82).speed(slowFactor)
+        static let barDraw = Animation.easeOut(duration: 0.28).delay(0.12).speed(slowFactor)
+        static let crossfade = Animation.easeInOut(duration: 0.2).speed(slowFactor)
         /// Large surfaces (Today → workout, row → detail): critically damped, no bounce.
-        static let springZoom = Animation.spring(response: 0.48, dampingFraction: 1.0)
+        static let springZoom = Animation.spring(response: 0.48, dampingFraction: 1.0).speed(slowFactor)
         /// Reduce Motion fallback for every shared transition: crossfade only.
-        static let fadeReduced = Animation.easeInOut(duration: 0.15)
+        static let fadeReduced = Animation.easeInOut(duration: 0.15).speed(slowFactor)
     }
 }
 
@@ -125,9 +133,9 @@ struct PrimaryButtonStyle: ButtonStyle {
         configuration.label
             .font(.headline)
             .frame(maxWidth: .infinity, minHeight: Theme.Size.primaryButton)
-            .foregroundStyle(Theme.Colors.onAccent)
-            .background(configuration.isPressed ? Theme.Colors.accentPressed : Theme.Colors.accent, in: .continuous(Theme.Radius.button))
-            .opacity(isEnabled ? 1 : 0.5)
+            .foregroundStyle(Theme.Colors.onAccent.opacity(isEnabled ? 1 : 0.8))
+            .background((configuration.isPressed ? Theme.Colors.accentPressed : Theme.Colors.accent).opacity(isEnabled ? 1 : 0.45),
+                        in: .continuous(Theme.Radius.button))
     }
 }
 

@@ -194,7 +194,8 @@ final class WorkoutSession {
         bannerSetID = setID
         bannerTask?.cancel()
         bannerTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(4))
+            // 4.0 s on screen once the number has landed (~0.4 s morph).
+            try? await Task.sleep(for: .seconds(4.4))
             guard !Task.isCancelled else { return }
             self?.dismissBanner()
         }

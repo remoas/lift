@@ -99,8 +99,11 @@ struct TodayView: View {
                     Button("Try again") { cloud.retry() }.buttonStyle(TextActionStyle())
                 }
             } else if let current = active.first {
-                let minutes = Int(Date().timeIntervalSince(current.startedAt) / 60)
-                Text("\(current.doneSets.count) of \(current.allSets.count) sets done, \(minutes) min in.")
+                // Same clock as the mini bar.
+                TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                    let minutes = Int(ctx.date.timeIntervalSince(current.startedAt) / 60)
+                    Text("\(current.doneSets.count) of \(current.allSets.count) sets done, \(minutes) min in.")
+                }
             } else if let next {
                 ledeText(for: next)
             }
@@ -124,7 +127,7 @@ struct TodayView: View {
         if let latest = finished.first, Date().timeIntervalSince(latest.startedAt) > 7 * 86_400 {
             return Text("Welcome back. Last \(routine.name) was \(lastOfRoutine.startedAt.formatted(.dateTime.day().month(.wide))); we've kept your numbers.")
         }
-        var text = Text("Session \(doneThisWeek + 1) of \(target) this week. Last \(routine.name) was \(lastOfRoutine.startedAt.formatted(.dateTime.weekday(.wide)))")
+        var text = Text("Your \(Self.ordinal(doneThisWeek + 1)) session this week. Last \(routine.name) was \(lastOfRoutine.startedAt.formatted(.dateTime.weekday(.wide)))")
         if let first = lastOfRoutine.groups.first, let top = topSet(first.sets) {
             let unit = first.exercise.unit(global: settings.unit)
             text = text + Text(", when you got ") + Text(WeightText.pair(top.snapshot, in: unit, step: first.exercise.step(for: unit))).fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary)
@@ -133,6 +136,15 @@ struct TodayView: View {
             text = text + Text(".")
         }
         return text
+    }
+
+    /// "third": spelled-out ordinal (spec §3.2), so the lede never shows a second n-of-target count.
+    static func ordinal(_ n: Int) -> String {
+        let f = NumberFormatter()
+        f.numberStyle = .spellOut
+        f.locale = Locale(identifier: "en")
+        let words = ["first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"]
+        return n >= 1 && n <= words.count ? words[n - 1] : (f.string(from: NSNumber(value: n)).map { "\($0)th" } ?? "\(n)th")
     }
 
     private func topSet(_ sets: [SetEntry]) -> SetEntry? {
@@ -183,8 +195,9 @@ struct TodayView: View {
 
     private var actions: some View {
         VStack(spacing: 0) {
-            if let current = active.first {
-                Button("Resume \(current.routineName)") { onOpenWorkout(current) }.buttonStyle(PrimaryButtonStyle())
+            if !active.isEmpty {
+                // Minimised: the mini bar ("Push · 18:42 · Resume") is the one Resume (QA 10).
+                EmptyView()
             } else if let next, next.sortedItems.isEmpty {
                 Button("Add exercises to \(next.name)") { buildingDay = next }.buttonStyle(PrimaryButtonStyle())
             } else if let next {

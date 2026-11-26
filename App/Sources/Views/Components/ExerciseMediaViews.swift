@@ -10,6 +10,12 @@ enum MediaStore {
         Bundle.main.url(forResource: "ExerciseMedia/" + relative, withExtension: nil)
     }
 
+    /// "video/leg-press.mp4" → "posters/leg-press-thumb.jpg" (or "-end.jpg").
+    static func posterURL(_ videoFile: String, kind: String) -> URL? {
+        let name = ((videoFile as NSString).lastPathComponent as NSString).deletingPathExtension
+        return url("posters/\(name)-\(kind).jpg")
+    }
+
     /// Downsampled image for lists; full images are decoded only on detail.
     static func thumbnail(for media: ExerciseMedia, side: CGFloat) async -> UIImage? {
         let key = "\(media.files.first ?? "")@\(Int(side))" as NSString
@@ -19,6 +25,10 @@ enum MediaStore {
         let image: UIImage?
         if let still = media.thumbnail, let url = url(still) {
             image = await UIImage(contentsOfFile: url.path)?.byPreparingThumbnail(ofSize: size)
+        } else if case .video(let file) = media, let poster = posterURL(file, kind: "thumb") {
+            // Bundled poster (frame at 1 s). The simulator's video decoder can return
+            // a solid green frame from AVAssetImageGenerator, so never rely on it here.
+            image = await UIImage(contentsOfFile: poster.path)?.byPreparingThumbnail(ofSize: size)
         } else if case .video(let file) = media, let url = url(file) {
             let gen = AVAssetImageGenerator(asset: AVURLAsset(url: url))
             gen.appliesPreferredTrackTransform = true
@@ -168,7 +178,12 @@ struct ExerciseMediaHeader: View {
         q.audiovisualBackgroundPlaybackPolicy = .pauses
         looper = AVPlayerLooper(player: q, templateItem: AVPlayerItem(asset: comp))
         player = q
-        // End frame for Reduce Motion (it rests on the End still).
+        // End frame for Reduce Motion (it rests on the End still): bundled poster first.
+        if let url = MediaStore.posterURL(file, kind: "end"),
+           let img = await Task.detached(priority: .userInitiated, operation: { UIImage(contentsOfFile: url.path)?.preparingForDisplay() }).value {
+            poster = img
+            return true
+        }
         let gen = AVAssetImageGenerator(asset: asset)
         gen.appliesPreferredTrackTransform = true
         gen.maximumSize = CGSize(width: 1200, height: 1200)

@@ -69,7 +69,8 @@ struct SetRowView: View {
                         Text(model.unit.symbol).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
                         Text("× \(model.reps)").font(Theme.Fonts.setValue)
                     } else {
-                        Text("Add weight").font(.body.weight(.semibold)).foregroundStyle(Theme.Colors.accent)
+                        Text("Add weight").font(.body.weight(.semibold))
+                            .foregroundStyle(model.state == .current ? Theme.Colors.accent : Theme.Colors.textSecondary)
                         Text("× \(model.reps)").font(Theme.Fonts.setValue)
                     }
                     if model.state == .best {

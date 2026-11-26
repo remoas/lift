@@ -106,7 +106,10 @@ enum Fixtures {
                 break
             case "24a-media-video":
                 exercise = b.exercise("barbell-shoulder-press")
-            case "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading":
+            case "24c-media-reduce-motion":
+                // Reduce Motion matters for video: End still, "▶ Play" pill, no autoplay.
+                exercise = b.exercise("barbell-shoulder-press")
+            case "24b-media-stills", "24d-media-loading":
                 exercise = b.exercise("bench-press")
             case "24e-media-none":
                 exercise = b.exercise("triceps-pushdown")
@@ -249,6 +252,12 @@ struct FixtureRoot: View {
             .environment(\.liftNamespace, liftNS)
             .overlay { ToastOverlay() }
             .onAppear {
+                if Theme.Motion.slowFactor < 1 {
+                    // UIKit transitions (zoom, push, cover) at Slow Animations speed too.
+                    for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
+                        for w in scene.windows { w.layer.speed = Float(Theme.Motion.slowFactor) }
+                    }
+                }
                 if frame == "15-restoring" { cloud.debugSimulateFirstRestore() }
                 // Health is written after Done now, so its error is a toast on Today.
                 if frame == "26-discard-toast" {
@@ -273,7 +282,14 @@ struct FixtureRoot: View {
         case "26-discard-toast":
             RootView()
         case "08-exercise", "16-exercise-empty", "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none":
-            if let ex = Fixtures.exercise { NavigationStack { ExerciseDetailView(exercise: ex) } }
+            // On a push stack, so Back shows as in the real flow (QA 14).
+            if let ex = Fixtures.exercise {
+                NavigationStack {
+                    Theme.Colors.bgCanvas
+                        .navigationTitle("Today")
+                        .navigationDestination(isPresented: .constant(true)) { ExerciseDetailView(exercise: ex) }
+                }
+            }
         case "09-routines", "23-routines-empty": RootView(initialTab: .routines)
         case "10-history", "12-history-empty": RootView(initialTab: .history)
         case "11-settings": SettingsView()

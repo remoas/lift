@@ -13,7 +13,7 @@ final class FlowRecordings: XCTestCase {
         var args = ["-LiftFixture", frame]
         if let k = ProcessInfo.processInfo.environment["LIFT_SLOW"] {
             // Same switch as Simulator › Slow Animations.
-            args += ["-UIAnimationDragCoefficient", k]
+            args += ["-UIAnimationDragCoefficient", k, "-LiftSlowAnimations"]
         }
         app.launchArguments = args
         app.launch()
