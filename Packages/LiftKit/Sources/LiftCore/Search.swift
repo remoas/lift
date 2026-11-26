@@ -135,6 +135,8 @@ public enum Search {
         }
         let qt = tokens(query)
         if qt.isEmpty {
+            // Only punctuation ("-"): nothing matches, as in the reference.
+            if !query.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return [] }
             let all = entries.filter(passes)
             let sorted = (muscles.isEmpty && equipment.isEmpty)
                 ? all.sorted { $0.sortKey.localizedStandardCompare($1.sortKey) == .orderedAscending }
