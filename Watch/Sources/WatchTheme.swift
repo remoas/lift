@@ -111,7 +111,8 @@ extension Text {
 extension View {
     /// A pinned control at the bottom: 44 pt, edge to edge, clear of the rounded corners.
     func pinnedBottom<B: View>(@ViewBuilder _ bottom: () -> B) -> some View {
-        safeAreaInset(edge: .bottom, spacing: 6) {
+        frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .bottom, spacing: 6) {
             bottom()
                 .padding(.horizontal, WatchTheme.inset)
                 .padding(.bottom, WatchTheme.bottomGap)

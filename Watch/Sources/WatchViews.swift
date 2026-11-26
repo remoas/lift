@@ -140,6 +140,8 @@ struct ExercisePage: View {
     @State private var weight = 0.0
     @State private var reps = 0.0
     @FocusState private var focus: Field?
+    /// The field the user tapped; only it can take the Crown (no default focus).
+    @State private var active: Field?
     @State private var showingOptions = false
     @State private var idle: Task<Void, Never>?
 
@@ -183,10 +185,14 @@ struct ExercisePage: View {
         }
         .onAppear {
             load()
-            if store.fixtureFocusWeight && isCurrent { focus = .weight }
+            if store.fixtureFocusWeight && isCurrent { take(.weight) }
         }
         .onChange(of: draftKey) { _, _ in load() }
-        .onChange(of: focus) { _, _ in armIdle() }
+        .onChange(of: focus) { _, f in
+            // Focus lost elsewhere (a swipe, a sheet): hand the Crown back.
+            if f == nil, active != nil, !store.isFixture { active = nil }
+            armIdle()
+        }
         .onChange(of: weight) { _, _ in armIdle() }
         .onChange(of: reps) { _, _ in armIdle() }
     }
@@ -247,8 +253,8 @@ struct ExercisePage: View {
         } else {
             // 3.5 First time: no Last, no bar; Crown sets the weight.
             Text("First time. Log what you do.").watchCaption()
-            if weight <= 0 && !exercise.bodyweight && focus != .weight {
-                Button { focus = .weight } label: {
+            if weight <= 0 && !exercise.bodyweight && active != .weight {
+                Button { take(.weight) } label: {
                     Text("Add weight").font(WatchTheme.hero(22)).foregroundStyle(WatchTheme.textPrimary)
                 }
                 .buttonStyle(.plain)
@@ -264,21 +270,21 @@ struct ExercisePage: View {
         HStack(alignment: .firstTextBaseline, spacing: 0) {
             if !exercise.bodyweight || weight > 0 {
                 Text(UnitMath.format(weight))
-                    .modifier(CrownFocusRing(on: focus == .weight))
-                    .focusable(true).focused($focus, equals: .weight)
+                    .modifier(CrownFocusRing(on: active == .weight))
+                    .focusable(active == .weight).focused($focus, equals: .weight)
                     .focusEffectDisabled()
                     .digitalCrownRotation($weight, from: 0, through: 1500, by: exercise.step, sensitivity: .low,
                                           isContinuous: false, isHapticFeedbackEnabled: true)
-                    .onTapGesture { focus = .weight }
+                    .onTapGesture { take(.weight) }
                 Text("×").padding(.horizontal, 2)
             }
             Text("\(Int(reps))\(exercise.bodyweight && weight <= 0 ? " reps" : "")")
-                .modifier(CrownFocusRing(on: focus == .reps))
-                .focusable(true).focused($focus, equals: .reps)
+                .modifier(CrownFocusRing(on: active == .reps))
+                .focusable(active == .reps).focused($focus, equals: .reps)
                 .focusEffectDisabled()
                 .digitalCrownRotation($reps, from: 1, through: 100, by: 1, sensitivity: .low,
                                       isContinuous: false, isHapticFeedbackEnabled: true)
-                .onTapGesture { focus = .reps }
+                .onTapGesture { take(.reps) }
         }
         .font(WatchTheme.hero(26))
         .foregroundStyle(WatchTheme.textPrimary)
@@ -339,16 +345,27 @@ struct ExercisePage: View {
     private func log() {
         let r = store.liveCount(for: exercise) ?? Int(reps)
         store.log(exercise: exercise, weight: weight, reps: max(r, 1))
+        release()
+    }
+
+    private func take(_ f: Field) {
+        active = f
+        DispatchQueue.main.async { focus = f }
+    }
+
+    private func release() {
+        idle?.cancel()
+        active = nil
         focus = nil
     }
 
     /// 3 s with no Crown input hands the Crown back to the pages (CDO).
     private func armIdle() {
         idle?.cancel()
-        guard focus == .weight || focus == .reps, !store.isFixture else { return }
+        guard active != nil, !store.isFixture else { return }
         idle = Task { @MainActor in
             try? await Task.sleep(for: .seconds(3))
-            if !Task.isCancelled { focus = nil }
+            if !Task.isCancelled { release() }
         }
     }
 
@@ -380,7 +397,7 @@ struct RestView: View {
     let exercise: LiveExercise
     let onEdit: () -> Void
 
-    private var ring: CGFloat { WatchTheme.isLarge ? 96 : 74 }
+    private var ring: CGFloat { WatchTheme.isLarge ? 92 : 64 }
 
     var body: some View {
         let dimmed = aod || previewDimmed
@@ -396,7 +413,7 @@ struct RestView: View {
                         .rotationEffect(.degrees(-90))
                     // Always-On keeps m:ss at full text colour (QA 1, item 16).
                     Text(RestCountdown.format(left))
-                        .font(WatchTheme.hero(30))
+                        .font(WatchTheme.hero(WatchTheme.isLarge ? 30 : 25))
                         .foregroundStyle(WatchTheme.textPrimary)
                         .accessibilityLabel("Rest, \(Int(left.rounded(.up))) seconds left")
                 }
@@ -408,7 +425,8 @@ struct RestView: View {
                         .theBar(dimmed: dimmed)
                 }
             }
-            .padding(.top, 6)
+            // Clear of the ••• / Finish row (QA 1, item 1).
+            .padding(.top, 14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .pinnedBottom {
                 if !dimmed {
@@ -428,7 +446,7 @@ struct RestUpView: View {
     let exercise: LiveExercise
     let onLog: () -> Void
 
-    private var ring: CGFloat { WatchTheme.isLarge ? 96 : 74 }
+    private var ring: CGFloat { WatchTheme.isLarge ? 92 : 64 }
 
     var body: some View {
         VStack(spacing: 2) {
@@ -442,7 +460,7 @@ struct RestUpView: View {
             Text(BeatItText.number(exercise.prefill, bodyweight: exercise.bodyweight))
                 .font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary).theBar()
         }
-        .padding(.top, 6)
+        .padding(.top, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .pinnedBottom { Button("Log set", action: onLog).buttonStyle(WatchPrimaryStyle()).modifier(DoubleTapLogs()) }
     }
