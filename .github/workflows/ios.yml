@@ -1,11 +1,11 @@
-# Manual only: macOS minutes are billed 10x on private repos, so this never
-# runs on push. Trigger it from the Actions tab once Ben picks how CI is paid for.
+# Manual only. Standard GitHub-hosted macOS runner (free for public repos);
+# never a larger runner. Unsigned simulator build; nothing goes to Apple.
 name: iOS build, tests and screenshots
 on:
   workflow_dispatch:
     inputs:
       screenshots:
-        description: "Capture the 27 design frames (light, dark) and the AX3 set row"
+        description: "Capture the 35 design frames (light, dark) and the AX3 set row"
         type: boolean
         default: true
 permissions:
@@ -16,23 +16,37 @@ concurrency:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
-      - name: Package tests (LiftCore)
+      - name: Select Xcode 16
+        run: |
+          ls -d /Applications/Xcode*.app
+          XC=$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+          mkdir -p review-logs screenshots-review
+          xcrun simctl list devicetypes | grep -i "iPhone 16" | tee review-logs/devicetypes.txt
+          xcrun simctl list runtimes | tee review-logs/runtimes.txt
+      - name: LiftCore unit tests
         working-directory: Packages/LiftKit
-        run: swift test
-      - name: Generate project
-        run: brew install xcodegen && xcodegen generate
-      - name: Build for simulator (unsigned)
         run: |
           set -o pipefail
-          mkdir -p build
+          swift test 2>&1 | tee ../../review-logs/liftcore-tests.log
+      - name: Generate project
+        run: brew install xcodegen && xcodegen generate
+      - name: Build and UI-test (iPhone 16 simulator, unsigned)
+        run: |
+          set -o pipefail
+          UDID=$(xcrun simctl create lift-ci "iPhone 16")
+          echo "$UDID" > review-logs/sim-udid.txt
           xcodebuild -project Lift.xcodeproj -scheme Lift -configuration Debug \
-            -destination 'platform=iOS Simulator,name=iPhone 16' \
-            -derivedDataPath build/dd CODE_SIGNING_ALLOWED=NO build > build/xcodebuild.log 2>&1 || (grep -E 'error:|warning: .*deprecated' build/xcodebuild.log | head -100; tail -80 build/xcodebuild.log; exit 1)
+            -destination "id=$UDID" -derivedDataPath build/dd \
+            -resultBundlePath review-logs/tests.xcresult \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO test > review-logs/xcodebuild.log 2>&1 \
+            || { grep -E "error:|failed|Failing|XCTAssert" review-logs/xcodebuild.log | sort -u | head -150; tail -60 review-logs/xcodebuild.log; exit 1; }
+          grep -E "Test Suite|Executed|passed|failed" review-logs/xcodebuild.log | tail -30
+          xcrun simctl delete "$UDID" || true
       - name: Screenshots
         if: ${{ inputs.screenshots }}
         run: scripts/screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review
@@ -42,5 +56,5 @@ jobs:
           name: lift-review
           path: |
             screenshots-review/
-            build/xcodebuild.log
+            review-logs/
           if-no-files-found: ignore
