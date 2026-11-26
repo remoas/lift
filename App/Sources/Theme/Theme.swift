@@ -100,6 +100,13 @@ enum Theme {
     }
 }
 
+extension RoundedRectangle {
+    /// Continuous corners, for explicit use (e.g. `RoundedRectangle.smooth(14)`).
+    static func smooth(_ radius: CGFloat) -> RoundedRectangle {
+        RoundedRectangle(cornerRadius: radius, style: .continuous)
+    }
+}
+
 extension Shape where Self == RoundedRectangle {
     /// Continuous corners everywhere.
     static func continuous(_ radius: CGFloat) -> RoundedRectangle {

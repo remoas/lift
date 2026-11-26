@@ -215,6 +215,6 @@ struct StepperCircle: View {
             .accessibilityElement()
             .accessibilityLabel(label)
             .accessibilityAddTraits(.isButton)
-            .accessibilityAction(action)
+            .accessibilityAction { action() }
     }
 }

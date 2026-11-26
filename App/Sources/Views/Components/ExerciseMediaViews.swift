@@ -44,7 +44,7 @@ struct ExerciseThumb: View {
 
     var body: some View {
         ZStack {
-            Shape.continuous(Theme.Radius.control).fill(Theme.Colors.accentSoft)
+            RoundedRectangle.smooth(Theme.Radius.control).fill(Theme.Colors.accentSoft)
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()
                     .transition(.opacity)

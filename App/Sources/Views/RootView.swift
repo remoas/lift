@@ -117,7 +117,7 @@ struct RootView: View {
                 .padding(.horizontal, Theme.Spacing.s4)
                 .frame(minHeight: Theme.Size.setRow)
                 .background(Theme.Colors.bgRaised, in: .continuous(Theme.Radius.button))
-                .overlay(Shape.continuous(Theme.Radius.button).stroke(Theme.Colors.separator, lineWidth: 0.5))
+                .overlay(RoundedRectangle.smooth(Theme.Radius.button).stroke(Theme.Colors.separator, lineWidth: 0.5))
             }
             .buttonStyle(.plain)
             .screenMargins()
