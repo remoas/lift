@@ -2,10 +2,11 @@ import SwiftUI
 import SwiftData
 import LiftCore
 
-/// Full-screen active workout. Close minimises; nothing is ever lost.
+/// The Log tab: today's workout, open from launch. Nothing logged = nothing saved.
 struct ActiveWorkoutView: View {
     let workout: Workout
-    var onClose: () -> Void
+    /// Only for a past workout logged from History (it opens in a cover).
+    var onClose: (() -> Void)? = nil
     /// Opens the summary. Nothing is final until Done there.
     var onFinished: (Workout) -> Void
     /// Back to Today with a 5 s Undo; deleted only when the window ends.
@@ -14,6 +15,7 @@ struct ActiveWorkoutView: View {
     @Environment(\.modelContext) private var context
     @Environment(AppSettings.self) private var settings
     @Environment(ToastCenter.self) private var toasts
+    @Environment(CloudSyncMonitor.self) private var cloud
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var session: WorkoutSession?
@@ -25,6 +27,8 @@ struct ActiveWorkoutView: View {
     @State private var shownBanner: PRBannerContent?
     @State private var shownSetID: UUID?
     @State private var bannerLanded = false
+    /// Exercise whose inline rep-goal stepper is showing.
+    @State private var repGoalFor: UUID?
 
     var body: some View {
         NavigationStack {
@@ -32,13 +36,15 @@ struct ActiveWorkoutView: View {
                 if let session { content(session) } else { Theme.Colors.bgCanvas }
             }
             .background(Theme.Colors.bgCanvas)
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(workout.isBackLog
+                             ? workout.startedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+                             : Date().formatted(.dateTime.weekday(.wide)))
+            .navigationBarTitleDisplayMode(.large)
             .toolbar { toolbar }
             .navigationDestination(item: $detail) { ExerciseDetailView(exercise: $0).liftZoomDestination(.exercise($0.id)) }
         }
         .onAppear {
             if session == nil { session = WorkoutSession(workout: workout, context: context, settings: settings) }
-            if workout.allSets.isEmpty { picker = .add }
             RestNotifications.requestPermissionIfNeeded()
             #if DEBUG
             applyFixture()
@@ -46,7 +52,7 @@ struct ActiveWorkoutView: View {
         }
         .sheet(item: $editing) { set in
             if let session {
-                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.rowModel(for: set, number: 1).lastTime) {
+                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.previous(for: set).map { WeightText.pair($0.snapshot, in: set.unit, step: set.exercise?.step(for: set.unit) ?? set.unit.defaultStep) }) {
                     if set.isDone { session.save(); session.refreshBests() } else { session.log(set) }
                 }
             }
@@ -86,20 +92,45 @@ struct ActiveWorkoutView: View {
             List {
                 if session.groups.isEmpty {
                     Section {
-                        Button("Add your first exercise") { picker = .add }
-                            .font(Theme.Fonts.exercise)
-                            .buttonStyle(TextActionStyle())
+                        VStack(alignment: .leading, spacing: Theme.Spacing.s5) {
+                            if cloud.isRestoring {
+                                VStack(alignment: .leading, spacing: Theme.Spacing.s2) {
+                                    Text("Bringing your workouts over from iCloud. You can log now; anything you log is kept.")
+                                    IndeterminateLine()
+                                }
+                                .font(.body).foregroundStyle(Theme.Colors.textSecondary)
+                            } else if cloud.restoreFailed {
+                                VStack(alignment: .leading, spacing: 0) {
+                                    Text("Couldn't reach iCloud. Your workouts will come over when you're back online.")
+                                        .font(.body).foregroundStyle(Theme.Colors.textSecondary)
+                                    Button("Try again") { cloud.retry() }.buttonStyle(TextActionStyle())
+                                }
+                            }
+                            Text("Log what you lift. Lift remembers it for next time.")
+                                .font(.body).foregroundStyle(Theme.Colors.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Button("Add exercise") { picker = .add }.buttonStyle(PrimaryButtonStyle())
+                        }
+                        .padding(.top, Theme.Spacing.s3)
                     }
                     .listRowSeparator(.hidden)
+                    .listRowBackground(Theme.Colors.bgCanvas)
+                } else if !workout.isBackLog, let started = session.startedClock {
+                    Section {
+                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                            Text(RestCountdown.format(ctx.date.timeIntervalSince(started)))
+                                .font(Theme.Fonts.caption.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary)
+                                .accessibilityLabel("Elapsed")
+                        }
+                    }
+                    .listRowSeparator(.hidden)
+                    .listRowBackground(Theme.Colors.bgCanvas)
                 }
                 ForEach(session.groups, id: \.exercise.id) { group in
                     exerciseSection(group.exercise, sets: group.sets, session: session)
                 }
                 if !session.groups.isEmpty {
                     Section {
-                        if session.allDone {
-                            Text("All sets done").font(Theme.Fonts.bodyEmphasis).foregroundStyle(Theme.Colors.textSecondary)
-                        }
                         Button("Add exercise") { picker = .add }.buttonStyle(TextActionStyle())
                     }
                     .listRowSeparator(.hidden)
@@ -176,28 +207,30 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    /// Typographic block (quick-log §2): name + •••, the Last line, the Beat it line.
     private func header(_ ex: Exercise, sets: [SetEntry], session: WorkoutSession) -> some View {
-        let first = sets.first
-        let rest = first?.restSeconds ?? 120
-        let firstTime = LiftStore.lastSessionSets(for: ex, excluding: workout).isEmpty
+        let rest = sets.first?.restSeconds ?? 120
+        let beat = session.beatIt(for: ex)
+        let isCurrent = session.currentExercise === ex
+        let hit = session.targetHit(for: ex)
         return VStack(alignment: .leading, spacing: Theme.Spacing.s1) {
             HStack {
                 Button { detail = ex } label: {
-                    Text(ex.name).font(Theme.Fonts.exercise).foregroundStyle(Theme.Colors.textPrimary)
+                    Text(ex.name).font(.headline).foregroundStyle(Theme.Colors.textPrimary)
                         .liftZoomSource(.exercise(ex.id))
                 }
                 .buttonStyle(.plain)
                 .onLongPressGesture { showEditToday = true }
                 Spacer()
                 Menu {
-                    Button("Swap exercise") { picker = .swap(ex) }
+                    Button("Swap") { picker = .swap(ex) }
                     Button("Add set") { session.addSet(to: ex) }
-                    Button("Edit today") { showEditToday = true }
                     Picker("Rest", selection: Binding(get: { rest }, set: { session.setRest(for: ex, seconds: $0) })) {
                         ForEach(RestChoices.all(including: rest), id: \.self) { Text(RestCountdown.format(TimeInterval($0))).tag($0) }
                     }
                     .pickerStyle(.menu)
-                    Button("Remove exercise", role: .destructive) { session.remove(ex, toasts: toasts) }
+                    Button("Rep goal · \(ex.repGoal)") { repGoalFor = ex.id }
+                    Button("Remove", role: .destructive) { session.remove(ex, toasts: toasts) }
                 } label: {
                     Image(systemName: "ellipsis")
                         .foregroundStyle(Theme.Colors.textSecondary)
@@ -205,64 +238,71 @@ struct ActiveWorkoutView: View {
                 }
                 .accessibilityLabel("\(ex.name) options")
             }
-            Text("\(first?.repMin ?? ex.repMin)–\(first?.repMax ?? ex.repMax) reps · \(RestCountdown.format(TimeInterval(rest))) rest")
-                .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-            if firstTime {
-                Text("First time here. Pick a weight you could lift \(first?.repMax ?? ex.repMax) times with good form.")
-                    .font(Theme.Fonts.secondary.italic()).foregroundStyle(Theme.Colors.textSecondary)
-            } else if !ex.note.isEmpty {
-                Text(ex.note).font(Theme.Fonts.secondary.italic()).foregroundStyle(Theme.Colors.textSecondary)
+            if !beat.last.isEmpty {
+                Text(lastLine(beat, unit: session.unit(for: ex)))
+                    .font(.subheadline).foregroundStyle(Theme.Colors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Group {
-                if typeSize.isAccessibilitySize {
-                    // Values stack (today, then last time beneath), so the heads do too.
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("Today")
-                        Text("Last time")
-                    }
-                    .padding(.leading, 36)
-                } else {
-                    HStack {
-                        Text("Last time").padding(.leading, 36)
-                        Spacer().frame(width: 60)
-                        Text("Today")
-                        Spacer()
-                    }
+            targetLine(beat, ex: ex, unit: session.unit(for: ex), isCurrent: isCurrent, hit: hit)
+            if repGoalFor == ex.id {
+                HStack {
+                    Stepper("Rep goal \(ex.repGoal)", value: Binding(get: { ex.repGoal }, set: { session.setRepGoal(for: ex, $0) }), in: 3...30)
+                        .font(.subheadline).foregroundStyle(Theme.Colors.textSecondary)
+                    Button("Done") { repGoalFor = nil }.buttonStyle(TextActionStyle()).padding(.leading, Theme.Spacing.s3)
                 }
             }
-            .font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
-            .padding(.top, Theme.Spacing.s2)
-            .accessibilityHidden(true)
         }
         .padding(.top, Theme.Spacing.s4)
+        .padding(.bottom, Theme.Spacing.s2)
         .listRowBackground(Theme.Colors.bgCanvas)
+    }
+
+    /// "Last · Mon · 185×8, 185×7, 185×6"
+    private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit) -> String {
+        let day = beat.lastDate.map { $0.formatted(.dateTime.weekday(.abbreviated)) }
+        let sets = beat.last.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
+        return (["Last", day].compactMap { $0 } + [sets]).joined(separator: " · ")
+    }
+
+    @ViewBuilder
+    private func targetLine(_ beat: LiftStore.BeatIt, ex: Exercise, unit: WeightUnit, isCurrent: Bool, hit: Bool) -> some View {
+        if let t = beat.target {
+            let number = ex.equipment == .bodyweight && t.weight <= 0 ? "\(t.reps) reps" : "\(UnitMath.format(t.weight)) × \(t.reps)"
+            let layout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.Spacing.s1))
+                : AnyLayout(HStackLayout(spacing: 0))
+            layout {
+                Text(typeSize.isAccessibilitySize ? "Beat it" : "Beat it · ")
+                if isCurrent && !hit { Text(number).theBar() } else { Text(number) }
+                if hit {
+                    Text("✓ Target hit").foregroundStyle(Theme.Colors.accent)
+                        .padding(.leading, typeSize.isAccessibilitySize ? 0 : Theme.Spacing.s3)
+                }
+            }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
+            .foregroundStyle(Theme.Colors.textPrimary)
+            .font(.body.monospacedDigit())
+            .padding(.bottom, isCurrent ? Theme.Size.bar + 3 : 0)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Beat it, \(number)\(hit ? ", target hit" : "")")
+        } else {
+            Text("First time. Log what you do.")
+                .font(.body).foregroundStyle(Theme.Colors.textPrimary)
+        }
     }
 
     // MARK: Toolbar
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .cancellationAction) {
-            Button("Close") { onClose() }
-                .accessibilityHint("Keeps the workout running")
-        }
-        ToolbarItem(placement: .principal) {
-            VStack(spacing: 0) {
-                Text(workout.routineName).font(.headline).foregroundStyle(Theme.Colors.textPrimary)
-                if workout.isBackLog {
-                    Text(workout.startedAt, format: .dateTime.weekday(.abbreviated).day().month(.abbreviated))
-                        .font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
-                } else {
-                    TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                        Text(RestCountdown.format(ctx.date.timeIntervalSince(workout.startedAt)))
-                            .font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
-                    }
-                }
+        if let onClose {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Close", action: onClose)
             }
         }
         ToolbarItem(placement: .primaryAction) {
             Menu {
-                Button("Add exercise", systemImage: "plus") { picker = .add }
-                Button("Edit today", systemImage: "arrow.up.arrow.down") { showEditToday = true }
+                Button("Reorder", systemImage: "arrow.up.arrow.down") { showEditToday = true }
                 Divider()
                 Button("Discard workout", systemImage: "trash", role: .destructive) { discard() }
             } label: {
@@ -275,16 +315,14 @@ struct ActiveWorkoutView: View {
             .accessibilityLabel("Workout options")
         }
         ToolbarItem(placement: .confirmationAction) {
-            if session?.allDone == true {
+            if session?.groups.isEmpty == false {
+                // The one Ember primary once an exercise is in (AC 65).
                 Button("Finish") { finish() }
                     .font(.headline)
                     .foregroundStyle(Theme.Colors.onAccent)
                     .padding(.horizontal, Theme.Spacing.s4)
                     .frame(minHeight: 36)
                     .background(Theme.Colors.accent, in: Capsule())
-            } else {
-                Button("Finish") { finish() }
-                    .fontWeight(.semibold)
             }
         }
     }
@@ -365,12 +403,11 @@ private struct PickerItem: Identifiable {
         switch mode {
         case .add: return "add"
         case .swap(let ex): return "swap-\(ex.id)"
-        case .setup(let d): return "setup-\(d)"
         }
     }
 }
 
-/// §3.13 Edit today: native List edit mode, today only.
+/// Reorder (frame 19): native List edit mode, today only.
 struct EditTodayView: View {
     let session: WorkoutSession
     var onAdd: () -> Void
@@ -383,7 +420,7 @@ struct EditTodayView: View {
         NavigationStack {
             List {
                 Section {
-                    Text("Drag to reorder. Changes are for today only.")
+                    Text("Drag to reorder.")
                         .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
                 }
                 Section {
@@ -405,22 +442,14 @@ struct EditTodayView: View {
                     }
                 }
                 if order.isEmpty {
-                    Button("Add your first exercise", action: onAdd).buttonStyle(TextActionStyle())
+                    Button("Add exercise", action: onAdd).buttonStyle(TextActionStyle())
                 }
             }
             .environment(\.editMode, .constant(.active))
+            .navigationTitle("Reorder")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Add", action: onAdd) }
-                ToolbarItem(placement: .principal) {
-                    VStack(spacing: 0) {
-                        Text("Edit today").font(.headline)
-                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                            Text("\(session.workout.routineName) · \(RestCountdown.format(ctx.date.timeIntervalSince(session.workout.startedAt)))")
-                                .font(Theme.Fonts.caption.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary)
-                        }
-                    }
-                }
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.fontWeight(.semibold) }
             }
             .overlay { ToastOverlay() }

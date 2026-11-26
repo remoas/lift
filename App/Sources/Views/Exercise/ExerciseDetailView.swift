@@ -8,7 +8,6 @@ struct ExerciseDetailView: View {
     @Bindable var exercise: Exercise
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var context
-    @Query(sort: \Routine.order) private var routines: [Routine]
     @State private var range: ChartRange = .threeMonths
     @State private var selected: Date?
     /// Starts true when media exists (no layout jump); the header reports collapse.
@@ -115,8 +114,7 @@ struct ExerciseDetailView: View {
 
     @ViewBuilder private var lede: some View {
         if workoutCount == 0 {
-            let inRoutine = routines.first { r in r.sortedItems.contains { $0.exercise === exercise } }
-            Text(inRoutine.map { "Not logged yet. It's in \($0.name)." } ?? "Not logged yet.")
+            Text("Not logged yet.")
         } else if workoutCount == 1 {
             Text("You've logged this once. Next time, you'll have a number to beat.")
         } else if let latest = sessions.last ?? History.e1RMSeries(for: exercise.id, in: logged).last {
@@ -255,8 +253,7 @@ struct ExerciseDetailView: View {
     // MARK: Settings
 
     @ViewBuilder private var settingsRows: some View {
-        Stepper("From \(exercise.repMin) reps", value: $exercise.repMin, in: 1...50).monospacedDigit()
-        Stepper("To \(exercise.repMax) reps", value: $exercise.repMax, in: exercise.repMin...60).monospacedDigit()
+        Stepper("Rep goal \(exercise.repGoal)", value: $exercise.repGoal, in: 3...30).monospacedDigit()
         Stepper(value: Binding(get: { exercise.restSec ?? settings.workingRestSeconds }, set: { exercise.restSec = $0 }), in: 15...600, step: 15) {
             Text("Rest \(RestCountdown.format(TimeInterval(exercise.restSec ?? settings.workingRestSeconds)))").monospacedDigit()
         }

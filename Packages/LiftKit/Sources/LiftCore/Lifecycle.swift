@@ -86,36 +86,10 @@ extension SessionPlan {
     public var isEmptyWhenFinalized: Bool { doneSets.isEmpty }
 }
 
-// MARK: Naming
-
-public enum RoutineNaming {
-    /// "{Weekday} workout", the Save-as-routine prefill.
-    public static func defaultName(for date: Date, calendar: Calendar = .current, locale: Locale = .current) -> String {
-        let f = DateFormatter()
-        f.calendar = calendar
-        f.locale = locale
-        f.timeZone = calendar.timeZone
-        f.setLocalizedDateFormatFromTemplate("EEEE")
-        return "\(f.string(from: date)) workout"
-    }
-
-    /// Empty falls back to the prefill; a duplicate (case-insensitive) gets
-    /// " 2", then " 3", and so on. No alert, ever.
-    public static func resolve(_ typed: String, prefill: String, existing: [String]) -> String {
-        let trimmed = typed.trimmingCharacters(in: .whitespacesAndNewlines)
-        let base = trimmed.isEmpty ? prefill : trimmed
-        let taken = Set(existing.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
-        guard taken.contains(base.lowercased()) else { return base }
-        var n = 2
-        while taken.contains("\(base) \(n)".lowercased()) { n += 1 }
-        return "\(base) \(n)"
-    }
-}
-
 // MARK: Workout outcome
 
-/// How a workout ended. Only `.finished` with at least one logged set moves
-/// the rotation, counts toward the week, feeds comparisons, or reaches Health.
+/// How a workout ended. Only `.finished` with at least one logged set is
+/// saved, feeds comparisons, or reaches Health.
 public enum WorkoutOutcome: Equatable, Sendable {
     case inProgress
     /// Discarded; still undoable until its window ends.
@@ -144,12 +118,6 @@ public struct WorkoutRecord: Equatable, Sendable {
 }
 
 public enum Outcomes {
-    /// The next routine from counted workouts only (discarded/in-progress ignored).
-    public static func nextRoutine(order: [UUID], records: [WorkoutRecord]) -> UUID? {
-        let last = records.filter(\.counts).filter { $0.routineID != nil }.max { $0.startedAt < $1.startedAt }
-        return Rotation.next(order: order, lastCompleted: last?.routineID)
-    }
-
     /// What Done sends to Apple Health; nil when nothing should be written.
     public struct HealthPayload: Equatable, Sendable {
         public var workoutID: UUID

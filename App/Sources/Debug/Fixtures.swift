@@ -8,13 +8,12 @@ import LiftCore
 /// throwaway defaults suite, so the shipped app never contains demo data.
 enum Fixtures {
     static let frames = [
-        "01-today", "02a-welcome", "02b-days", "02c-build-empty", "02d-setup-picker", "02e-build-filled",
-        "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "07-finish", "08-exercise", "09-routines",
+        "01-log-empty", "01b-log-active",
+        "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "07-finish", "08-exercise",
         "10-history", "11-settings", "12-history-empty", "13-first-workout", "14-health-error", "15-restoring",
-        "16-exercise-empty", "17-choose-workout", "18-exercise-picker", "19-reorder", "20-finish-changed",
-        "21-finish-blank", "22-today-day-empty", "23-routines-empty",
+        "16-exercise-empty", "18-exercise-picker", "19-reorder",
         "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none",
-        "25-finish-sets-left", "26-discard-toast", "27-finish-save-routine",
+        "25-finish-sets-left", "26-discard-toast",
     ]
 
     /// Screen-recording starts (AC 61), not design frames.
@@ -49,50 +48,29 @@ enum Fixtures {
         let defaults = UserDefaults(suiteName: suite)!
         let settings = AppSettings(defaults: defaults)
         settings.unit = .lb
-        settings.daysPerWeek = 6
         let container = LiftStore.makeContainer(inMemory: true)
         let b = Builder(context: container.mainContext, settings: settings)
-        LiftStore.ensureRoutines(b.context)
 
         switch frame {
-        case "02a-welcome", "02b-days", "02c-build-empty", "02d-setup-picker":
-            settings.hasOnboarded = false
-        case "02e-build-filled":
-            settings.hasOnboarded = false
-            b.fill("Push")
-        case "23-routines-empty":
-            settings.hasOnboarded = true
-        case "15-restoring":
-            settings.hasOnboarded = true
-        case "12-history-empty":
-            settings.hasOnboarded = true
-            b.fillAll()
+        case "01-log-empty", "15-restoring", "12-history-empty":
+            break
         case "13-first-workout":
-            settings.hasOnboarded = true
-            b.fillAll()
-            workout = b.active("Push", doneSets: 1)
-        case "22-today-day-empty":
-            settings.hasOnboarded = true
-            b.fill("Pull"); b.fill("Legs")
-            b.history(weeks: 2, thisWeek: ["Pull", "Legs"], skip: ["Push"])
+            // Nothing in history: no Last line, "First time. Log what you do."
+            workout = b.active(["bench-press", "barbell-shoulder-press"], doneSets: 0)
         default:
-            settings.hasOnboarded = true
-            b.fillAll()
-            b.history(weeks: 3, thisWeek: ["Pull", "Legs"])
+            b.history(weeks: 3)
             switch frame {
+            case "01b-log-active":
+                workout = b.active(["bench-press", "barbell-shoulder-press"], doneSets: 1)
             case "03-workout", "04-rest", "05-set-editor", "19-reorder":
-                workout = b.active("Push", doneSets: 2)
+                workout = b.active(Builder.push, doneSets: 2)
             case "06-pr-banner":
-                workout = b.active("Push", doneSets: 2, topSet: (205, 5))
+                workout = b.active(Builder.push, doneSets: 2, topSet: (205, 5))
             case "07-finish":
-                workout = b.finishedToday("Push", topSet: (205, 5))
-            case "20-finish-changed":
-                workout = b.finishedToday("Push", topSet: nil, swap: ("incline-dumbbell-press", "cable-crossover"))
-            case "21-finish-blank", "27-finish-save-routine":
-                workout = b.finishedToday(nil, topSet: nil)
+                workout = b.finishedToday(topSet: (205, 5))
             case "rec-pr":
                 // Two PRs in a row: the current bench set, then the next exercise's first set.
-                let w = b.active("Push", doneSets: 2)
+                let w = b.active(Builder.push, doneSets: 2)
                 let open = w.groups.flatMap(\.sets).filter { !$0.isDone }
                 if open.count > 1 {
                     open[0].weight = 215; open[0].reps = 5
@@ -100,13 +78,11 @@ enum Fixtures {
                 }
                 workout = w
             case "25-finish-sets-left":
-                workout = b.active("Push", doneSets: 11)
+                workout = b.active(Builder.push, doneSets: 11)
             case "26-discard-toast":
-                // After Discard: Today with the Undo toast; the workout is pending deletion.
+                // After Discard: a fresh Log with the Undo toast.
                 break
-            case "24a-media-video":
-                exercise = b.exercise("barbell-shoulder-press")
-            case "24c-media-reduce-motion":
+            case "24a-media-video", "24c-media-reduce-motion":
                 // Reduce Motion matters for video: End still, "▶ Play" pill, no autoplay.
                 exercise = b.exercise("barbell-shoulder-press")
             case "24b-media-stills", "24d-media-loading":
@@ -125,81 +101,56 @@ enum Fixtures {
         return (container, settings)
     }
 
+    /// Debug-only staging data (in memory, never in the shipped app).
     @MainActor
     struct Builder {
         let context: ModelContext
         let settings: AppSettings
 
-        static let plan: [String: [(String, Int, ClosedRange<Int>, Double)]] = [
-            "Push": [("bench-press", 3, 6...8, 185), ("barbell-shoulder-press", 3, 6...8, 115), ("incline-dumbbell-press", 3, 8...12, 60),
-                     ("side-lateral-raise", 3, 12...15, 20), ("triceps-pushdown", 3, 10...12, 50)],
-            "Pull": [("deadlift", 3, 3...5, 315), ("pullups", 3, 6...10, 0), ("bent-over-row", 3, 6...10, 155), ("face-pull", 3, 12...15, 40), ("barbell-curl", 3, 8...12, 70)],
-            "Legs": [("barbell-squat", 3, 5...8, 245), ("romanian-deadlift", 3, 6...10, 205), ("leg-press", 3, 8...12, 360), ("leg-curl", 3, 10...12, 90), ("calf-raises", 3, 10...15, 180)],
+        static let push = ["bench-press", "barbell-shoulder-press", "incline-dumbbell-press", "side-lateral-raise", "triceps-pushdown"]
+        static let pull = ["deadlift", "pullups", "bent-over-row", "face-pull", "barbell-curl"]
+        static let legs = ["barbell-squat", "romanian-deadlift", "leg-press", "leg-curl", "calf-raises"]
+        /// Starting weight (lb) and reps per exercise.
+        static let base: [String: (Double, Int)] = [
+            "bench-press": (185, 8), "barbell-shoulder-press": (115, 8), "incline-dumbbell-press": (60, 10),
+            "side-lateral-raise": (20, 12), "triceps-pushdown": (50, 10),
+            "deadlift": (315, 5), "pullups": (0, 9), "bent-over-row": (155, 8), "face-pull": (40, 12), "barbell-curl": (70, 9),
+            "barbell-squat": (245, 6), "romanian-deadlift": (205, 8), "leg-press": (360, 10), "leg-curl": (90, 10), "calf-raises": (180, 12),
         ]
-
-        func routine(_ name: String) -> Routine? {
-            (try? context.fetch(FetchDescriptor<Routine>()))?.first { $0.name == name }
-        }
 
         func exercise(_ id: String) -> Exercise? {
             ExerciseLibrary.bundled.exercise(id).map { LiftStore.exercise(for: $0, context: context) }
         }
 
-        func fill(_ day: String) {
-            guard let r = routine(day) else { return }
-            for (i, p) in (Self.plan[day] ?? []).enumerated() {
-                guard let ex = exercise(p.0) else { continue }
-                let item = RoutineItem(order: i, targetSets: p.1, repRange: p.2, exercise: ex)
-                context.insert(item)
-                item.routine = r
-            }
-        }
-
-        func fillAll() { ["Push", "Pull", "Legs"].forEach(fill) }
-
-        /// Finished sessions: `weeks` past weeks of PPL ×2, then `thisWeek`.
-        /// Weights climb 5 lb a week so the chart and bests have a story.
-        func history(weeks: Int, thisWeek: [String], skip: Set<String> = []) {
+        /// Finished sessions, three a week (push, pull, legs), weights climbing 5 lb a week.
+        func history(weeks: Int) {
             let cal = Calendar.current
-            let weekStart = Week.start(of: Date())
+            let now = Date()
             for w in stride(from: weeks, through: 1, by: -1) {
-                let start = cal.date(byAdding: .day, value: -7 * w, to: weekStart)!
-                for (d, day) in ["Push", "Pull", "Legs", "Push", "Pull", "Legs"].enumerated() where !skip.contains(day) {
-                    let date = cal.date(byAdding: .hour, value: 24 * d + 7, to: start)!
+                for (d, day) in [Self.push, Self.pull, Self.legs].enumerated() {
+                    let date = cal.date(byAdding: .hour, value: -(24 * (7 * w - 2 * d)) + 2, to: now)!
                     session(day, at: date, bump: Double(-5 * w))
                 }
-            }
-            let now = Date()
-            for (i, day) in thisWeek.enumerated() {
-                // Earlier this week, but never before Monday 00:00.
-                let back = Double(thisWeek.count - i) * 86_400 * 0.9
-                let date = max(weekStart.addingTimeInterval(3_600 * Double(i + 1)), now.addingTimeInterval(-back))
-                session(day, at: date, bump: 0)
             }
         }
 
         @discardableResult
-        func session(_ day: String?, at date: Date, bump: Double, topSet: (Double, Int)? = nil, finished: Bool = true, doneSets: Int = .max) -> Workout {
-            let r = day.flatMap(routine)
-            let w = Workout(routineID: r?.id, routineName: r?.name ?? "Workout", startedAt: date)
+        func session(_ ids: [String], at date: Date, bump: Double, topSet: (Double, Int)? = nil, finished: Bool = true) -> Workout {
+            let w = Workout(startedAt: date)
             context.insert(w)
-            let plan = day.flatMap { Self.plan[$0] } ?? [("bench-press", 3, 6...8, 185), ("dumbbell-row", 3, 8...12, 70), ("hammer-curls-2", 2, 10...12, 35)]
             var logged = 0
-            for (e, p) in plan.enumerated() {
-                guard let ex = exercise(p.0) else { continue }
-                let reps = [p.2.upperBound, p.2.upperBound, max(p.2.upperBound - 1, p.2.lowerBound)]
-                for s in 0..<p.1 {
-                    var weight = p.3 > 0 ? p.3 + bump : 0
-                    var r = reps[min(s, 2)]
-                    if e == 0, s == 1, let top = topSet { weight = top.0; r = top.1 }
+            for (e, id) in ids.enumerated() {
+                guard let ex = exercise(id), let base = Self.base[id] else { continue }
+                let reps = [base.1, max(base.1 - 1, 1), max(base.1 - 2, 1)]
+                for s in 0..<3 {
+                    var weight = base.0 > 0 ? base.0 + bump : 0
+                    var r = reps[s]
+                    if e == 0, s == 0, let top = topSet { weight = top.0; r = top.1 }
                     let set = SetEntry(order: s, exerciseOrder: e, weight: max(weight, 0), unit: .lb, reps: r, exercise: ex)
-                    set.repMin = p.2.lowerBound; set.repMax = p.2.upperBound
-                    set.restSeconds = p.2.upperBound <= 8 ? 150 : 90
-                    if logged < doneSets {
-                        set.isDone = true
-                        set.doneAt = date.addingTimeInterval(Double(logged + 1) * 150)
-                        logged += 1
-                    }
+                    set.restSeconds = base.1 <= 8 ? 150 : 90
+                    set.isDone = true
+                    set.doneAt = date.addingTimeInterval(Double(logged + 1) * 150)
+                    logged += 1
                     context.insert(set)
                     set.workout = w
                 }
@@ -208,9 +159,27 @@ enum Fixtures {
             return w
         }
 
-        func active(_ day: String, doneSets: Int, topSet: (Double, Int)? = nil) -> Workout {
+        /// Today's open log with these exercises added the real way (prefilled
+        /// from last time, the top set at the target), `doneSets` ticked.
+        /// `asLastTime`: ticked sets repeat last time's numbers (target not hit
+        /// yet, so the current exercise shows the bar); false keeps the prefill.
+        func active(_ ids: [String], doneSets: Int, topSet: (Double, Int)? = nil, asLastTime: Bool = true) -> Workout {
             let started = Date().addingTimeInterval(-18 * 60 - 42)
-            let w = LiftStore.start(routine(day), globalUnit: .lb, at: started, context: context)
+            let w = LiftStore.startBlank(at: started, context: context)
+            for id in ids {
+                guard let ex = exercise(id) else { continue }
+                LiftStore.addExercise(ex, to: w, globalUnit: .lb, restDefault: 120, context: context)
+            }
+            if asLastTime {
+                var n = 0
+                for g in w.groups {
+                    let last = LiftStore.beatIt(for: g.exercise, excluding: w, unit: .lb).last
+                    for (j, s) in g.sets.enumerated() {
+                        if n < doneSets, j < last.count { s.weight = last[j].weight; s.reps = last[j].reps }
+                        n += 1
+                    }
+                }
+            }
             let sets = w.groups.flatMap(\.sets)
             for (i, s) in sets.prefix(doneSets).enumerated() {
                 if i == 1, let topSet { s.weight = topSet.0; s.reps = topSet.1 }
@@ -221,13 +190,11 @@ enum Fixtures {
             return w
         }
 
-        func finishedToday(_ day: String?, topSet: (Double, Int)?, swap: (String, String)? = nil) -> Workout {
-            let w = session(day, at: Date().addingTimeInterval(-55 * 60), bump: 5, topSet: topSet, finished: false)
-            if let swap, let old = exercise(swap.0), let new = exercise(swap.1) {
-                LiftStore.swap(old, for: new, in: w, globalUnit: .lb, context: context)
-                for s in w.allSets where s.exercise === new { s.isDone = true; s.doneAt = Date().addingTimeInterval(-20 * 60); if s.weight == 0 { s.weight = 30 } }
-            }
-            // Left open: the summary is shown before Done, like the real flow.
+        /// Today's push, all logged, top bench set beating its target; left open
+        /// so the summary shows before Done, like the real flow.
+        func finishedToday(topSet: (Double, Int)?) -> Workout {
+            let w = active(Self.push, doneSets: .max, asLastTime: false)
+            if let topSet, let first = w.groups.first?.sets.first { first.weight = topSet.0; first.reps = topSet.1 }
             return w
         }
 
@@ -242,9 +209,6 @@ struct FixtureRoot: View {
     let frame: String
     @Environment(CloudSyncMonitor.self) private var cloud
     @Environment(ToastCenter.self) private var toasts
-    @Query(sort: \Routine.order) private var routines: [Routine]
-    @Query(filter: #Predicate<Workout> { $0.endedAt != nil }, sort: \Workout.startedAt, order: .reverse)
-    private var finished: [Workout]
     @Namespace private var liftNS
 
     var body: some View {
@@ -259,10 +223,10 @@ struct FixtureRoot: View {
                     }
                 }
                 if frame == "15-restoring" { cloud.debugSimulateFirstRestore() }
-                // Health is written after Done now, so its error is a toast on Today.
+                // Health is written after Done, so its error is a toast on the Log.
                 if frame == "26-discard-toast" {
                     // Same call RootView makes on Discard: hidden, then deleted when the toast ends.
-                    toasts.show("Push discarded", undo: {}, onCommit: {})
+                    toasts.show("Workout discarded", undo: {}, onCommit: {})
                 }
                 if frame == "14-health-error" { toasts.show("Couldn't save to Apple Health. Your workout is safe in Lift.") }
             }
@@ -270,34 +234,21 @@ struct FixtureRoot: View {
 
     @ViewBuilder private var content: some View {
         switch frame {
-        case "02a-welcome": SetupFlow(onFinish: {})
-        case "02b-days": SetupFlow(onFinish: {}, startAt: [.days])
-        case "02c-build-empty", "02d-setup-picker", "02e-build-filled": SetupFlow(onFinish: {}, startAt: [.days, .build(0)])
-        case "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "13-first-workout", "19-reorder", "rec-pr":
-            if let w = Fixtures.workout { ActiveWorkoutView(workout: w, onClose: {}, onFinished: { _ in }) }
-        case "07-finish", "20-finish-changed", "21-finish-blank", "25-finish-sets-left":
+        case "01b-log-active", "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "13-first-workout", "19-reorder", "rec-pr":
+            if let w = Fixtures.workout { RootView(workout: w) }
+        case "07-finish", "25-finish-sets-left":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }
-        case "27-finish-save-routine":
-            if let w = Fixtures.workout { FinishView(workout: w, onDone: {}, startWithSaveAsRoutine: true) }
-        case "26-discard-toast":
-            RootView()
         case "08-exercise", "16-exercise-empty", "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none":
             // On a push stack, so Back shows as in the real flow (QA 14).
             if let ex = Fixtures.exercise {
                 NavigationStack {
                     Theme.Colors.bgCanvas
-                        .navigationTitle("Today")
+                        .navigationTitle(Date().formatted(.dateTime.weekday(.wide)))
                         .navigationDestination(isPresented: .constant(true)) { ExerciseDetailView(exercise: ex) }
                 }
             }
-        case "09-routines", "23-routines-empty": RootView(initialTab: .routines)
         case "10-history", "12-history-empty": RootView(initialTab: .history)
         case "11-settings": SettingsView()
-        case "17-choose-workout":
-            RootView().sheet(isPresented: .constant(true)) {
-                ChooseWorkoutSheet(routines: routines, finished: finished,
-                                   next: LiftStore.nextRoutine(routines: routines, finished: finished)) { _ in }
-            }
         case "18-exercise-picker": ExercisePicker(mode: .add) { _ in }
         default: RootView()
         }

@@ -2,8 +2,6 @@ import SwiftUI
 
 /// Shared-element IDs (spec §8.1). One namespace, owned by RootView.
 enum LiftTransitionID: Hashable {
-    case workout(UUID)       // Workout.id, reserved before presenting
-    case workoutMini(UUID)   // same Workout.id, minimised bar
     case exercise(UUID)      // Exercise.id
     case prBanner(UUID)      // SetEntry.id, banner container
     case prValue(UUID)       // SetEntry.id, the shared number

@@ -53,16 +53,14 @@ final class WorkoutSession {
     }
 
     func rowModel(for set: SetEntry, number: Int) -> SetRowModel {
-        let ex = set.exercise
         let unit = set.unit
-        let prev = previous(for: set)
         let state: SetRowState = set.isDone ? (bestIDs.contains(set.id) ? .best : .done) : (set === currentSet ? .current : .upcoming)
-        let step = ex?.step(for: unit) ?? unit.defaultStep
         let secondary: String? = settings.showOtherUnit && set.weight > 0
             ? "\(UnitMath.format(UnitMath.convertLoadable(set.weight, from: unit, to: unit.other, step: unit.other.defaultStep / 2))) \(unit.other.symbol)"
             : nil
+        // Last time lives on the exercise's Last line now, not per row.
         return SetRowModel(id: set.id, number: number, kind: set.kind,
-                           lastTime: prev.map { WeightText.pair($0.snapshot, in: unit, step: step) },
+                           lastTime: nil,
                            weightText: set.needsWeight ? nil : UnitMath.format(set.weight),
                            unit: unit, reps: set.reps, secondary: secondary, state: state)
     }
@@ -88,7 +86,31 @@ final class WorkoutSession {
         return .logged
     }
 
+    /// Last line + Beat it target for an exercise (same function as the prefill).
+    func beatIt(for exercise: Exercise) -> LiftStore.BeatIt {
+        LiftStore.beatIt(for: exercise, excluding: workout, unit: unit(for: exercise))
+    }
+
+    /// A logged set in this workout met or beat the exercise's target.
+    func targetHit(for exercise: Exercise) -> Bool {
+        guard let t = beatIt(for: exercise).target else { return false }
+        let u = unit(for: exercise)
+        return workout.doneSets.contains { s in
+            s.exercise === exercise && s.kind != .warmup &&
+            Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t)
+        }
+    }
+
+    /// The clock starts at the first logged set; nil until then.
+    var startedClock: Date? { workout.doneSets.isEmpty ? nil : workout.startedAt }
+
+    /// The exercise holding the current set: the only one with the bar.
+    var currentExercise: Exercise? { currentSet?.exercise }
+
     func log(_ set: SetEntry) {
+        let wasHit = set.exercise.map { targetHit(for: $0) } ?? true
+        // The clock starts at the first logged set (nothing logged = nothing timed).
+        if !workout.isBackLog, workout.doneSets.isEmpty { workout.startedAt = Date() }
         set.isDone = true
         set.doneAt = workout.isBackLog ? backLogTime() : Date()
         guard LiftStore.save(context) else {
@@ -97,6 +119,7 @@ final class WorkoutSession {
             saveError = "Couldn't save that set. Try again."
             return
         }
+        if let ex = set.exercise, !wasHit, targetHit(for: ex) { Haptics.step() }
         let kinds = LiftStore.newRecords(for: set, in: workout)
         bestIDs = LiftStore.bestSetIDs(in: workout)
         if let ex = set.exercise, !kinds.isEmpty {
@@ -277,19 +300,24 @@ final class WorkoutSession {
         LiftStore.reorder(exercises, in: workout, context: context)
     }
 
-    /// Exercises added, swapped, removed, reordered or set counts changed.
-    var routineChanges: [String] {
-        guard let id = workout.routineID,
-              let routine = try? context.fetch(FetchDescriptor<Routine>(predicate: #Predicate { $0.id == id })).first else { return [] }
-        return RoutineDiff.changes(routine: LiftStore.slots(of: routine), workout: LiftStore.slots(of: workout))
-    }
-
     /// Rest lives on the exercise: sets its own rest and applies it to this
     /// workout's unlogged sets of that exercise (warm-ups keep their default).
     func setRest(for exercise: Exercise, seconds: Int) {
         exercise.restSec = seconds
         for set in workout.allSets where set.exercise === exercise && !set.isDone && set.kind != .warmup {
             set.restSeconds = seconds
+        }
+        save()
+    }
+
+    /// Rep goal for the Target rule; re-derives this workout's unlogged prefill.
+    func setRepGoal(for exercise: Exercise, _ goal: Int) {
+        exercise.repGoal = min(max(goal, 3), 30)
+        let b = beatIt(for: exercise)
+        let open = workout.allSets.filter { $0.exercise === exercise }.sorted { $0.order < $1.order }
+        if let i = b.topIndex, let t = b.target, i < open.count, !open[i].isDone {
+            open[i].weight = t.weight
+            open[i].reps = t.reps
         }
         save()
     }

@@ -28,14 +28,13 @@ final class Exercise {
     /// Default rep range when the exercise is added somewhere.
     var repMin: Int = 8
     var repMax: Int = 12
-    /// Per-exercise rest; nil = the routine's (or Settings') default.
+    /// "Beat it" rep goal (Target rule); set from the exercise's ••• menu.
+    var repGoal: Int = 10
+    /// Per-exercise rest; nil = Settings' default.
     var restSec: Int?
     /// Sticky note that follows the exercise into every workout.
     var note: String = ""
     var createdAt: Date = Date()
-
-    @Relationship(deleteRule: .cascade, inverse: \RoutineItem.exercise)
-    var routineItems: [RoutineItem]? = []
 
     @Relationship(deleteRule: .nullify, inverse: \SetEntry.exercise)
     var sets: [SetEntry]? = []
@@ -110,54 +109,11 @@ final class Exercise {
 }
 
 @Model
-final class Routine {
-    var id: UUID = UUID()
-    var name: String = ""
-    /// Position in the rotation.
-    var order: Int = 0
-    var isSeeded: Bool = false
-    /// "Rest between sets" default for this day.
-    var restSeconds: Int = 120
-
-    @Relationship(deleteRule: .cascade, inverse: \RoutineItem.routine)
-    var items: [RoutineItem]? = []
-
-    init(id: UUID = UUID(), name: String, order: Int, isSeeded: Bool = false) {
-        self.id = id
-        self.name = name
-        self.order = order
-        self.isSeeded = isSeeded
-    }
-
-    var sortedItems: [RoutineItem] { (items ?? []).sorted { $0.order < $1.order } }
-}
-
-@Model
-final class RoutineItem {
-    var id: UUID = UUID()
-    var order: Int = 0
-    var targetSets: Int = 3
-    var repMin: Int = 8
-    var repMax: Int = 12
-    var routine: Routine?
-    var exercise: Exercise?
-
-    init(order: Int, targetSets: Int = 3, repRange: ClosedRange<Int>, exercise: Exercise?) {
-        self.order = order
-        self.targetSets = targetSets
-        self.repMin = repRange.lowerBound
-        self.repMax = repRange.upperBound
-        self.exercise = exercise
-    }
-
-    var repRange: ClosedRange<Int> { min(repMin, repMax)...max(repMin, repMax) }
-}
-
-@Model
 final class Workout {
     var id: UUID = UUID()
+    /// Legacy (routines were removed); always nil now.
     var routineID: UUID?
-    var routineName: String = ""
+    var routineName: String = "Workout"
     var startedAt: Date = Date()
     /// nil while the workout is in progress.
     var endedAt: Date?
@@ -170,9 +126,7 @@ final class Workout {
     @Relationship(deleteRule: .cascade, inverse: \SetEntry.workout)
     var sets: [SetEntry]? = []
 
-    init(routineID: UUID?, routineName: String, startedAt: Date = Date()) {
-        self.routineID = routineID
-        self.routineName = routineName
+    init(startedAt: Date = Date()) {
         self.startedAt = startedAt
     }
 
@@ -254,5 +208,5 @@ final class SetEntry {
 }
 
 enum LiftSchema {
-    static let models: [any PersistentModel.Type] = [Exercise.self, Routine.self, RoutineItem.self, Workout.self, SetEntry.self]
+    static let models: [any PersistentModel.Type] = [Exercise.self, Workout.self, SetEntry.self]
 }

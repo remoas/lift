@@ -106,11 +106,6 @@ final class SessionPlanTests: XCTestCase {
         XCTAssertEqual(p.newRecords(for: lb.id, pastSets: base), [])
     }
 
-    func testRotationUsesStartedRoutineOnly() {
-        let push = UUID(), pull = UUID(), legs = UUID()
-        // Ben did Legs out of order: rotation continues from Legs.
-        XCTAssertEqual(Rotation.next(order: [push, pull, legs], lastCompleted: legs), push)
-    }
 
     func testE1RMSeriesBestPerWorkout() {
         let all = pastSets + [set(bench, 205, 5, workout: today, offset: 10), set(bench, 185, 8, workout: today, offset: 11)]
@@ -187,30 +182,6 @@ final class ExerciseKeyedTests: XCTestCase {
     }
 }
 
-final class RoutineDiffTests: XCTestCase {
-    let a = UUID(), b = UUID(), c = UUID(), d = UUID()
-
-    func testNoChanges() {
-        let r = [PlanSlot(exerciseID: a, name: "Bench Press", sets: 4)]
-        XCTAssertEqual(RoutineDiff.changes(routine: r, workout: r), [])
-    }
-
-    func testSwapRemoveAndSummary() {
-        let routine = [PlanSlot(exerciseID: a, name: "Bench Press", sets: 4), PlanSlot(exerciseID: b, name: "Incline Dumbbell Press", sets: 3), PlanSlot(exerciseID: c, name: "Dips", sets: 3)]
-        let workout = [PlanSlot(exerciseID: a, name: "Bench Press", sets: 4), PlanSlot(exerciseID: d, name: "Machine Chest Press", sets: 3)]
-        let ch = RoutineDiff.changes(routine: routine, workout: workout)
-        XCTAssertEqual(ch, ["Machine Chest Press instead of Incline Dumbbell Press.", "Dips removed."])
-        XCTAssertEqual(RoutineDiff.summary(ch), "Machine Chest Press instead of Incline Dumbbell Press. Dips removed.")
-    }
-
-    func testReorderAndSetCountAndOverflow() {
-        let routine = [PlanSlot(exerciseID: a, name: "A", sets: 3), PlanSlot(exerciseID: b, name: "B", sets: 3)]
-        let workout = [PlanSlot(exerciseID: b, name: "B", sets: 4), PlanSlot(exerciseID: a, name: "A", sets: 3), PlanSlot(exerciseID: c, name: "C", sets: 3)]
-        let ch = RoutineDiff.changes(routine: routine, workout: workout)
-        XCTAssertEqual(ch, ["C added.", "B 3 → 4 sets.", "New order."])
-        XCTAssertEqual(RoutineDiff.summary(ch), "C added. B 3 → 4 sets. …and 1 more change")
-    }
-}
 
 final class LifecycleTests: XCTestCase {
     let t0 = Date(timeIntervalSince1970: 2_000_000)
@@ -314,70 +285,10 @@ final class OutcomeTests: XCTestCase {
         return WorkoutRecord(id: id, routineID: routine, startedAt: t0.addingTimeInterval(offset), outcome: outcome, plan: plan(id, logged: logged, unlogged: unlogged))
     }
 
-    func testDiscardAndUndoLeaveRotationAndHealthUntouched() {
-        let history = [record(push, .finished, at: 0)]
-        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history), pull)
 
-        // Start Pull, then discard it: rotation still says Pull, Health gets nothing.
-        var pullToday = record(pull, .discardPending, at: 86_400)
-        var window = UndoWindow<UUID>()
-        window.begin(pullToday.id, at: t0)
-        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), pull)
-        XCTAssertNil(Outcomes.healthPayload(for: pullToday, healthEnabled: true))
 
-        // Undo: back in progress, intact, still not counted.
-        XCTAssertTrue(window.undo(pullToday.id, at: t0.addingTimeInterval(2)))
-        pullToday.outcome = .inProgress
-        XCTAssertEqual(pullToday.plan.allSets.count, 3)
-        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), pull)
-        XCTAssertNil(Outcomes.healthPayload(for: pullToday, healthEnabled: true))
 
-        // Discard again and let it expire: deleted, rotation unchanged.
-        window.begin(pullToday.id, at: t0.addingTimeInterval(10))
-        pullToday.outcome = .discardPending
-        XCTAssertEqual(window.expire(at: t0.addingTimeInterval(16)), pullToday.id)
-        pullToday.outcome = .discarded
-        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), pull)
-        XCTAssertNil(Outcomes.healthPayload(for: pullToday, healthEnabled: true))
 
-        // Only a finished Pull moves it on.
-        pullToday.outcome = .finished
-        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), legs)
-    }
-
-    func testUnloggedSetsDroppedAtDoneNeverReachHealth() {
-        let r = record(push, .finished, at: 0, logged: 2, unlogged: 3)
-        let payload = Outcomes.healthPayload(for: r, healthEnabled: true)
-        XCTAssertEqual(payload?.setCount, 2)
-        XCTAssertEqual(payload?.volumeKg ?? 0, 2 * UnitMath.kilograms(185, .lb) * 8, accuracy: 0.01)
-        XCTAssertNil(Outcomes.healthPayload(for: r, healthEnabled: false))
-        XCTAssertNil(Outcomes.healthPayload(for: r, healthEnabled: nil))
-        // Finished with nothing ticked: not saved, no rotation move, no Health.
-        let empty = record(push, .finished, at: 10, logged: 0, unlogged: 4)
-        XCTAssertFalse(empty.counts)
-        XCTAssertNil(Outcomes.healthPayload(for: empty, healthEnabled: true))
-        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: [empty]), push)
-    }
-
-    func testBlankWorkoutDoesNotMoveRotation() {
-        let records = [record(push, .finished, at: 0), record(nil, .finished, at: 100)]
-        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: records), pull)
-    }
-
-    func testRoutineNameDuplicateSuffix() {
-        XCTAssertEqual(RoutineNaming.resolve("", prefill: "Thursday workout", existing: ["Push", "Pull", "Legs"]), "Thursday workout")
-        XCTAssertEqual(RoutineNaming.resolve("  ", prefill: "Thursday workout", existing: ["Thursday workout"]), "Thursday workout 2")
-        XCTAssertEqual(RoutineNaming.resolve("Arms", prefill: "Thursday workout", existing: ["arms", "Arms 2"]), "Arms 3")
-        XCTAssertEqual(RoutineNaming.resolve("Push", prefill: "x", existing: ["Push", "Pull", "Legs"]), "Push 2")
-        XCTAssertEqual(RoutineNaming.resolve("Upper", prefill: "x", existing: ["Push"]), "Upper")
-    }
-
-    func testDefaultNameIsWeekday() {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(identifier: "Atlantic/Bermuda")!
-        let thursday = cal.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 7))!
-        XCTAssertEqual(RoutineNaming.defaultName(for: thursday, calendar: cal, locale: Locale(identifier: "en_US")), "Thursday workout")
-    }
 
     func testRestDefaultNeverOverwritesAcrossRepeatedSaves() {
         let bench = UUID(), curl = UUID()

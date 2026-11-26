@@ -7,7 +7,6 @@ struct ExercisePicker: View {
     enum Mode: Equatable {
         case add                      // add to today (one tap, or several with checks)
         case swap(Exercise)           // swap in one tap
-        case setup(day: String)       // multi-select for a build day
     }
 
     let mode: Mode
@@ -67,7 +66,6 @@ struct ExercisePicker: View {
         switch mode {
         case .add: return "Add exercise"
         case .swap(let ex): return "Swap \(ex.name)"
-        case .setup(let day): return "Add to \(day)"
         }
     }
 
@@ -77,8 +75,8 @@ struct ExercisePicker: View {
         case .swap(let ex):
             let sets = (ex.sets ?? []).filter { $0.workout?.isActive == true && !$0.isDone }
             let first = sets.first
-            return "Keeps \(max(sets.count, 1)) sets of \(first?.repMin ?? ex.repMin)–\(first?.repMax ?? ex.repMax). Today only."
-        case .setup: return "Tap all you do. Order comes next."
+            _ = first
+            return "Keeps \(max(sets.count, 1)) sets. Today only."
         }
     }
 
@@ -155,17 +153,21 @@ struct ExercisePicker: View {
             guard let d = (ex.sets ?? []).filter({ $0.isDone && $0.workout?.endedAt != nil }).compactMap(\.doneAt).max() else { return nil }
             return (ex, d)
         }
-        return logged.sorted { $0.1 > $1.1 }.prefix(8).map { ex, date in
+        return logged.sorted { $0.1 > $1.1 }.prefix(12).map { ex, date in
             Item(choice: .row(ex), name: displayName(.row(ex)),
-                 detail: "Last \(lastPair(ex) ?? "") · \(date.formatted(.dateTime.day().month(.abbreviated)))",
+                 detail: ([Self.ago(date)] + [lastPair(ex)].compactMap { $0 }).joined(separator: " · "),
                  mediaRef: ex.mediaRef, primary: ex.primaryMuscles)
         }
     }
 
-    private var common: [Item] {
-        guard !isFiltering, case .setup(let day) = mode else { return [] }
-        return ExerciseLibrary.bundled.common(for: day).compactMap { lib in
-            entries.first { $0.id == lib.rowID }.flatMap(item)
+    /// "Today", "Yesterday", "3 days ago", then a date.
+    static func ago(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> String {
+        let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: now)).day ?? 0
+        switch days {
+        case ..<1: return "Today"
+        case 1: return "Yesterday"
+        case 2...13: return "\(days) days ago"
+        default: return date.formatted(.dateTime.day().month(.abbreviated))
         }
     }
 
@@ -194,10 +196,7 @@ struct ExercisePicker: View {
                 .padding(.vertical, Theme.Spacing.s2)
             List {
                 if !recent.isEmpty {
-                    Section("Recent") { ForEach(recent) { row($0) } }
-                }
-                if !common.isEmpty, case .setup(let day) = mode {
-                    Section("Common on \(day)") { ForEach(common) { row($0) } }
+                    Section("Recents") { ForEach(recent) { row($0) } }
                 }
                 if !filtered.isEmpty {
                     Section(isFiltering ? "\(filtered.count) matches" : "All exercises") { ForEach(filtered) { row($0) } }
@@ -226,7 +225,7 @@ struct ExercisePicker: View {
                     ChipMorphPanel(group: group, selection: $filters, open: $openFilter, namespace: chipSpace)
                 }
             }
-            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: isSetup ? "Search or create" : "Search")
+            .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
             .modifier(SearchFocus(focused: $searchFocused))
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -234,7 +233,7 @@ struct ExercisePicker: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
             .safeAreaInset(edge: .bottom) {
-                if isMulti, !selected.isEmpty || isSetup {
+                if isMulti, !selected.isEmpty {
                     Button("Add \(selected.count)") { commit(selected) }
                         .buttonStyle(PrimaryButtonStyle())
                         .disabled(selected.isEmpty)
@@ -246,15 +245,10 @@ struct ExercisePicker: View {
             .sheet(isPresented: $creating) {
                 CreateExerciseForm(initialName: query.trimmingCharacters(in: .whitespaces)) { ex in
                     creating = false
-                    if isMulti && isSetup {
-                        selected.append(.row(ex))
-                        query = ""
-                    } else {
-                        commit([.row(ex)])
-                    }
+                    commit([.row(ex)])
                 }
             }
-            .onAppear { searchFocused = !isSetup }
+            .onAppear { searchFocused = true }
             .task(id: exercises.count) { rebuildIndex() }
             .onChange(of: query) { refresh() }
             .onChange(of: filters) { refresh() }
@@ -262,8 +256,6 @@ struct ExercisePicker: View {
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
     }
-
-    private var isSetup: Bool { if case .setup = mode { return true } else { return false } }
 
     private func row(_ item: Item) -> some View {
         let isSelected = selected.contains(item.choice)
@@ -328,8 +320,7 @@ struct CreateExerciseForm: View {
     @State private var primary: Set<MuscleGroup> = []
     @State private var secondary: Set<MuscleGroup> = []
     @State private var unit: WeightUnit? = nil
-    @State private var repMin = 8
-    @State private var repMax = 12
+    @State private var repGoal = Target.defaultRepGoal
     @State private var rest = 120
     @State private var error: String?
 
@@ -357,9 +348,8 @@ struct CreateExerciseForm: View {
                         LabeledContent("Secondary", value: summary(secondary))
                     }
                 }
-                Section("Reps and rest") {
-                    Stepper("From \(repMin) reps", value: $repMin, in: 1...50).monospacedDigit()
-                    Stepper("To \(repMax) reps", value: $repMax, in: repMin...50).monospacedDigit()
+                Section("Rep goal and rest") {
+                    Stepper("Rep goal \(repGoal)", value: $repGoal, in: 3...30).monospacedDigit()
                     Stepper("Rest \(RestCountdown.format(TimeInterval(rest)))", value: $rest, in: 30...300, step: 15).monospacedDigit()
                 }
             }
@@ -394,7 +384,8 @@ struct CreateExerciseForm: View {
                 name: name, variant: variant,
                 primary: MuscleGroup.allCases.filter(primary.contains),
                 secondary: MuscleGroup.allCases.filter(secondary.contains),
-                equipment: equipment, unit: unit, repRange: repMin...max(repMax, repMin), rest: rest, context: context)
+                equipment: equipment, unit: unit, repRange: max(repGoal - 2, 1)...repGoal, rest: rest, context: context)
+            ex.repGoal = repGoal
             onCreate(ex)
             dismiss()
         } catch LiftStore.CreateError.duplicate(let existing) {

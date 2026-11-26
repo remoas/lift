@@ -1,6 +1,6 @@
 import XCTest
 
-/// Drives the three shared-transition flows (AC 61) while the CI script records
+/// Drives the shared-transition flows 2 and 3 (AC 61; flow 1 was dropped with the mini bar) while the CI script records
 /// the simulator screen. Skipped unless LIFT_RECORD is set (TEST_RUNNER_LIFT_RECORD).
 final class FlowRecordings: XCTestCase {
     override func setUpWithError() throws {
@@ -31,28 +31,10 @@ final class FlowRecordings: XCTestCase {
         start.press(forDuration: 0.01, thenDragTo: end)
     }
 
-    /// (1) Start Push: Today → workout, Close to the mini bar, Resume from the bar.
-    func testFlow1TodayToWorkout() {
-        let app = launch("01-today")
-        let start = app.buttons["Start Push"]
-        XCTAssertTrue(start.waitForExistence(timeout: 15))
-        pause(3)
-        start.tap()
-        XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 10))
-        pause(2)
-        app.buttons["Close"].tap()
-        let bar = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "in progress. Resume")).firstMatch
-        XCTAssertTrue(bar.waitForExistence(timeout: 10))
-        pause(2)
-        bar.tap()
-        XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 10))
-        pause(2)
-    }
-
     /// (2) Exercise row with media → detail, swipe back; again with the back button.
     func testFlow2ExerciseRowToDetail() {
-        let app = launch("01-today")
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Barbell Bench Press")).firstMatch
+        let app = launch("01b-log-active")
+        let row = app.buttons.matching(NSPredicate(format: "label == %@", "Barbell Bench Press")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 15))
         pause(3)
         row.tap()

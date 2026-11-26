@@ -20,3 +20,4 @@ research/__pycache__/
 
 # Third-party API dumps (wger CC BY-SA with contributor emails, Everkinetic CC BY-SA): research inputs only, never published
 research/raw/
+design/animations/

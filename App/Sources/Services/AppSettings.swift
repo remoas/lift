@@ -7,8 +7,6 @@ import LiftCore
 final class AppSettings {
     private let defaults: UserDefaults
 
-    var hasOnboarded: Bool { didSet { defaults.set(hasOnboarded, forKey: Keys.onboarded) } }
-    var daysPerWeek: Int { didSet { defaults.set(daysPerWeek, forKey: Keys.days) } }
     var unit: WeightUnit { didSet { defaults.set(unit.rawValue, forKey: Keys.unit) } }
     var showOtherUnit: Bool { didSet { defaults.set(showOtherUnit, forKey: Keys.secondary) } }
     var autoStartRest: Bool { didSet { defaults.set(autoStartRest, forKey: Keys.autoRest) } }
@@ -25,8 +23,6 @@ final class AppSettings {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        hasOnboarded = defaults.bool(forKey: Keys.onboarded)
-        daysPerWeek = defaults.object(forKey: Keys.days) as? Int ?? 6
         // Ben's Bermuda gym is in pounds, so lb is the default.
         unit = WeightUnit(rawValue: defaults.string(forKey: Keys.unit) ?? "") ?? .lb
         showOtherUnit = defaults.object(forKey: Keys.secondary) as? Bool ?? false
@@ -55,8 +51,6 @@ final class AppSettings {
     }
 
     private enum Keys {
-        static let onboarded = "lift.onboarded"
-        static let days = "lift.daysPerWeek"
         static let unit = "lift.unit"
         static let secondary = "lift.showOtherUnit"
         static let autoRest = "lift.autoRest"
