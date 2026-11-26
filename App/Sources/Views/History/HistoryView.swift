@@ -114,9 +114,11 @@ struct HistoryView: View {
         let snapshot = WorkoutArchive(w)
         context.delete(w)
         _ = LiftStore.save(context)
-        toasts.show("Workout deleted") {
+        // Labelled: an unlabelled trailing closure binds to `onCommit` (Swift 5 backward
+        // matching), which "restored" the item when the Undo window ended (Ben, 1.0 (2)).
+        toasts.show("Workout deleted", undo: {
             snapshot.restore(into: context)
-        }
+        })
     }
 }
 

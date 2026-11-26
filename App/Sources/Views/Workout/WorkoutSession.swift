@@ -288,14 +288,16 @@ final class WorkoutSession {
         _ = LiftStore.save(context)
         bestIDs = LiftStore.bestSetIDs(in: workout)
         if rest?.setID == removed.id { stopRest() }
-        toasts.show("Set \(number) removed") { [weak self] in
+        // Labelled: an unlabelled trailing closure binds to `onCommit` (Swift 5 backward
+        // matching), which "restored" the item when the Undo window ended (Ben, 1.0 (2)).
+        toasts.show("Set \(number) removed", undo: { [weak self] in
             guard let self else { return }
             let s = removed.makeEntry(exercise: ex)
             self.context.insert(s)
             s.workout = self.workout
             _ = LiftStore.save(self.context)
             self.bestIDs = LiftStore.bestSetIDs(in: self.workout)
-        }
+        })
     }
 
     func setKind(_ set: SetEntry, _ kind: SetKind) {
@@ -321,11 +323,13 @@ final class WorkoutSession {
         let removed = LiftStore.remove(exercise, from: workout, context: context)
         bestIDs = LiftStore.bestSetIDs(in: workout)
         if let r = rest?.setID, removed.contains(where: { $0.id == r }) { stopRest() }
-        toasts.show("\(exercise.name) removed") { [weak self] in
+        // Labelled: an unlabelled trailing closure binds to `onCommit` (Swift 5 backward
+        // matching), which "restored" the item when the Undo window ended (Ben, 1.0 (2)).
+        toasts.show("\(exercise.name) removed", undo: { [weak self] in
             guard let self else { return }
             LiftStore.restore(removed, exercise: exercise, into: self.workout, context: self.context)
             self.bestIDs = LiftStore.bestSetIDs(in: self.workout)
-        }
+        })
     }
 
     func reorder(_ exercises: [Exercise]) {
