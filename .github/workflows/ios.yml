@@ -1,0 +1,46 @@
+# Manual only: macOS minutes are billed 10x on private repos, so this never
+# runs on push. Trigger it from the Actions tab once Ben picks how CI is paid for.
+name: iOS build, tests and screenshots
+on:
+  workflow_dispatch:
+    inputs:
+      screenshots:
+        description: "Capture the 27 design frames (light, dark) and the AX3 set row"
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.4.app || sudo xcode-select -s "$(ls -d /Applications/Xcode*.app | sort -V | tail -1)"
+      - name: Package tests (LiftCore)
+        working-directory: Packages/LiftKit
+        run: swift test
+      - name: Generate project
+        run: brew install xcodegen && xcodegen generate
+      - name: Build for simulator (unsigned)
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild -project Lift.xcodeproj -scheme Lift -configuration Debug \
+            -destination 'platform=iOS Simulator,name=iPhone 16' \
+            -derivedDataPath build/dd CODE_SIGNING_ALLOWED=NO build > build/xcodebuild.log 2>&1 || (grep -E 'error:|warning: .*deprecated' build/xcodebuild.log | head -100; tail -80 build/xcodebuild.log; exit 1)
+      - name: Screenshots
+        if: ${{ inputs.screenshots }}
+        run: scripts/screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lift-review
+          path: |
+            screenshots-review/
+            build/xcodebuild.log
+          if-no-files-found: ignore

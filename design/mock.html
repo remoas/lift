@@ -1,0 +1,334 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Lift phase 1 mock</title>
+<style>
+/* SF Pro stand-in: Inter (SF Pro isn't licensed for the box). Natively this is SF Pro via system text styles. */
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,"SF Pro Text",Inter,sans-serif;font-feature-settings:"tnum" 1,"cv11" 1;background:#E9E7E3;padding:40px;color:#141413}
+h1{font-size:28px;font-weight:700;letter-spacing:-.4px}
+.intro{font-size:15px;color:#5E5B57;max-width:900px;line-height:22px;margin:6px 0 32px}
+.board{display:flex;flex-wrap:wrap;gap:36px 32px}
+.cell{width:390px}
+.cap{font-size:13px;line-height:18px;color:#5E5B57;margin-top:10px}
+.cap b{color:#141413;font-weight:600}
+.screen{width:390px;height:844px;border-radius:48px;overflow:hidden;position:relative;box-shadow:0 1px 0 rgba(0,0,0,.04),0 12px 40px rgba(0,0,0,.10);
+ --bg:#FFFFFF;--sunken:#F4F3F1;--raised:#FFFFFF;--sep:#E6E4E0;--t1:#141413;--t2:#5E5B57;--t3:#6F6C67;--acc:#C2410C;--accP:#9A3412;--on:#FFFFFF;--soft:#FCEDE5;--ok:#15803D;--bad:#B91C1C;--stroke:#8C8984;--scrim:rgba(20,20,19,.28);
+ background:var(--bg);color:var(--t1);font-size:17px;line-height:22px;letter-spacing:-.2px}
+.dark{--bg:#0B0B0C;--sunken:#161618;--raised:#1E1E21;--sep:#2C2C30;--t1:#F5F4F1;--t2:#A6A39E;--t3:#8E8B86;--acc:#FF8A3D;--accP:#FFA766;--on:#1A0B02;--soft:#3A1E0E;--ok:#4ADE80;--bad:#F87171;--stroke:#6E6B67;--scrim:rgba(0,0,0,.55)}
+.sb{height:54px;display:flex;justify-content:space-between;align-items:center;padding:14px 34px 0;font-size:17px;font-weight:600}
+.sb .r{display:flex;gap:6px;align-items:center}
+.sb .bat{width:26px;height:12px;border:1.5px solid var(--t1);border-radius:4px;opacity:.9;position:relative}.sb .bat:after{content:"";position:absolute;inset:1.5px;right:5px;background:var(--t1);border-radius:1.5px}
+.nav{height:44px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;position:relative}
+.nav .ttl{position:absolute;left:0;right:0;text-align:center;font-weight:600;font-size:17px;pointer-events:none}
+.nav .ttl small{display:block;font-weight:400;font-size:13px;line-height:16px;color:var(--t2)}
+.nb{min-width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--acc);font-size:17px;padding:0 12px;position:relative;z-index:1}
+.nb.b{font-weight:600}
+.pad{padding:0 20px}
+.eyebrow{font-size:15px;color:var(--t2);line-height:20px}
+.hero{font-size:34px;line-height:41px;font-weight:700;letter-spacing:-.6px}
+.bar{position:relative;display:inline-block}
+.bar:after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:4px;border-radius:2px;background:var(--acc)}
+.lede{font-size:17px;line-height:24px;color:var(--t2);margin-top:10px}
+.lede b{color:var(--t1);font-weight:600}
+.sec{font-size:15px;color:var(--t2);margin:28px 0 4px}
+.row{display:flex;align-items:center;min-height:56px;border-bottom:.5px solid var(--sep);gap:12px;padding:8px 0}
+.row .main{flex:1;min-width:0}
+.row .n{font-weight:500}
+.row .s{font-size:15px;line-height:20px;color:var(--t2)}
+.row .v{font-size:17px;color:var(--t2)}
+.chev{color:var(--t3);font-size:20px;width:12px}
+.btn{height:56px;border-radius:14px;background:var(--acc);color:var(--on);font-weight:600;font-size:17px;display:flex;align-items:center;justify-content:center;width:100%}
+.btn2{height:44px;display:flex;align-items:center;justify-content:center;color:var(--acc);font-weight:500;font-size:17px}
+.foot{position:absolute;left:0;right:0;bottom:0;padding:12px 20px 34px;background:linear-gradient(to bottom,transparent,var(--bg) 18px)}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:83px;border-top:.5px solid var(--sep);background:var(--bg);display:flex;justify-content:space-around;padding-top:7px}
+.tab{width:80px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10px;font-weight:500;color:var(--t3)}
+.tab i{width:26px;height:26px;display:block;border-radius:7px;border:2px solid currentColor}
+.tab.on{color:var(--acc)}
+.tab.c i{border-radius:50%}.tab.l i{border-radius:3px;border-width:2px 0}
+.foot.ab{bottom:83px;padding-bottom:12px}
+.week{display:flex;gap:2px;margin-top:20px;align-items:center}
+.wd{display:flex;align-items:center;justify-content:center;width:20px;height:20px}
+.wd i{width:10px;height:10px;border-radius:50%;border:1.5px solid var(--stroke);display:block}
+.wd.done i{background:var(--t1);border-color:var(--t1)}
+.wd.next i{border-color:var(--acc);background:var(--acc);box-shadow:0 0 0 4px var(--soft)}
+/* workout */
+.ex{padding:20px 20px 4px}
+.exh{display:flex;align-items:baseline;justify-content:space-between}
+.exn{font-size:20px;font-weight:600;line-height:25px;letter-spacing:-.3px}
+.exm{font-size:15px;color:var(--t2);line-height:20px;margin-top:2px}
+.note{font-size:15px;color:var(--t2);font-style:italic;margin-top:6px;line-height:20px}
+.sets{margin-top:8px}
+.set{display:grid;grid-template-columns:22px 1fr 1fr 44px;align-items:center;gap:8px;min-height:56px;border-bottom:.5px solid var(--sep)}
+.set .k{font-size:15px;color:var(--t3);text-align:left}
+.set .p{font-size:15px;color:var(--t2)}
+.set .w{font-size:20px;font-weight:600;letter-spacing:-.3px}
+.set .w u{text-decoration:none;font-weight:400;font-size:15px;color:var(--t2);margin-left:2px}
+.set.up .w{color:var(--t2);font-weight:500}
+.set.cur{background:var(--soft);margin:0 -12px;padding:0 12px;border-radius:14px;border-bottom-color:transparent}
+.setsh{display:grid;grid-template-columns:22px 1fr 1fr 44px;gap:8px;font-size:13px;color:var(--t2);padding-bottom:4px}
+.tk{width:44px;height:44px;display:flex;align-items:center;justify-content:center}
+.tk i{width:30px;height:30px;border-radius:50%;border:2px solid var(--stroke);display:block;position:relative}
+.cur .tk i{border-color:var(--acc);border-width:2.5px;width:34px;height:34px}
+.tk.on i{background:var(--t1);border-color:var(--t1)}
+.tk.on i:after,.tk.pr i:after{content:"";position:absolute;left:9px;top:6px;width:7px;height:12px;border:solid var(--bg);border-width:0 2.5px 2.5px 0;transform:rotate(45deg)}
+.tk.pr i{background:var(--acc);border-color:var(--acc)}
+.best{font-size:13px;color:var(--acc);font-weight:600;margin-left:6px;letter-spacing:0}
+.rest{position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-top:.5px solid var(--sep);padding:14px 20px 34px}
+.dark .rest{background:var(--raised)}
+.rest .line{position:absolute;left:0;top:-1px;height:3px;background:var(--acc);border-radius:0 2px 2px 0}
+.rest .top{display:flex;align-items:center;justify-content:space-between}
+.rest .t{font-size:34px;font-weight:700;letter-spacing:-.6px;line-height:40px}
+.rest .nx{font-size:15px;color:var(--t2);line-height:20px}
+.rest .ctl{display:flex;gap:8px}
+.chip{height:44px;min-width:56px;padding:0 14px;border-radius:12px;background:var(--sunken);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:500}
+.chip.a{color:var(--acc)}
+/* sheet */
+.scrim{position:absolute;inset:0;background:var(--scrim)}
+.sheet{z-index:3;position:absolute;left:0;right:0;bottom:0;background:var(--raised);border-radius:22px 22px 0 0;padding:8px 20px 34px}
+.grab{width:36px;height:5px;border-radius:3px;background:var(--sep);margin:0 auto 14px}
+.seg{display:flex;background:var(--sunken);border-radius:10px;padding:2px;height:36px}
+.seg span{flex:1;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;color:var(--t2);border-radius:8px;min-width:52px}
+.seg span.on{background:var(--raised);color:var(--t1);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.dark .seg span.on{background:#3A3A3F}
+.stepper{display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+.sbtn{width:64px;height:64px;border-radius:50%;background:var(--sunken);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:400;color:var(--t1)}
+.num{font-size:56px;line-height:64px;font-weight:700;letter-spacing:-1.5px;text-align:center}
+.num small{font-size:20px;font-weight:500;color:var(--t2);letter-spacing:0;margin-left:4px}
+.lbl{display:flex;justify-content:space-between;align-items:center;font-size:15px;color:var(--t2);margin-top:18px}
+.plates{text-align:center;font-size:15px;color:var(--t2);margin-top:4px;line-height:20px}
+/* banner */
+.banner{position:absolute;left:12px;right:12px;top:104px;background:var(--raised);border-radius:18px;padding:14px 16px 16px;box-shadow:0 10px 30px rgba(0,0,0,.14),0 0 0 .5px var(--sep);z-index:5}
+.dark .banner{box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 0 .5px var(--sep)}
+.banner .k1{font-size:15px;font-weight:600;color:var(--acc)}
+.banner .k2{font-size:22px;font-weight:700;letter-spacing:-.4px;margin-top:4px;line-height:28px}
+.banner .k3{font-size:15px;color:var(--t2);margin-top:6px;line-height:20px}
+/* grouped settings */
+.grp{background:var(--sunken)}
+.gsec{font-size:13px;color:var(--t2);padding:22px 36px 6px}
+.gl{margin:0 20px;background:var(--raised);border-radius:12px;overflow:hidden}
+.gl .gr{display:flex;align-items:center;min-height:48px;padding:0 16px;gap:10px;position:relative}
+.gl .gr+.gr:before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--sep)}
+.gr .gn{flex:1}.gr .gv{color:var(--t2)}
+.gfoot{font-size:13px;color:var(--t2);padding:6px 36px 0;line-height:18px}
+.tog{width:51px;height:31px;border-radius:16px;background:var(--ok);position:relative}.tog:after{content:"";position:absolute;right:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2)}
+.tog.off{background:var(--sunken);box-shadow:inset 0 0 0 1.5px var(--stroke)}.tog.off:after{right:auto;left:2px}
+.chart{margin:8px 0 0}
+.ok,.row .s.ok{color:var(--ok)}.bad{color:var(--bad)}
+.daypick{display:flex;gap:10px;margin-top:14px}
+.daypick span{flex:1;height:64px;border-radius:14px;background:var(--sunken);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600}
+.daypick span.on{background:var(--t1);color:var(--bg)}
+.prog{height:3px;background:var(--sep);border-radius:2px;margin-top:18px;overflow:hidden}.prog i{display:block;height:100%;width:42%;background:var(--acc)}
+.sk{height:14px;border-radius:7px;background:var(--sunken);margin:10px 0}
+.more{width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:var(--t2);font-size:20px;letter-spacing:1px;margin-right:-12px}
+.toast{position:absolute;left:12px;right:12px;bottom:34px;height:52px;border-radius:14px;background:var(--t1);color:var(--bg);display:flex;align-items:center;justify-content:space-between;padding:0 4px 0 16px;font-size:15px;font-weight:500;z-index:6}
+.toast b{color:var(--acc);filter:brightness(1.25);font-weight:600;height:44px;display:flex;align-items:center;padding:0 12px}
+.dark .toast b{filter:brightness(.8)}
+.search{height:40px;border-radius:10px;background:var(--sunken);display:flex;align-items:center;padding:0 12px;color:var(--t2);font-size:17px;gap:8px}
+.ed{display:flex;align-items:center;min-height:60px;border-bottom:.5px solid var(--sep);gap:4px}
+.ed .rm{width:44px;height:44px;display:flex;align-items:center;justify-content:center;margin-left:-12px}
+.ed .rm i{width:24px;height:24px;border-radius:50%;background:var(--bad);position:relative;display:block}.ed .rm i:after{content:"";position:absolute;left:6px;right:6px;top:11px;height:2px;background:#fff;border-radius:1px}
+.ed .hd{width:44px;height:44px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;margin-right:-12px}.ed .hd i{width:18px;height:2px;border-radius:1px;background:var(--t3);display:block}
+.ed.lift{background:var(--raised);box-shadow:0 8px 24px rgba(0,0,0,.16);border-radius:12px;margin:0 -8px;padding:0 8px;transform:scale(1.02);border-bottom-color:transparent}
+.dark .ed.lift{box-shadow:0 8px 24px rgba(0,0,0,.6);background:#2A2A2E}
+.togrow{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:.5px solid var(--sep);margin-top:4px}
+</style></head><body>
+<h1>Lift · phase 1 design draft</h1>
+<p class="intro">Draft for Ben, 26 Nov 2026. iPhone 15/16 frames at 390 × 844 pt, light and dark. Sample numbers are illustrative only; the app shows no data it doesn't have. Rendered with Inter as a stand-in for SF Pro. Spec: /workspace/lift/design/spec.md.</p>
+<div class="board" id="board"></div>
+<script>
+const SB=`<div class="sb"><span>9:41</span><span class="r"><span style="font-size:13px">●●●</span><span class="bat"></span></span></div>`;
+const tabs=(on)=>`<div class="tabs">${[['Today','c'],['History','l'],['Routines','']].map(([n,c])=>`<div class="tab ${c} ${n==on?'on':''}"><i></i>${n}</div>`).join('')}</div>`;
+const tk=(s)=>`<div class="tk ${s||''}"><i></i></div>`;
+const set=(k,p,w,r,st,extra='')=>`<div class="set ${st=='cur'?'cur':''} ${st=='up'?'up':''}"><span class="k">${k}</span><span class="p">${p}</span><span class="w">${w}<u>lb</u> × ${r}${extra}</span>${tk(st=='done'?'on':st=='pr'?'pr':'')}</div>`;
+const chart=(empty)=>{ if(empty) return `<svg class="chart" width="350" height="170" viewBox="0 0 350 170"><line x1="0" y1="150" x2="350" y2="150" stroke="var(--sep)"/><circle cx="24" cy="96" r="5" fill="var(--t1)"/><text x="40" y="101" font-size="15" fill="var(--t2)">One session so far. Your line starts next time.</text></svg>`;
+ const pts=[[0,128],[38,122],[76,118],[114,119],[152,108],[190,104],[228,99],[266,96],[304,82],[330,74]];
+ const d=pts.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join(' ');
+ return `<svg class="chart" width="350" height="170" viewBox="0 0 350 170"><line x1="0" y1="150" x2="350" y2="150" stroke="var(--sep)"/><path d="${d}" fill="none" stroke="var(--t1)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="330" cy="74" r="6" fill="var(--acc)"/><circle cx="330" cy="74" r="11" fill="var(--acc)" opacity=".18"/><text x="0" y="168" font-size="13" fill="var(--t2)">Sep</text><text x="350" y="168" font-size="13" fill="var(--t2)" text-anchor="end">Today</text><text x="0" y="${128-10}" font-size="13" fill="var(--t2)">218</text></svg>`;};
+
+const S={};
+S['01-today']=()=>`${SB}<div class="nav"><span></span><span class="nb" aria-label="Settings">⚙︎</span></div>
+<div class="pad"><div class="eyebrow">Thursday</div><div class="hero">Next up, <span class="bar">Push</span></div>
+<p class="lede">Your third session this week. Last Push was Monday, when you got <b>185 × 8</b> on bench.</p>
+<div class="week" aria-label="2 of 6 sessions this week">${[1,1,2,0,0,0].map(v=>`<div class="wd ${v==1?'done':v==2?'next':''}"><i></i></div>`).join('')}<span style="font-size:15px;color:var(--t2);margin-left:6px">2 of 6 this week</span></div>
+<div class="sec">Today’s lifts</div>
+${[['Bench Press','4 sets · last 185 × 8'],['Overhead Press','3 sets · last 115 × 9'],['Incline Dumbbell Press','3 sets · last 60 × 10'],['Cable Fly','3 sets · last 30 × 12'],['Lateral Raise','3 sets · last 20 × 15']].map(([n,s])=>`<div class="row"><div class="main"><div class="n">${n}</div><div class="s">${s}</div></div></div>`).join('')}
+</div><div class="foot ab"><div class="btn">Start Push</div><div style="display:flex;justify-content:center;gap:8px"><span class="btn2" style="padding:0 12px">Other routine</span><span class="btn2" style="padding:0 12px">Blank workout</span></div></div>${tabs('Today')}`;
+
+S['02a-welcome']=()=>`${SB}<div class="pad" style="padding-top:120px"><div class="eyebrow">Lift</div><div class="hero" style="font-size:40px;line-height:46px">Your split,<br>your <span class="bar">lifts</span>.</div>
+<p class="lede" style="margin-top:16px">Set up Push, Pull and Legs with the exercises you actually do. About two minutes, and you can change anything later.</p></div>
+<div class="foot"><div class="btn">Get started</div></div>`;
+
+S['02b-days']=()=>`${SB}<div class="nav"><span class="nb">‹</span></div><div class="pad" style="padding-top:20px"><div class="eyebrow">1 of 4</div><div class="hero">How many days<br>a week?</div>
+<div class="daypick" style="margin-top:28px"><span>3</span><span>4</span><span>5</span><span class="on">6</span></div>
+<p style="font-size:15px;color:var(--t2);margin-top:12px;line-height:20px">Tap one to carry on. Push, Pull, Legs in order; 6 runs each twice. Miss a day and the next one just slides.</p>
+<p style="font-size:15px;color:var(--t2);margin-top:28px;line-height:20px">Weights in lb. <span style="color:var(--acc);font-weight:500;display:inline-block;padding:12px 4px;margin:-12px 0">Change</span></p></div>`;
+
+S['02c-build-empty']=()=>`${SB}<div class="nav"><span class="nb">‹</span><span class="nb">Skip</span></div><div class="pad" style="padding-top:20px"><div class="eyebrow">2 of 4 · Push</div><div class="hero">What’s on <span class="bar">Push</span>?</div>
+<p class="lede">Add the exercises you do on Push. Sets and reps go right next to each one.</p></div>
+<div class="foot"><div class="btn">Add exercises</div><div class="btn2">Skip Push for now</div></div>`;
+
+S['02d-setup-picker']=()=>`${S['02c-build-empty']()}<div class="scrim"></div><div class="sheet" style="top:62px"><div class="grab"></div>
+<div style="font-size:22px;font-weight:700;letter-spacing:-.4px">Add to Push</div><div style="font-size:15px;color:var(--t2);margin-top:2px">Tap all you do. Order comes next.</div>
+<div class="search" style="margin-top:14px"><span>⌕</span><span>Search or create</span></div>
+<div class="sec" style="margin-top:18px">Common on Push</div>
+${[['Bench Press',1],['Overhead Press',1],['Incline Dumbbell Press',0],['Dips',1],['Lateral Raise',1],['Triceps Pushdown',0],['Cable Fly',0]].map(([n,on])=>`<div class="row" style="min-height:52px"><div class="main"><div class="n">${n}</div></div><div class="tk ${on?'on':''}" aria-label="${n}${on?', selected':''}"><i style="width:26px;height:26px"></i></div></div>`).join('')}
+<div class="btn2" style="justify-content:flex-start">All exercises</div>
+<div class="foot" style="background:linear-gradient(to bottom,transparent,var(--raised) 18px)"><div class="btn">Add 4</div></div></div>`;
+
+const stp=(n)=>`<span style="display:inline-flex;align-items:center;height:44px;border-radius:12px;background:var(--sunken)"><span style="width:44px;text-align:center;font-size:20px" aria-label="Fewer sets">−</span><span style="min-width:52px;text-align:center;font-size:15px;font-weight:600">${n} sets</span><span style="width:44px;text-align:center;font-size:20px" aria-label="More sets">+</span></span>`;
+const rr=(r)=>`<span class="chip" style="font-size:15px;font-weight:600">${r} reps <span style="color:var(--t2);margin-left:4px">▾</span></span>`;
+S['02e-build-filled']=()=>`${SB}<div class="nav"><span class="nb">‹</span><span class="nb">Skip</span></div><div class="pad" style="padding-top:4px"><div class="eyebrow">2 of 4 · Push</div><div class="hero">What’s on <span class="bar">Push</span>?</div>
+${[['Bench Press',4,'6–8'],['Overhead Press',3,'8–10'],['Dips',3,'8–12'],['Lateral Raise',3,'12–15']].map(([n,k,r])=>`<div style="padding:12px 0;border-bottom:.5px solid var(--sep)"><div style="display:flex;align-items:center;justify-content:space-between"><span class="n" style="font-weight:600">${n}</span><span class="hd" style="width:44px;height:32px;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;margin-right:-12px" aria-label="Reorder ${n}"><i style="width:18px;height:2px;border-radius:1px;background:var(--t3);display:block"></i><i style="width:18px;height:2px;border-radius:1px;background:var(--t3);display:block"></i><i style="width:18px;height:2px;border-radius:1px;background:var(--t3);display:block"></i></span></div><div style="display:flex;gap:8px;margin-top:8px">${stp(k)}${rr(r)}</div></div>`).join('')}
+<div class="btn2" style="justify-content:flex-start">Add exercise</div>
+<div class="row" style="border-top:.5px solid var(--sep);min-height:48px"><div class="main"><div class="n" style="font-weight:400">Rest between sets</div></div><span class="v">2:00 ▾</span></div>
+</div><div class="foot"><div class="btn">Next: Pull</div></div>`;
+
+S['22-today-day-empty']=()=>`${SB}<div class="nav"><span></span><span class="nb" aria-label="Settings">⚙︎</span></div>
+<div class="pad"><div class="eyebrow">Thursday</div><div class="hero">Next up, <span class="bar">Push</span></div>
+<p class="lede">Push doesn’t have any exercises yet. Add the ones you do and you’re ready to go.</p>
+<div class="week" aria-label="0 of 6 sessions this week">${[2,0,0,0,0,0].map(v=>`<div class="wd ${v==2?'next':''}"><i></i></div>`).join('')}<span style="font-size:15px;color:var(--t2);margin-left:6px">0 of 6 this week</span></div>
+</div><div class="foot ab"><div class="btn">Add exercises to Push</div><div style="display:flex;justify-content:center;gap:8px"><span class="btn2" style="padding:0 12px">Other routine</span><span class="btn2" style="padding:0 12px">Blank workout</span></div></div>${tabs('Today')}`;
+
+S['23-routines-empty']=()=>`${SB}<div class="nav"></div><div class="pad"><div class="hero">Routines</div>
+<p class="lede">Push, Pull, Legs, then round again. <b>6 days a week.</b> Add exercises to each whenever you like.</p>
+${['Push','Pull','Legs'].map((n,i)=>`<div class="row" style="padding:14px 0;align-items:flex-start"><div class="main"><div class="n" style="font-size:20px;font-weight:600">${n}${i==0?'<span class="best" style="font-size:15px;margin-left:8px">Next</span>':''}</div><div class="s" style="margin-top:4px">No exercises yet</div><div class="btn2" style="justify-content:flex-start;margin-top:2px">Add exercises</div></div></div>`).join('')}
+<div class="btn2" style="justify-content:flex-start;margin-top:8px">Change days a week</div>
+</div>${tabs('Routines')}`;
+
+const woHead=(t='18:42')=>`${SB}<div class="nav"><span class="nb">Close</span><span class="ttl">Push<small>${t}</small></span><span class="nb b">Finish</span></div>`;
+S['03-workout']=()=>`${woHead()}
+<div class="ex"><div class="exh" style="align-items:center"><span class="exn">Bench Press</span><span class="more" aria-label="Bench Press options">•••</span></div><div class="exm">6–8 reps · 2:30 rest</div><div class="note">Pause on the chest. Elbows in.</div>
+<div class="sets"><div class="setsh"><span></span><span>Last time</span><span>Today</span><span></span></div>
+${set(1,'185 × 8','185',8,'done')}${set(2,'185 × 8','185',8,'done')}${set(3,'185 × 7','185',7,'cur')}${set(4,'185 × 6','185',6,'up')}</div></div>
+<div class="ex"><div class="exn">Overhead Press</div><div class="exm">8–10 reps · 2:00 rest</div>
+<div class="sets">${set(1,'115 × 9','115',9,'up')}${set(2,'115 × 9','115',9,'up')}${set(3,'115 × 8','115',8,'up')}</div></div>
+<div class="ex" style="opacity:1"><div class="exn">Incline Dumbbell Press</div><div class="exm">8–10 reps · 2:00 rest</div></div>`;
+
+S['04-rest']=()=>`${woHead('21:05')}
+<div class="ex"><div class="exn">Bench Press</div><div class="exm">6–8 reps · 2:30 rest</div>
+<div class="sets"><div class="setsh"><span></span><span>Last time</span><span>Today</span><span></span></div>
+${set(1,'185 × 8','185',8,'done')}${set(2,'185 × 8','185',8,'done')}${set(3,'185 × 7','185',8,'done')}${set(4,'185 × 6','185',6,'cur')}</div></div>
+<div class="ex"><div class="exn">Overhead Press</div><div class="exm">8–10 reps · 2:00 rest</div>
+<div class="sets">${set(1,'115 × 9','115',9,'up')}${set(2,'115 × 9','115',9,'up')}</div></div>
+<div class="rest"><div class="line" style="width:68%"></div><div class="top"><div><div class="t">1:42</div><div class="nx">Next 185 × 6</div></div><div class="ctl"><span class="chip" aria-label="Rest 15 seconds less">−15</span><span class="chip" aria-label="Rest 15 seconds more">+15</span><span class="chip a">Skip</span></div></div></div>`;
+
+S['05-set-editor']=()=>`${S['03-workout']()}<div class="scrim"></div><div class="sheet"><div class="grab"></div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font-size:22px;font-weight:700;letter-spacing:-.4px;line-height:28px">Bench Press, set 3</div><div style="font-size:15px;color:var(--t2);line-height:20px;margin-top:2px">Last time 185 × 7</div></div><div class="seg" style="width:112px" aria-label="Units for this exercise"><span class="on">lb</span><span>kg</span></div></div>
+<div class="lbl"><span>Weight</span><span>Working set ▾</span></div>
+<div class="stepper"><span class="sbtn" aria-label="5 lb less">−</span><div class="num"><span class="bar">190</span><small>lb</small></div><span class="sbtn" aria-label="5 lb more">+</span></div>
+<div class="plates">45 bar, then 45 + 25 + 2.5 a side</div>
+<div class="lbl"><span>Reps</span><span></span></div>
+<div class="stepper"><span class="sbtn">−</span><div class="num">7</div><span class="sbtn">+</span></div>
+<div style="height:22px"></div><div class="btn">Log set</div></div>`;
+
+S['06-pr-banner']=()=>`${woHead('24:10')}
+<div class="ex" style="padding-top:150px"><div class="exn">Bench Press</div><div class="exm">6–8 reps · 2:30 rest</div>
+<div class="sets">${set(1,'185 × 8','185',8,'done')}${set(2,'185 × 8','185',8,'done')}${set(3,'185 × 7','185',8,'done')}<div class="set"><span class="k">4</span><span class="p">185 × 6</span><span class="w">205<u>lb</u> × 5<span class="best">Best</span></span>${tk('pr')}</div></div></div>
+<div class="ex"><div class="exn">Overhead Press</div><div class="exm">8–10 reps · 2:00 rest</div><div class="sets">${set(1,'115 × 9','115',9,'cur')}</div></div>
+<div class="banner" role="status"><div class="k1">New best</div><div class="k2">Bench Press, <span class="bar">205 × 5</span></div><div class="k3">Heaviest yet, up 5 lb from 200. Estimated max is now 239 lb.</div></div>
+<div class="rest"><div class="line" style="width:96%"></div><div class="top"><div><div class="t">2:24</div><div class="nx">Next 115 × 9</div></div><div class="ctl"><span class="chip">−15</span><span class="chip">+15</span><span class="chip a">Skip</span></div></div></div>`;
+
+S['07-finish']=()=>`${SB}<div class="nav"><span></span></div><div class="pad"><div class="eyebrow">Thursday · 54 min · 19 sets</div><div class="hero">Push, done.</div>
+<p class="lede">Two new bests today, and <b>4% more weight moved</b> than last Push.</p>
+<div class="sec">New bests</div>
+<div class="row"><div class="main"><div class="n">Bench Press, <span class="bar">205 × 5</span></div><div class="s">Heaviest yet, up 5 lb</div></div></div>
+<div class="row"><div class="main"><div class="n">Lateral Raise, 25 × 15</div><div class="s">Most reps at 25 lb</div></div></div>
+<div class="sec">Against last Push</div>
+<div class="row"><div class="main"><div class="n">21,450 lb moved</div><div class="s">Up from 20,610 on Monday</div></div></div>
+<div class="row"><div class="main"><div class="n">Pull is next</div><div class="s">3 of 6 this week</div></div></div>
+<div class="row" style="border:0"><div class="main"><div class="s ok">✓ Saved to Apple Health</div></div></div>
+</div><div class="foot"><div class="btn">Done</div><div class="btn2">Add a note</div></div>`;
+
+S['08-exercise']=()=>`${SB}<div class="nav"><span class="nb">‹ Today</span><span class="nb">Edit</span></div><div class="pad">
+<div class="hero">Bench Press</div><div class="eyebrow">Barbell · lb</div>
+<p class="lede">Your estimated max is <b>239 lb</b>, up 21 since September.</p>
+<div style="margin-top:14px" class="seg"><span>1M</span><span class="on">3M</span><span>1Y</span><span>All</span></div>
+${chart()}
+<div class="sec">Bests</div>
+${[['Heaviest','205 × 5','Today'],['Estimated max','239 lb','Today'],['Most reps at 185','9','12 Nov'],['Biggest set','1,480 lb','19 Nov']].map(([a,b,c])=>`<div class="row" style="min-height:48px"><div class="main"><div class="n">${a}</div></div><span class="v" style="color:var(--t1)">${b}</span><span class="v" style="width:64px;text-align:right">${c}</span></div>`).join('')}
+</div>`;
+
+S['09-routines']=()=>`${SB}<div class="nav"><span></span><span class="nb">Edit</span></div><div class="pad"><div class="hero">Routines</div>
+<p class="lede">Push, Pull, Legs, then round again. <b>6 days a week.</b></p>
+${[['Push','Bench Press, Overhead Press, Incline Dumbbell Press, Cable Fly, Lateral Raise, Triceps Pushdown','Next'],['Pull','Deadlift, Pull-up, Barbell Row, Lat Pulldown, Face Pull, Curl',''],['Legs','Squat, Romanian Deadlift, Leg Press, Leg Curl, Calf Raise','']].map(([n,s,t])=>`<div class="row" style="padding:14px 0;align-items:flex-start"><div class="main"><div class="n" style="font-size:20px;font-weight:600">${n}${t?`<span class="best" style="font-size:15px;margin-left:8px">${t}</span>`:''}</div><div class="s" style="margin-top:4px">${s}</div></div><span class="chev">›</span></div>`).join('')}
+<div class="btn2" style="justify-content:flex-start;margin-top:8px">Change days a week</div>
+</div>${tabs('Routines')}`;
+
+S['10-history']=()=>`${SB}<div class="nav"></div><div class="pad"><div class="hero">History</div>
+<div class="sec">This week · 3 of 6</div>
+${[['Push','Thu 26 Nov · 54 min','2 bests'],['Legs','Tue 24 Nov · 61 min',''],['Pull','Mon 23 Nov · 49 min','1 best']].map(([a,b,c])=>`<div class="row"><div class="main"><div class="n">${a}</div><div class="s">${b}</div></div><span class="v" style="color:var(--acc);font-size:15px">${c}</span><span class="chev">›</span></div>`).join('')}
+<div class="sec">Last week · 6 of 6</div>
+${[['Legs','Sat 21 Nov · 58 min',''],['Pull','Fri 20 Nov · 50 min',''],['Push','Thu 19 Nov · 52 min','1 best'],['Legs','Wed 18 Nov · 63 min','']].map(([a,b,c])=>`<div class="row"><div class="main"><div class="n">${a}</div><div class="s">${b}</div></div><span class="v" style="color:var(--acc);font-size:15px">${c}</span><span class="chev">›</span></div>`).join('')}
+</div>${tabs('History')}`;
+
+S['11-settings']=()=>`<div class="grp" style="position:absolute;inset:0">${SB}<div class="nav"><span></span><span class="ttl">Settings</span><span class="nb b">Done</span></div>
+<div class="gsec">Units</div><div class="gl"><div class="gr"><span class="gn">Weights in</span><div class="seg" style="width:120px"><span class="on">lb</span><span>kg</span></div></div><div class="gr"><span class="gn">Show the other unit too</span><span class="tog off"></span></div></div>
+<div class="gfoot">Each set keeps the unit you logged it in, so switching never changes a record.</div>
+<div class="gsec">Bar and plates</div><div class="gl"><div class="gr"><span class="gn">Bar</span><span class="gv">45 lb</span><span class="chev">›</span></div><div class="gr"><span class="gn">Plates</span><span class="gv">45, 35, 25, 10, 5, 2.5</span><span class="chev">›</span></div><div class="gr"><span class="gn">kg plates</span><span class="gv">25 to 1.25</span><span class="chev">›</span></div></div>
+<div class="gsec">Rest</div><div class="gl"><div class="gr"><span class="gn">Start rest after each set</span><span class="tog"></span></div><div class="gr"><span class="gn">Warm-up sets</span><span class="gv">1:00</span><span class="chev">›</span></div></div>
+<div class="gsec">Data</div><div class="gl"><div class="gr"><span class="gn">Apple Health</span><span class="gv">On</span><span class="chev">›</span></div><div class="gr"><span class="gn">iCloud backup</span><span class="gv">6:12 AM</span><span class="chev">›</span></div><div class="gr"><span class="gn" style="color:var(--acc)">Export as CSV</span></div></div></div>`;
+
+S['12-history-empty']=()=>`${SB}<div class="nav"></div><div class="pad"><div class="hero">History</div>
+<p class="lede" style="margin-top:28px">Your workouts land here once you finish one. Every set, every best, kept on this iPhone and backed up to iCloud.</p>
+<div class="btn2" style="justify-content:flex-start;margin-top:8px">Go to Today</div></div>${tabs('History')}`;
+
+S['13-first-workout']=()=>`${SB}<div class="nav"><span class="nb">Close</span><span class="ttl">Push<small>0:48</small></span><span class="nb b">Finish</span></div>
+<div class="ex"><div class="exn">Bench Press</div><div class="exm">6–8 reps · 2:30 rest</div>
+<p class="note" style="font-style:normal">First time here. Pick a weight you could lift 8 times with good form.</p>
+<div class="sets"><div class="set cur"><span class="k">1</span><span class="p">—</span><span class="w" style="color:var(--acc)">Add weight</span>${tk('')}</div>
+<div class="set up"><span class="k">2</span><span class="p">—</span><span class="w">— × 8</span>${tk('')}</div><div class="set up"><span class="k">3</span><span class="p">—</span><span class="w">— × 8</span>${tk('')}</div></div></div>
+<div class="ex"><div class="exn">Overhead Press</div><div class="exm">8–10 reps · 2:00 rest</div></div>`;
+
+S['14-health-error']=()=>S['07-finish']().replace('<div class="s ok">✓ Saved to Apple Health</div>','<div class="s bad" style="color:var(--bad)">Couldn’t save to Apple Health. Your workout is safe in Lift.</div><div class="btn2" style="justify-content:flex-start;height:44px">Try again</div>');
+
+S['15-restoring']=()=>`${SB}<div class="nav"></div><div class="pad" style="padding-top:40px"><div class="eyebrow">Welcome back</div><div class="hero">Bringing your<br>workouts over</div>
+<p class="lede">Restoring from iCloud. You can start a workout now; anything you log is kept.</p>
+<div class="prog"><i></i></div>
+<div class="sk" style="width:60%;margin-top:40px"></div><div class="sk" style="width:80%"></div><div class="sk" style="width:45%"></div></div>
+<div class="foot" style="bottom:83px;padding-bottom:12px"><div class="btn">Start Push</div></div>${tabs('Today')}`;
+
+S['16-exercise-empty']=()=>`${SB}<div class="nav"><span class="nb">‹ Today</span><span class="nb">Edit</span></div><div class="pad">
+<div class="hero">Cable Fly</div><div class="eyebrow">Cable · lb</div>
+<p class="lede">You’ve logged this once. Next time, you’ll have a number to beat.</p>${chart(true)}
+<div class="sec">Bests</div><p class="s" style="font-size:15px;color:var(--t2);line-height:20px">Bests appear after your second session, so day one never counts as a fake record.</p></div>`;
+
+S['17-choose-workout']=()=>`${S['01-today']()}<div class="scrim"></div><div class="sheet"><div class="grab"></div>
+<div style="font-size:22px;font-weight:700;letter-spacing:-.4px">Choose a workout</div><div style="font-size:15px;color:var(--t2);margin-top:2px">Your rotation picks up from whatever you do.</div>
+<div style="margin-top:10px">${[['Push','Suggested · last Monday'],['Pull','Last Tuesday'],['Legs','Last Wednesday']].map(([a,b],i)=>`<div class="row"><div class="main"><div class="n">${a}${i==0?'<span class="best" style="font-size:15px;margin-left:8px">Next</span>':''}</div><div class="s">${b}</div></div><span class="chev">›</span></div>`).join('')}
+<div class="row"><div class="main"><div class="n" style="color:var(--acc)">Blank workout</div><div class="s">Add exercises as you go</div></div></div></div></div>`;
+
+S['18-exercise-picker']=()=>`${woHead('31:20')}<div class="scrim"></div><div class="sheet" style="top:62px"><div class="grab"></div>
+<div style="display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:22px;font-weight:700;letter-spacing:-.4px">Swap Incline Dumbbell Press</div><div style="font-size:15px;color:var(--t2);margin-top:2px">Keeps 3 sets of 8–10. Today only.</div></div></div>
+<div class="search" style="margin-top:14px"><span>⌕</span><span style="color:var(--t1)">chest pr</span><span style="margin-left:auto;font-size:15px">✕</span></div>
+<div class="sec" style="margin-top:18px">Recent</div>
+${[['Machine Chest Press','Last 140 × 10 · 12 Nov'],['Dumbbell Bench Press','Last 70 × 9 · 3 Nov']].map(([a,b])=>`<div class="row"><div class="main"><div class="n">${a}</div><div class="s">${b}</div></div></div>`).join('')}
+<div class="sec">All exercises</div>
+${[['Chest Press, Hammer Strength','Not logged yet'],['Decline Chest Press','Not logged yet']].map(([a,b])=>`<div class="row"><div class="main"><div class="n">${a}</div><div class="s">${b}</div></div></div>`).join('')}
+<div class="row" style="border:0"><div class="main"><div class="n" style="color:var(--acc)">Create “chest pr”</div><div class="s">A custom exercise, yours to name and set up</div></div></div></div>`;
+
+S['19-reorder']=()=>`${SB}<div class="nav"><span class="nb">Add</span><span class="ttl">Edit today<small>Push · 31:20</small></span><span class="nb b">Done</span></div>
+<div class="pad"><p class="s" style="font-size:15px;color:var(--t2);line-height:20px;margin:6px 0 10px">Drag to reorder. Changes are for today only.</p>
+${[['Bench Press','4 sets · done'],['Overhead Press','3 sets · 1 done'],['Machine Chest Press','3 sets · swapped in'],['Cable Fly','3 sets'],['Lateral Raise','3 sets'],['Triceps Pushdown','3 sets']].map(([a,b],i)=>`<div class="ed ${i==3?'lift':''}"><span class="rm" aria-label="Remove ${a}"><i></i></span><div class="main" style="flex:1"><div class="n" style="font-weight:500">${a}</div><div class="s" style="font-size:15px;color:var(--t2)">${b}</div></div><span class="hd" aria-label="Reorder ${a}"><i></i><i></i><i></i></span></div>`).join('')}
+</div><div class="toast" role="status"><span>Dips removed</span><b>Undo</b></div>`;
+
+S['20-finish-changed']=()=>`${SB}<div class="nav"><span></span></div><div class="pad"><div class="eyebrow">Thursday · 56 min · 19 sets</div><div class="hero">Push, done.</div>
+<p class="lede">One new best today, and <b>2% more weight moved</b> than last Push.</p>
+<div class="sec">New bests</div>
+<div class="row"><div class="main"><div class="n">Machine Chest Press, <span class="bar">150 × 10</span></div><div class="s">Heaviest yet, up 10 lb</div></div></div>
+<div class="sec">Against last Push</div>
+<div class="row"><div class="main"><div class="n">20,980 lb moved</div><div class="s">Up from 20,610 on Monday</div></div></div>
+<div class="row"><div class="main"><div class="n">Pull is next</div><div class="s">3 of 6 this week</div></div></div>
+<div class="togrow"><div class="main" style="flex:1"><div class="n" style="font-weight:500">Update Push routine with today’s changes</div><div class="s" style="font-size:15px;color:var(--t2);line-height:20px;margin-top:2px">Machine Chest Press instead of Incline Dumbbell Press. Dips removed.</div></div><span class="tog off" role="switch" aria-checked="false"></span></div>
+</div><div class="foot"><div class="btn">Done</div><div class="btn2">Add a note</div></div>`;
+
+S['21-finish-blank']=()=>`${SB}<div class="nav"><span></span></div><div class="pad"><div class="eyebrow">Saturday · 38 min · 12 sets</div><div class="hero">Workout, done.</div>
+<p class="lede">Four exercises, <b>9,240 lb</b> moved. Your rotation still has <b>Legs</b> next.</p>
+<div class="sec">Today</div>
+${[['Front Squat','3 sets · top 185 × 6'],['Bulgarian Split Squat','3 sets · top 50 × 10'],['Hip Thrust','3 sets · top 225 × 10'],['Hanging Leg Raise','3 sets · 12 reps']].map(([a,b])=>`<div class="row"><div class="main"><div class="n">${a}</div><div class="s">${b}</div></div></div>`).join('')}
+<div class="row" style="border:0"><div class="main"><div class="s ok">✓ Saved to Apple Health</div></div></div>
+</div><div class="foot"><div class="btn">Done</div><div class="btn2">Save as routine</div></div>`;
+
+const caps={'01-today':'<b>Today.</b> Next workout in the rotation, last time’s numbers, one button.','02a-welcome':'<b>Setup 0.</b> Welcome. One button.','02b-days':'<b>Setup 1.</b> Tap a number to carry on; lb is preset.','02c-build-empty':'<b>Setup 2–4.</b> Each day starts empty. Skip is always there.','02d-setup-picker':'<b>Setup picker.</b> Same picker, multi-select, common picks first.','02e-build-filled':'<b>Setup, filled.</b> Sets and reps inline, one rest default.','03-workout':'<b>Active workout.</b> Prefilled from last time. One tap on the ring logs the set.','04-rest':'<b>Rest.</b> Starts on its own. The line drains; next weight shown for loading plates.','05-set-editor':'<b>Set editor.</b> Only when you did something different. Steppers, plate maths, unit per exercise.','06-pr-banner':'<b>New best.</b> Banner, one haptic, the set keeps a quiet Best tag.','07-finish':'<b>Finish.</b> What you beat, against last Push, what’s next.','08-exercise':'<b>Exercise detail.</b> Estimated max over time and four bests.','09-routines':'<b>Routines.</b> PPL in rotation, no cap.','10-history':'<b>History.</b> Grouped by week against the target.','11-settings':'<b>Settings.</b> Units, bar and plates, rest, data.','12-history-empty':'<b>Empty.</b> History before the first finish.','13-first-workout':'<b>First workout.</b> No last time yet, so the first tap asks for a weight.','14-health-error':'<b>Error.</b> Health save failed; data is safe.','15-restoring':'<b>Loading.</b> Restoring on a new iPhone; never blocks training.','16-exercise-empty':'<b>Empty.</b> Exercise with one session; quiet baseline.','17-choose-workout':'<b>Other routine.</b> Any routine or blank; rotation follows what you did.','18-exercise-picker':'<b>Add / swap.</b> Search, recents, create custom. Swap keeps sets and reps.','19-reorder':'<b>Edit today.</b> Drag handles, remove, undo toast.','20-finish-changed':'<b>Finish, changed.</b> One optional switch, off by default.','21-finish-blank':'<b>Finish, blank.</b> Save as routine, optional.','22-today-day-empty':'<b>Today, empty day.</b> The suggested routine has no exercises yet.','23-routines-empty':'<b>Routines, empty.</b> Days set, no exercises yet.'};
+const b=document.getElementById('board');
+for(const mode of ['light','dark']) for(const k of Object.keys(S)){
+ const c=document.createElement('div');c.className='cell';
+ c.innerHTML=`<div class="screen ${mode=='dark'?'dark':''}" data-shot="${k}-${mode}">${S[k]()}</div><div class="cap">${caps[k]} ${mode=='dark'?'(dark)':''}</div>`;b.appendChild(c);}
+</script></body></html>

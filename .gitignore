@@ -1,0 +1,19 @@
+# Generated
+Lift.xcodeproj/
+App/Info.plist
+build/
+DerivedData/
+.build/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+# Secrets: never commit
+*.p12
+*.p8
+*.mobileprovision
+*.cer
+.env*
+AuthKey_*
+# Local review output (shared with CDO out-of-band)
+screenshots-review/*.png
+research/__pycache__/
