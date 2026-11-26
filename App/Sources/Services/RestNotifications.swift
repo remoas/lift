@@ -6,6 +6,10 @@ enum RestNotifications {
     private static let id = "lift.rest"
 
     static func requestPermissionIfNeeded() {
+        #if DEBUG
+        // Screenshot fixtures and UI tests: never raise the system prompt over a frame.
+        if Fixtures.requested != nil { return }
+        #endif
         let center = UNUserNotificationCenter.current()
         center.getNotificationSettings { settings in
             guard settings.authorizationStatus == .notDetermined else { return }

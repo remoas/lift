@@ -57,15 +57,21 @@ Section gap 28 (`space6` + 4) between a lede and the next list. Set row min heig
 ## Sizes
 Primary button height 56, full width minus 2 × 20. Tick: 44 × 44 hit area; ring 30 pt (current set 34 pt, 2.5 pt stroke). Steppers 64 pt circles. Rest chips 44 pt tall, ≥56 wide.
 
-## Motion (respect Reduce Motion → crossfade 0.2 s, no translation/scale)
+## Motion
+Respect Reduce Motion: crossfade only, `fadeReduced` (0.15 s), no translation or scale. Shared-element rules, IDs and acceptance criteria are in spec.md §8.
+
+Large surfaces (Today → workout, exercise row → detail) use `springZoom`: critically damped, **no bounce**, interruptible, and they follow the finger on an interactive dismiss (Emil Kowalski / Rauno restraint). Small in-place morphs (PR banner, and the existing filter-chip-to-sheet pattern) use `springBanner`.
+
 | Token | Value | Use |
 |---|---|---|
 | `springTick` | `.spring(response: 0.28, dampingFraction: 0.72)` | Ring fills from centre, check strokes in (0.18 s) |
-| `springBanner` | `.spring(response: 0.42, dampingFraction: 0.82)` | PR banner drops 16 pt + fades in; auto-dismiss after 4 s, swipe up to dismiss |
-| `barDraw` | `.easeOut(duration: 0.28)` after a 0.12 s delay | The bar draws left→right |
+| `springBanner` | `.spring(response: 0.42, dampingFraction: 0.82)` | PR banner container and number; also the filter chip that grows into a sheet, so in-place morphs share one spring. Auto-dismiss after 4 s; swipe up to dismiss. Slight settle, no visible bounce. |
+| `springZoom` | `.spring(response: 0.48, dampingFraction: 1.0)` (equiv. `.smooth(duration: 0.42)`) | iOS 18 zoom: Today → workout, exercise row → detail, and the settle after an interactive gesture. No bounce. Do not use `.snappy` or any bounce > 0 on these surfaces. |
+| `barDraw` | `.easeOut(duration: 0.28)` after a 0.12 s delay | The bar draws left→right, only once the underlined number is in its final place |
 | `restDrain` | `.linear` over the rest duration | Rest line |
 | `sheet` | system | Set editor sheet |
-Haptics: tick = `.impact(.light)`; new best = `.notification(.success)`; rest at zero = `.notification(.warning)` + local notification if backgrounded; stepper = `.selection`.
+| `fadeReduced` | `.easeInOut(duration: 0.15)` | Reduce Motion fallback for every shared transition and for the older “no translation/scale” cases |
+Haptics: tick = `.impact(.light)`; new best = `.notification(.success)` when the PR banner starts to appear, not on dismiss; rest at zero = `.notification(.warning)` + local notification if backgrounded; stepper = `.selection`. Shared zooms add no haptic of their own.
 
 ## App icon: RESOLVED, icon A (Ben, 6:47am 26 Nov)
 `icon/icon-a-ember.svg`: Ember background with a cream loaded barbell, with a 1024 PNG beside it. Preview: `shots/icon-draft.png`. Ship it as the single 1024 asset in all builds. CDO will supply dark and tinted variants next. Icon B is dropped and stays in the folder for reference only.

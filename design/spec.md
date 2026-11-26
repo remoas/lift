@@ -3,7 +3,7 @@
 **Status:** CDO draft, 26 Nov 2026. Drafts only. Nothing is built for TestFlight, submitted or published without Ben's own yes.
 **Approval to start:** Ben, 6:38am Bermuda time, 26 Nov (relayed by Grok Bot): "Yes, CDO and the iOS Developer can start building Lift".
 **Plan:** https://cursor.com/canvas/store-4a287fb7-f67e-49e6-9d24-b3adafe89952/f7f4236a-cf74-48f6-88a4-2ef8558ceaa7
-**Stack (from the iOS Developer):** native SwiftUI, iPhone, SwiftData local-first, CloudKit private backup, HealthKit write.
+**Stack (from the iOS Developer):** native SwiftUI, iPhone, **iOS 17** deployment, SwiftData local-first, CloudKit private backup, HealthKit write. Zoom transitions are gated for iOS 18+; the target stays 17 (spec §8).
 **Files:** tokens in `DESIGN.md` · frames in `mock.html` · renders in `shots/<nn-name>-<light|dark>.png` · icon drafts in `icon/`.
 Mock numbers and exercise names are illustrative only. Frames after setup show what Ben's own routines might look like. Nothing in them is seeded, and the app never shows numbers it doesn't have.
 
@@ -16,7 +16,7 @@ Mock numbers and exercise names are illustrative only. Frames after setup show w
 6. **Designed for phase 2.** The set row, rest bar and PR banner are self-contained components that Watch, Live Activity and friends will reuse. Don't hard-code them to the phone layout. Keep a `source` (phone/watch) field on each set and leave room in the Today hero for a future "crew" line. Ship none of it now.
 
 ## 2. Navigation
-Tab bar with three tabs: **Today**, **History**, **Routines**. Settings is a gear (44 pt) top-right on Today, presented as a sheet. The active workout is a full-screen cover over the tabs. "Close" minimises it to a bar above the tab bar ("Push · 18:42 · Resume"), so a workout is never lost. Exercise detail is pushed from any exercise name (Today, Workout header long-press/tap on name, Finish, History, Routines).
+Tab bar with three tabs: **Today**, **History**, **Routines**. Settings is a gear (44 pt) top-right on Today, presented as a sheet. The active workout is a full-screen cover over the tabs. "Close" minimises it to a bar above the tab bar ("Push · 18:42 · Resume"), so a workout is never lost. Exercise detail is pushed from any exercise name (Today, Workout header long-press/tap on name, Finish, History, Routines). Shared element transitions (spec §8) apply to Start/Resume, exercise push and the PR banner. Close and an interactive drag-down on the workout minimise; they never dismiss or discard the workout (AC 13).
 
 ## 3. Screens
 
@@ -66,7 +66,7 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
   - back after 7+ days: "Welcome back. Last {Routine} was {date}; we've kept your numbers." Neutral, never a warning.
 - Week marks: one dot per target session (3–6), not per weekday. Done = filled textPrimary, next = accent with an accentSoft halo, remaining = controlStroke ring. Then the text "{done} of {target} this week". The accessibility label reads the sentence.
 - "Today's lifts": plain rows with the name and "{sets} sets · last {w × r}" (top working set). Tap → exercise detail.
-- Primary: **Start {Routine}**, pinned above the tab bar. The suggestion is only a suggestion.
+- Primary: **Start {Routine}**, pinned above the tab bar. The suggestion is only a suggestion. On iOS 18, Start and Resume zoom from the Today workout source into the cover (spec §8). There is no new card chrome.
 - Under it, two quiet accent text buttons (44 pt, no fill), side by side: **Other routine** · **Blank workout**.
   - *Other routine* opens "Choose a workout" (`17-choose-workout`, medium sheet). Title: "Choose a workout". Sub: "Your rotation picks up from whatever you do." It lists every routine with its last date, and the suggested one carries an accent "Next" tag. "Blank workout" is the last row, in accent, with "Add exercises as you go". Tapping a routine starts it straight away, with no extra confirm.
   - *Blank workout* starts an empty workout (title "Workout"). The screen shows "Add your first exercise" as the current action, and the picker opens straight away.
@@ -114,7 +114,7 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
   - With sets left, Finish goes **straight to the summary**, with no alert (`25-finish-sets-left`). See §3.6.
 - **No confirm alerts anywhere in Lift.** Ben's rule is undo toasts, not confirm popups.
 - **Discard workout** (from the workout "•••" menu) has no alert. It closes the workout and returns to Today, with the toast "{Routine} discarded · **Undo**" for 5 s (`26-discard-toast`). Undo reopens the workout exactly as it was: ticked sets, current set, elapsed time and rest. After 5 s, or on the next action, the workout and its sets are deleted, nothing reaches Health, and the rotation doesn't move.
-- **Close** always minimises and never asks anything, even with nothing ticked.
+- **Close** always minimises and never asks anything, even with nothing ticked. An interactive drag-down, pinch or edge-swipe on the workout does the same (spec §8). None of these dismiss or discard the workout.
 
 ### 3.4 Set editor sheet (`05-set-editor`)
 - Medium detent and a grabber. The workout stays visible behind a scrim.
@@ -137,7 +137,7 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
     - Estimated max: "Your estimated max is now {e1RM}, up {Δ}."
     - Reps: "{reps} reps at {w}, {Δ} more than ever."
     - Biggest set: "Your biggest set of {exercise}, {volume}."
-- Motion and haptic: `springBanner` and success haptic. It stays 4 s, a swipe up dismisses it, and a tap opens exercise detail. When two bests land within 4 s, the second replaces the first in place, with no stacking.
+- Motion and haptic: the banner uses `matchedGeometryEffect` from the just-logged set's number (spec §8), `springBanner` and a success haptic when it appears (not on dismiss). It stays 4 s, a swipe up dismisses it back toward the set, and a tap opens exercise detail. When two bests land within 4 s, the second replaces the first in place, with no stacking.
 - The set row keeps the accent ring and a "Best" tag for the rest of the workout.
 - **Quiet baseline:** an exercise's first session never shows a banner. Finish says: "First {Routine} logged. These are your numbers to beat."
 - A unit switch can't fake a best: all comparisons run in kg internally, at full precision.
@@ -185,7 +185,7 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
   - With some days filled, filled rows show their exercise sentence as in `09-routines`, and empty rows show "No exercises yet · Add exercises".
 
 ### 3.8 Exercise detail (`08-exercise`, `16-exercise-empty`, media header `24a`–`24e`)
-- **Media header** (optional; only when the exercise has media). It's inset 20 pt each side, radius 16, at **3:2** (350 × 233 pt on a 390 pt screen), and never taller than 4:3. It sits under the nav, above the name. The background is `bgSunken`, and media is aspect-fill, centred.
+- **Media header** (optional; only when the exercise has media). It's inset 20 pt each side, radius 16, at **3:2** (350 × 233 pt on a 390 pt screen), and never taller than 4:3. It sits under the nav, above the name. The background is `bgSunken`, and media is aspect-fill, centred. Opening the screen from a row uses the zoom in spec §8. The header fades in at this final size; list rows do not grow a thumbnail.
   - **Video** (`24a-media-video`): a muted loop that autoplays only when Reduce Motion is off and Low Power Mode is off.
     - There's **no audio, ever**: the audio track is stripped or the player is muted, and it never takes over the audio session, so Ben's music keeps playing.
     - Play/pause is a 44 pt glass circle (20 pt glyph, `.ultraThinMaterial`), bottom-left at 10 pt inset. Tapping the media also toggles. VoiceOver: "Pause demonstration" / "Play demonstration".
@@ -348,6 +348,15 @@ Start stays available throughout. If the restore fails: "Couldn't reach iCloud. 
 53. With no media, the header collapses completely (no placeholder), and the screen matches `08-exercise`.
 54. With a media header, the e1RM chart is fully visible without scrolling on iPhone 16 (390 × 844) at the default text size.
 
+### Shared element transitions (26 Nov, drafts only; iOS 17 target stays)
+55. The deployment target stays **iOS 17**. Zoom presentations are wrapped in `if #available(iOS 18, *)` and use `.navigationTransition(.zoom(sourceID:in:))` plus `matchedTransitionSource`. On iOS 17, Start/Resume uses the standard full-screen cover and exercise detail uses the standard push (including the system edge swipe). `matchedGeometryEffect` for the PR banner and the minimised workout bar works on 17 and is not gated. Do not bump the target in this work.
+56. **Today → workout** (iOS 18): the Today workout source (the hero through “Today’s lifts”, no new card chrome and no card grid) is tagged `LiftTransitionID.workout(id)` and zooms into the full-screen workout cover under `springZoom`. “Push” morphs from the Today hero to the workout nav title; *the bar* under the Today name fades out and does not travel (the workout title has no bar). Exercise names in the list fade to the workout headers. The lede, week dots, Start / Other routine / Blank workout, tab bar and settings gear fade out; Close, elapsed time, Finish, •••, set rows, notes and rest fade in. Other routine zooms from the chosen sheet row; Blank workout from the Blank control; Resume from the same Today source, or from the mini bar when that’s what’s showing. The source and destination share one stable UUID (reserve the `Workout.id` before presenting).
+57. Close, an interactive drag-down, a pinch, and an edge-swipe on the active workout **minimise** it, the same as Close. They follow the finger, are interruptible, and settle with `springZoom` (no bounce). Released early, the workout snaps back. They never dismiss or discard the workout and never write to Health or move the rotation. Minimise uses `matchedGeometryEffect` (`LiftTransitionID.workoutMini(id)`, iOS 17+) between the workout nav title plus elapsed time and the mini bar (“Push · 18:42 · Resume”). Resume from that bar is the reverse. Discard (and only Discard) may use the reverse zoom back to Today, because the workout is actually ending.
+58. **Exercise row → detail** (iOS 18): the tapped row is tagged `LiftTransitionID.exercise(exerciseId)` and zooms into the pushed detail under `springZoom`. The name morphs from the row (`exercise`) to the detail hero. Meta (“4 sets · last 185 × 8”, or the workout header meta) crossfades to the eyebrow and lede. The media header, when there is media, **fades in at its final geometry** (3:2, inset 20, radius 16) — rows do not gain a thumbnail. Video does not autoplay until the transition has finished; play/pause or the Start/End pill fades in after it settles. The chart, bests, notes and settings fade in and do not move. The source chrome (tab bar, or the workout nav and rest bar) fades. Swipe-back from the edge, the interactive pinch or drag-down close, and the back button all reverse the zoom: the gestures follow the finger and are interruptible; the back button plays the reverse with `springZoom` and no bounce. On iOS 17 this is a standard push. The same IDs are used from Today, the workout, Finish, History and Routines, including the no-media empty state.
+59. **PR banner** (iOS 17+, `matchedGeometryEffect`, same pattern as the filter chip that grows into a sheet): the set row **stays put**. The ring fills and the “Best” tag appear with `springTick` as already specified. A matched copy of the today’s number (`LiftTransitionID.prValue(setId)`) lifts into the banner’s “{w} × {r}”; the banner container (`LiftTransitionID.prBanner(setId)`) expands from that value’s bounds (row radius 14) to the banner (radius 18, 12 pt side insets, under the nav) with `springBanner`. “New best” and the why line fade in once the number has landed; *the bar* then draws under the banner number with `barDraw` and never appears on the set row as well. The success haptic fires when the banner starts to appear, not on dismiss. Auto-dismiss at 4 s, or a swipe up, reverses the morph back toward the set (the Best tag and accent ring stay). The swipe follows the finger. A second best within 4 s replaces the first in place: copy crossfades, the number morphs if it changed, no stack. A tap still opens exercise detail (§3.5). Put `springBanner` on the existing filter-chip-to-sheet morph as well, so in-place shared elements share one spring.
+60. Under **Reduce Motion**, all three moments (and minimise / Resume) are a `fadeReduced` crossfade only (0.15 s, `.easeInOut`), with no translation, scale or matched morph, and no bounce. Interactive dismiss is allowed but does not scale or drag the surface; it crossfades on commit. Media still follows AC 52 (no autoplay).
+61. Visual QA for this delta ships in the **same pass as AC 24**, after the first free GitHub / macOS CI run: screen recordings on iPhone 16, default text size, at normal speed (light and dark) and at Simulator Slow Animations (light), plus one Reduce Motion pass (light, normal speed). Record: (1) Start {Routine} Today → workout, Close to the mini bar, Resume from the bar; (2) an exercise row with a media header → detail, then swipe-back, and once with the back button; (3) a PR appear from a logged set, a swipe-up dismiss, and a 4 s auto-dismiss. CDO reviews the recordings with the AC 24 screenshots. Nothing goes to Ben as a TestFlight request without his own yes.
+
 ## 7. Decisions (resolved)
 Ben, 6:47am 26 Nov, relayed by Grok Bot:
 - **RESOLVED: Accent is Ember** (#C2410C light / #FF8A3D dark).
@@ -356,4 +365,168 @@ Ben, 6:47am 26 Nov, relayed by Grok Bot:
 - **RESOLVED: lb plates** (45 bar; 45, 35, 25, 10, 5, 2.5), and **dumbbells in 5 lb steps**.
 - **RESOLVED: Ben's own exercises and reps, not seeded.** The quick setup is in §3.1.
 
-Still open: nothing for Ben in phase 1.
+Still open: nothing for Ben in phase 1. (Optional later, not a recommendation and not needed for this delta: bumping the deployment target to iOS 18 would drop the zoom gate. Phase 1 stays on iOS 17.)
+
+## 8. Shared element transitions
+
+Draft delta, 26 Nov 2026, 9:56am Bermuda time. Ben, via Grok Bot, asked for shared element transitions in Lift, pointing at [Expo’s post](https://x.com/expo/status/2125720045276029297) (it quotes a Reanimated “postcard” demo: a trip card’s photo, title and duration badge morph into a detail hero, the rest of the screen crossfades, and a drag or swipe follows the finger back to the list). That demo is Expo / React Native. This section is the native SwiftUI translation. Drafts only.
+
+The idea we keep: one or two elements really move, everything else crossfades, large surfaces do not bounce, and a gesture is always interruptible. We do not import polaroid chrome, card grids or horizontal paging between workouts (AC 19 still holds). *The bar* and the Ember rules in DESIGN.md stay as they are.
+
+### 8.1 API and deployment
+
+The target stays **iOS 17**. Do not raise it for this work.
+
+```swift
+enum LiftTransitionID: Hashable {
+    case workout(UUID)       // Workout.id — reserve it before presenting
+    case workoutMini(UUID)   // same Workout.id, minimised bar
+    case exercise(UUID)      // Exercise.id
+    case prBanner(UUID)      // SetEntry.id, banner container
+    case prValue(UUID)       // SetEntry.id, the shared number
+}
+
+// One @Namespace on the ancestor that presents the cover / push, e.g. the Today root.
+@Namespace private var liftNS
+```
+
+| OS | Push and full-screen cover | In-place (PR banner, mini bar) |
+|---|---|---|
+| iOS 18+ | `.navigationTransition(.zoom(sourceID:in:))` on the destination, `.matchedTransitionSource(id:in:)` on the source, animated with `springZoom` | `matchedGeometryEffect` (below) |
+| iOS 17 | Standard `fullScreenCover` and standard `NavigationLink` push, including the system edge swipe. No homemade zoom. | `matchedGeometryEffect` — already available, not gated |
+
+`navigationTransition(.zoom)` is supported on NavigationStack destinations, sheets and full-screen covers, so the workout can stay a cover over the tabs as in §2.
+
+Optional, for Ben later and not a recommendation here: bumping the target to iOS 18 would drop the `#available` gate. Phase 1 stays on 17.
+
+### 8.2 Springs, haptics, Reduce Motion
+
+Tokens are in DESIGN.md. In short:
+
+- **`springZoom`** — `.spring(response: 0.48, dampingFraction: 1.0)`, equivalently `.smooth(duration: 0.42)`. Large surfaces. Critically damped, **no bounce**. Used for the zoom and for the settle after a finger-led gesture. Never `.snappy`, and never a bounce greater than 0, on these surfaces.
+- **`springBanner`** — `.spring(response: 0.42, dampingFraction: 0.82)`. Small in-place morphs: the PR banner, and the existing **filter chip that grows into a sheet**. Align that chip to this spring so in-place shared elements feel like one system. A slight settle is fine; no visible bounce.
+- **`barDraw`** — unchanged. It only runs once the underlined number is in its final place.
+- **`fadeReduced`** — `.easeInOut(duration: 0.15)`. Every shared transition under Reduce Motion, including minimise and Resume.
+
+Gestures follow the finger while touched, are interruptible (a second gesture wins; a mid-flight zoom can be pulled back), and settle with the spring above. Released before the commit threshold, the surface returns with the same spring and no bounce.
+
+Haptics: zooms add none of their own. The PR success haptic fires when the banner starts to appear, not when it dismisses. Tick, rest and steppers are unchanged.
+
+### 8.3 Today workout source → active workout
+
+Not a new card. The source is the typographic block from the hero (“Next up, *Push*”) through the “Today’s lifts” list. No extra fill, no extra stroke, no card grid. A 14 pt (`radiusButton`) clip is allowed *during the zoom only*, morphing to the full-screen cover (edge-to-edge, no corner radius at rest).
+
+**Source.** The block tagged `LiftTransitionID.workout(id)` with `matchedTransitionSource`. Create or reserve the `Workout.id` before presenting so both sides share one UUID. Resume of an in-progress workout uses that workout’s existing id.
+
+**Destination.** The full-screen workout cover, with `.navigationTransition(.zoom(sourceID: .workout(id), in: liftNS))`.
+
+**What morphs**
+
+- The routine name “Push”: Today hero (`display`, with *the bar* under it) → workout nav title (`body` / semibold title, no bar). The type size may crossfade if a live interpolation looks mushy.
+- The source block’s bounds and, mid-flight only, its corner radius, expand to the cover.
+
+**What crossfades**
+
+- Out: the weekday eyebrow, the lede, week dots, “Today’s lifts” heading, each row’s “{n} sets · last {w × r}”, the Start (or Resume) button, Other routine, Blank workout, the tab bar, the settings gear, and *the bar* under the Today name. The bar does not travel onto the workout title (the workout screen has no bar; AC 6 still holds).
+- In: Close, elapsed time, Finish, the workout •••, per-exercise meta, notes, set rows, column heads and the rest bar (if rest is already running, e.g. Resume).
+
+**What stays put / does not animate**
+
+- Status bar.
+- Exercise names in the Today list may fade rather than try to track into the workout headers, whose positions differ; do not tween them across a messy path.
+- On iOS 17, nothing zooms; the standard cover presentation is used.
+
+**Other entry points**
+
+- Other routine: the chosen row in the “Choose a workout” sheet is the source, same `workout(id)`.
+- Blank workout: the Blank workout control (Today or the sheet’s last row) is the source. The destination title “Workout” fades in; there is no name to morph and no lifts list.
+- Empty suggested day: there is no Start, so this zoom is not used until a Start or Resume exists.
+
+**Dismiss and Close**
+
+- **Close**, an **interactive drag-down**, a **pinch**, and an **edge-swipe** on the workout all **minimise**, the same as Close. They follow the finger. They never dismiss the cover in a way that would lose the workout, and they are not Discard. Released early, the workout snaps back with `springZoom` and no bounce.
+- Minimise itself uses `matchedGeometryEffect` (`LiftTransitionID.workoutMini(id)`), which works on iOS 17: the nav title plus elapsed time contract into the bar above the tab bar (“Push · 18:42 · Resume”). The cover yields to Today underneath. Resume from that bar is the reverse. Resume from Today’s Resume button uses the §8.3 zoom (iOS 18) or the standard cover (iOS 17).
+- **Discard** is the path that actually ends the workout. It may reverse-zoom back to the Today source (iOS 18) and then show the existing undo toast. iOS 17: standard dismiss plus the toast.
+
+**Haptic.** None added for Start, Close, Resume or Discard.
+
+**Reduce Motion.** `fadeReduced` only, both ways, including minimise.
+
+### 8.4 Exercise row → exercise detail (media header included)
+
+**Source.** The tapped row — a Today lifts row, a workout exercise header (name, not the set rows), or the matching row on Finish, History or Routines — tagged `LiftTransitionID.exercise(exerciseId)` with `matchedTransitionSource`.
+
+**Destination.** The pushed exercise detail, with `.navigationTransition(.zoom(sourceID: .exercise(id), in: liftNS))`. Same IDs from every entry point, including `16-exercise-empty` and `24e` (no media).
+
+**What morphs**
+
+- The exercise name: row (`exercise`) → detail hero. Type size may crossfade if a live interpolation looks mushy.
+
+**What crossfades**
+
+- Row meta (“4 sets · last 185 × 8”, or “6–8 reps · 2:30 rest”) → the detail eyebrow (“Barbell · lb”) and lede.
+- **Media header:** fades in already at its final geometry — **3:2, inset 20 pt, radius 16**, never taller than 4:3, `bgSunken`, aspect-fill. There is **no source thumbnail** and we do not add one to the rows. Video does not autoplay until the transition has finished. The play/pause control, or the Start/End pill, fades in after the settle. Loading still uses the final-size skeleton (AC 52). With no media, the header stays collapsed (AC 53) and only the name plus the rest of the screen participate.
+- Chart, range chips, bests, notes, history and settings fade in and do not move.
+- Source chrome fades out: the tab bar, or the workout nav, set list and rest bar.
+
+**What does not animate**
+
+- Status bar.
+- No invented image flying out of a text row.
+- *The bar* is not used on this screen unless a later state introduces one; do not draw one during the transition.
+- On iOS 17, standard push only.
+
+**Dismiss**
+
+- Edge swipe-back, the iOS 18 zoom’s interactive pinch or drag-down close, and the back button all reverse the zoom to the same source row.
+- Gestures follow the finger and are interruptible. Released early, the detail snaps back with `springZoom` and no bounce.
+- The back button plays the reverse non-interactively, same spring, no bounce.
+- iOS 17: the system pop, including the edge swipe.
+
+**Haptic.** None added.
+
+**Reduce Motion.** `fadeReduced` only. Media follows AC 52 (End still, no autoplay).
+
+### 8.5 PR banner (appear and dismiss)
+
+This one stays inside the workout view, so `matchedGeometryEffect` is the right tool, and it works on **iOS 17**. Use the same pattern as the **filter chip that grows into a sheet** already in the codebase, and drive both with `springBanner`.
+
+**Source.** The just-logged set’s today value (“205 lb × 5”). The set row stays in place: the ring fills and the “Best” tag appear with `springTick`, as already specified. The ring does not fly up into the banner.
+
+**Destination.** The PR banner in §3.5 (`bgRaised`, radius 18, 12 pt side insets, under the nav).
+
+**Matched IDs**
+
+- `LiftTransitionID.prValue(setId)` — the number, source today-value to the banner’s “{w} × {r}” (`title`). Use a matched copy so the row’s own number can stay put (or crossfade in place to the Best-tagged value) while the banner number lifts from that origin.
+- `LiftTransitionID.prBanner(setId)` — the banner container, expanding from the value’s bounds (current-set row radius 14) to the banner.
+
+**What morphs**
+
+- The number, including tabular figures, from the set value to the banner number.
+- The container shape and corner radius, 14 → 18.
+
+**What crossfades**
+
+- “New best” and the why line fade in once the number has landed.
+- *The bar* is not a shared element. After the number is in place, it draws under the banner number with `barDraw` (0.12 s delay, then 0.28 s). It must not also sit under the set row at the same time (one bar per screen).
+
+**What stays put / does not animate**
+
+- The set row’s layout, the rest bar, and the workout nav.
+- The ring stays in the row and only does its existing fill.
+- First sessions stay quiet: no banner, so no morph (§3.5).
+
+**Dismiss**
+
+- Auto at 4 s, or a swipe up, reverses the morph: the container and number contract toward the set, the label and why line fade, *the bar* fades (it does not undraw in reverse). The row keeps the Best tag and the accent ring.
+- The swipe follows the finger and is interruptible. Released early, the banner settles back with `springBanner`.
+- A second best within 4 s replaces the first in place: no stack, copy crossfades, the number morphs with `prValue` if the figures changed.
+- A tap still opens exercise detail, using §8.4 from the banner (the banner’s name + number is a valid source for `exercise(id)`; the banner dismisses as the detail zooms).
+
+**Haptic.** `.notification(.success)` when the banner starts to appear. None on dismiss, none on a mid-flight replacement.
+
+**Reduce Motion.** The banner and its copy fade with `fadeReduced` only, no drop, no scale, no matched morph. The ring may still fill as a crossfade of the check (existing Reduce Motion rule).
+
+### 8.6 Out of scope
+
+No shared transition for the set editor sheet (system sheet), the exercise picker, Settings, Finish → Today, or paging between workouts. The set editor, rest bar and tick motion stay on the tokens they already use.
