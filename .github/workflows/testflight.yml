@@ -10,6 +10,10 @@ on:
         description: "CFBundleVersion"
         required: true
         default: "1"
+      icloud:
+        description: "Include the iCloud (CloudKit) entitlement. Needs container iCloud.com.benspink.lift registered on the App ID; off = local-only build"
+        type: boolean
+        default: true
       upload:
         description: "Upload the IPA to App Store Connect (needs the Lift app record)"
         type: boolean
@@ -46,7 +50,14 @@ jobs:
           chmod 600 "$KEY"
           echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
       - name: Generate project
-        run: brew install xcodegen && xcodegen generate
+        run: |
+          brew install xcodegen && xcodegen generate
+          if [ "${{ inputs.icloud }}" != "true" ]; then
+            /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-container-identifiers" App/Lift.entitlements || true
+            /usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-services" App/Lift.entitlements || true
+            /usr/libexec/PlistBuddy -c "Delete :aps-environment" App/Lift.entitlements || true
+          fi
+          cp App/Lift.entitlements tf-logs/entitlements-requested.plist
       - name: Archive (Release, automatic signing)
         run: |
           set -o pipefail
