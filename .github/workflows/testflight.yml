@@ -72,6 +72,9 @@ jobs:
             > tf-logs/archive.log 2>&1 \
             || { grep -E "error:|warning: .*(sign|profile|entitle)" tf-logs/archive.log | sort -u | head -80; tail -40 tf-logs/archive.log; exit 1; }
           tail -5 tf-logs/archive.log
+          V=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" build/Lift.xcarchive/Products/Applications/Lift.app/Info.plist)
+          echo "CFBundleVersion=$V"
+          [ "$V" = "${{ inputs.build_number }}" ] || { echo "CFBundleVersion $V != ${{ inputs.build_number }}"; exit 1; }
       - name: Export IPA (App Store Connect)
         run: |
           set -o pipefail
@@ -100,6 +103,8 @@ jobs:
           set -o pipefail
           xcrun altool --upload-app -f build/export/Lift.ipa -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee tf-logs/upload.log
+          # altool can exit 0 on a rejected upload; fail unless it says it worked.
+          grep -q "UPLOAD SUCCEEDED" tf-logs/upload.log
       - name: Remove key
         if: always()
         run: rm -rf ~/.appstoreconnect
