@@ -392,11 +392,17 @@ struct ActiveWorkoutView: View {
         let slow = Theme.Motion.slowFactor
         if let new {
             if shownBanner != nil {
+                // Replace in place (AC 59, §8.5): same card, the number morphs, the why
+                // crossfades; no second appear, no stack. The last best wins.
                 withAnimation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springBanner) {
                     shownBanner = new
                     shownSetID = setID
                     bannerLanded = true
                     bannerCopyIn = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.42 / slow) {
+                    guard shownBanner == new, editing == nil else { return }
+                    session?.bannerDidLand()
                 }
                 return
             }
@@ -405,6 +411,10 @@ struct ActiveWorkoutView: View {
                 bannerCopyIn = true
                 shownSetID = setID
                 withAnimation(Theme.Motion.fadeReduced) { shownBanner = new }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2 / slow) {
+                    guard shownBanner == new, editing == nil else { return }
+                    session?.bannerDidLand()
+                }
                 return
             }
             var t = Transaction()
@@ -421,6 +431,11 @@ struct ActiveWorkoutView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.34 / slow) {
                 guard shownBanner == new else { return }
                 withAnimation(Theme.Motion.fadeReduced) { bannerCopyIn = true }
+            }
+            // Copy in and the bar drawn (~0.74 s): the 4 s clock starts now.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.74 / slow) {
+                guard shownBanner == new, editing == nil else { return }
+                session?.bannerDidLand()
             }
         } else {
             guard shownBanner != nil else { return }

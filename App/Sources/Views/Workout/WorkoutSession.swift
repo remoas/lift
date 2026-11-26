@@ -316,14 +316,23 @@ final class WorkoutSession {
         bannerExercise = exercise
         bannerSetID = setID
         bannerTask?.cancel()
-        if !bannerHeld { scheduleBannerDismiss() }
+        // The 4 s clock starts when the view reports the banner has landed (copy in,
+        // bar drawn), so it can't run out mid-appear (flow 3 on the slow tape, quick-log
+        // run 3). Fallback if no view is showing it: the full appear plus 4 s.
+        if !bannerHeld { scheduleBannerDismiss(after: 4.0 + 1.2 / Theme.Motion.slowFactor) }
     }
 
-    private func scheduleBannerDismiss() {
+    /// The banner view finished its appear (or its in-place replace): 4 s from now.
+    func bannerDidLand() {
+        guard banner != nil, !bannerHeld else { return }
+        scheduleBannerDismiss()
+    }
+
+    private func scheduleBannerDismiss(after seconds: Double = 4.0) {
         bannerTask?.cancel()
         bannerTask = Task { [weak self] in
-            // 4.0 s on screen once the number has landed (~0.4 s morph).
-            try? await Task.sleep(for: .seconds(4.4))
+            // 4.0 s on screen once it has landed.
+            try? await Task.sleep(for: .seconds(seconds))
             guard !Task.isCancelled else { return }
             self?.dismissBanner()
         }
