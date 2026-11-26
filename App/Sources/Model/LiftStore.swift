@@ -156,12 +156,44 @@ enum LiftStore {
         let beat = beatIt(for: exercise, excluding: workout, unit: unit)
         let n = max(count ?? beat.last.count, 1)
         for i in 0..<n {
-            var value = i < beat.last.count ? beat.last[i] : beat.last.last
-            if i == beat.topIndex, let t = beat.target { value = t }
+            let value = i < beat.last.count ? beat.last[i] : beat.last.last
             let set = SetEntry(order: i, exerciseOrder: exerciseOrder, kind: .working, weight: value?.weight ?? 0, unit: unit, reps: value?.reps ?? exercise.repGoal, exercise: exercise)
             set.restSeconds = rest
             context.insert(set)
             set.workout = workout
+        }
+        prefill(exercise, in: workout, globalUnit: globalUnit)
+    }
+
+    /// A logged set of `exercise` in `workout` met or beat its target.
+    static func targetHit(_ exercise: Exercise, in workout: Workout, globalUnit: WeightUnit) -> Bool {
+        let u = exercise.unit(global: globalUnit)
+        guard let t = beatIt(for: exercise, excluding: workout, unit: u).target else { return false }
+        return workout.doneSets.contains { s in
+            s.exercise === exercise && s.kind != .warmup &&
+            Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t)
+        }
+    }
+
+    /// The one source of truth for unlogged sets (AC 64, Ben 2:16 pm): the
+    /// first set prefills at the target; every later set with the set just
+    /// logged this session. The current row, the rest bar's Next and the set
+    /// editor all read these values.
+    static func prefill(_ exercise: Exercise, in workout: Workout, globalUnit: WeightUnit) {
+        let u = exercise.unit(global: globalUnit)
+        let beat = beatIt(for: exercise, excluding: workout, unit: u)
+        let sets = workout.allSets.filter { $0.exercise === exercise && $0.kind != .warmup }.sorted { $0.order < $1.order }
+        var justLogged: SetTarget?
+        for (i, s) in sets.enumerated() {
+            if s.isDone {
+                justLogged = SetTarget(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps)
+                continue
+            }
+            let lastTime = i < beat.last.count ? beat.last[i] : beat.last.last
+            guard let v = Target.prefill(justLogged: justLogged, target: beat.target, lastTime: lastTime) else { continue }
+            s.weight = v.weight
+            s.unit = u
+            s.reps = v.reps
         }
     }
 

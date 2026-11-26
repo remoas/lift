@@ -140,11 +140,15 @@ struct PrimaryButtonStyle: ButtonStyle {
 }
 
 /// Quiet text action in accent, ≥44 pt tall.
+/// Accent only for the primary text actions (Add exercise, Back to workout,
+/// Save workouts to Apple Health); secondary ones (Add set, Not now, Add a
+/// note) pass `secondary: true` (QA quick-log 13).
 struct TextActionStyle: ButtonStyle {
+    var secondary = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body)
-            .foregroundStyle(Theme.Colors.accent)
+            .foregroundStyle(secondary ? Theme.Colors.textSecondary : Theme.Colors.accent)
             .frame(minHeight: Theme.Size.hit)
             .contentShape(Rectangle())
             .opacity(configuration.isPressed ? 0.6 : 1)

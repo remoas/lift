@@ -105,13 +105,18 @@ struct ExerciseMediaHeader: View {
     var body: some View {
         Group {
             if phase != .collapsed {
-                ZStack {
-                    Theme.Colors.bgSunken
-                    if phase == .loading { MediaSkeleton(animated: !reduceMotion) } else { content }
-                }
-                .aspectRatio(Theme.Size.mediaAspect, contentMode: .fit)
-                .frame(maxWidth: .infinity)
-                .clipShape(.continuous(Theme.Radius.media))
+                // The 3:2 box sets the size; content can never widen it, so the
+                // radius-16 clip and the Play pill stay on the media (QA 5).
+                Color.clear
+                    .aspectRatio(Theme.Size.mediaAspect, contentMode: .fit)
+                    .frame(maxWidth: .infinity)
+                    .overlay {
+                        ZStack {
+                            Theme.Colors.bgSunken
+                            if phase == .loading { MediaSkeleton(animated: !reduceMotion) } else { content }
+                        }
+                    }
+                    .clipShape(.continuous(Theme.Radius.media))
                 .contentShape(.continuous(Theme.Radius.media))
             }
         }
@@ -261,7 +266,8 @@ struct ExerciseMediaHeader: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.Colors.textPrimary)
-            .padding(10)
+            .padding(.leading, 10)
+            .padding(.bottom, 10)
             .accessibilityLabel(playing ? "Pause demonstration" : "Play demonstration")
         }
         .contentShape(Rectangle())

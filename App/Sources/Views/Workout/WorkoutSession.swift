@@ -93,12 +93,7 @@ final class WorkoutSession {
 
     /// A logged set in this workout met or beat the exercise's target.
     func targetHit(for exercise: Exercise) -> Bool {
-        guard let t = beatIt(for: exercise).target else { return false }
-        let u = unit(for: exercise)
-        return workout.doneSets.contains { s in
-            s.exercise === exercise && s.kind != .warmup &&
-            Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t)
-        }
+        LiftStore.targetHit(exercise, in: workout, globalUnit: settings.unit)
     }
 
     /// The clock starts at the first logged set; nil until then.
@@ -128,7 +123,8 @@ final class WorkoutSession {
                 showBanner(content, exercise: ex, setID: set.id)
             }
         }
-        carryForward(from: set)
+        // Later sets prefill with what was just logged (AC 64, Ben 2:16 pm).
+        if let ex = set.exercise { LiftStore.prefill(ex, in: workout, globalUnit: settings.unit); _ = LiftStore.save(context) }
         if !workout.isBackLog, settings.autoStartRest { startRest(after: set) }
     }
 
@@ -138,21 +134,6 @@ final class WorkoutSession {
         return latest.addingTimeInterval(60)
     }
 
-    /// If what was just logged differs from last time, the next set inherits it.
-    private func carryForward(from set: SetEntry) {
-        guard let ex = set.exercise, let sets = groups.first(where: { $0.exercise === ex })?.sets,
-              let i = sets.firstIndex(where: { $0 === set }), i + 1 < sets.count else { return }
-        let next = sets[i + 1]
-        guard !next.isDone else { return }
-        let prev = previous(for: set)
-        let matchedLastTime = prev.map { abs($0.snapshot.weightKg - set.snapshot.weightKg) < 0.01 && $0.reps == set.reps } ?? false
-        if !matchedLastTime || next.needsWeight {
-            next.weight = set.weight
-            next.unit = set.unit
-            next.reps = set.reps
-            _ = LiftStore.save(context)
-        }
-    }
 
     // MARK: Rest
 
@@ -313,12 +294,7 @@ final class WorkoutSession {
     /// Rep goal for the Target rule; re-derives this workout's unlogged prefill.
     func setRepGoal(for exercise: Exercise, _ goal: Int) {
         exercise.repGoal = min(max(goal, 3), 30)
-        let b = beatIt(for: exercise)
-        let open = workout.allSets.filter { $0.exercise === exercise }.sorted { $0.order < $1.order }
-        if let i = b.topIndex, let t = b.target, i < open.count, !open[i].isDone {
-            open[i].weight = t.weight
-            open[i].reps = t.reps
-        }
+        LiftStore.prefill(exercise, in: workout, globalUnit: settings.unit)
         save()
     }
 

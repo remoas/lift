@@ -24,23 +24,16 @@ struct SetEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.s4) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(Theme.Fonts.title).foregroundStyle(Theme.Colors.textPrimary)
-                    Text(lastTime.map { "Last time \($0)" } ?? "First time")
-                        .font(Theme.Fonts.secondary)
-                        .foregroundStyle(Theme.Colors.textSecondary)
-                }
-                Spacer()
-                Picker("Unit", selection: unitBinding) {
-                    ForEach(WeightUnit.allCases) { Text($0.symbol).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .frame(width: 120)
-                .accessibilityLabel("Unit for \(exercise?.name ?? "this exercise")")
+            // Title gets the full width; kg|lb sits on the Weight row (QA quick-log 20).
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(Theme.Fonts.title).foregroundStyle(Theme.Colors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text(lastTime.map { "Last time \($0)" } ?? "First time")
+                    .font(Theme.Fonts.secondary)
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
 
-            HStack {
+            HStack(spacing: Theme.Spacing.s3) {
                 Text("Weight").sectionLabel()
                 Spacer()
                 Menu {
@@ -51,6 +44,12 @@ struct SetEditorSheet: View {
                     Text("\(entry.kind.label) set ▾").font(.subheadline).foregroundStyle(Theme.Colors.textSecondary)
                         .frame(minHeight: Theme.Size.hit)
                 }
+                Picker("Unit", selection: unitBinding) {
+                    ForEach(WeightUnit.allCases) { Text($0.symbol).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 96)
+                .accessibilityLabel("Unit for \(exercise?.name ?? "this exercise")")
             }
 
             HStack {

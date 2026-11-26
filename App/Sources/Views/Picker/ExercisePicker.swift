@@ -109,6 +109,14 @@ struct ExercisePicker: View {
         choices = map
         names = Set(list.map(\.sortKey))
         refresh()
+        #if DEBUG
+        // Frame 18b: an alias search with two picked (QA quick-log 16).
+        if Fixtures.requested == "18b-picker-search", selected.isEmpty {
+            query = "rdl"
+            refresh()
+            selected = Array(results.prefix(2).map(\.choice))
+        }
+        #endif
     }
 
     private func refresh() {

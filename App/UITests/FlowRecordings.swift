@@ -54,25 +54,52 @@ final class FlowRecordings: XCTestCase {
         pause(2)
     }
 
-    /// (3) PR from a logged set, swipe-up dismiss; a second PR, 4 s auto-dismiss.
+    /// Brings the current set fully on screen (QA quick-log 11: the logged set was off the tape).
+    private func reveal(_ el: XCUIElement, in app: XCUIApplication) {
+        for _ in 0..<4 where !(el.isHittable && el.frame.maxY < app.frame.height * 0.72) {
+            let list = app.collectionViews.firstMatch.exists ? app.collectionViews.firstMatch : app
+            list.swipeUp(velocity: .slow)
+            pause(0.8)
+        }
+    }
+
+    /// (3) A best from a logged set; a second best on the same exercise within
+    /// 4 s replaces it in place; swipe-up dismiss; then a third best on the next
+    /// exercise left untouched for the 4 s auto-dismiss.
     func testFlow3PRBanner() {
         let app = launch("rec-pr")
+        let banner = app.descendants(matching: .any)["PR banner"].firstMatch
         let current = app.descendants(matching: .any)["current-set"].firstMatch
         XCTAssertTrue(current.waitForExistence(timeout: 15))
-        pause(3)
+        reveal(current, in: app)
+        pause(2)
+        // 1) Bench set 3: 215 × 5, a best.
         current.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
-        let banner = app.descendants(matching: .any)["PR banner"].firstMatch
         XCTAssertTrue(banner.waitForExistence(timeout: 5))
-        pause(1.8)
+        pause(1.2)
+        // 2) Bench set 4 (prefilled with what was just logged) + 5 lb: a second best, replaces in place.
+        let next = app.descendants(matching: .any)["current-set"].firstMatch
+        if next.waitForExistence(timeout: 3) {
+            next.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).tap()
+            let more = app.buttons["More weight"]
+            if more.waitForExistence(timeout: 3) {
+                more.tap()
+                app.buttons["Log set"].firstMatch.tap()
+            }
+        }
+        XCTAssertTrue(banner.waitForExistence(timeout: 3))
+        pause(2)
+        // 3) Swipe-up dismiss.
         let c = banner.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
         c.press(forDuration: 0.05, thenDragTo: banner.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -1.5)), withVelocity: .slow, thenHoldForDuration: 0.05)
         pause(3)
-        // Log the next PR (next exercise's first set), then let it auto-dismiss.
-        let next = app.descendants(matching: .any)["current-set"].firstMatch
-        if next.waitForExistence(timeout: 5) {
-            next.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
+        // 4) Next exercise's first set: a best, untouched until it auto-dismisses.
+        let third = app.descendants(matching: .any)["current-set"].firstMatch
+        if third.waitForExistence(timeout: 5) {
+            reveal(third, in: app)
+            third.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
             _ = banner.waitForExistence(timeout: 8)
-            pause(6)   // 4 s auto-dismiss plus the reverse morph
+            pause(6)   // 4 s auto-dismiss plus the reverse morph, no touches
         }
     }
 }

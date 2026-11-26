@@ -25,12 +25,19 @@ private struct LiftZoomSource: ViewModifier {
     var radius: CGFloat = Theme.Radius.button
     @Environment(\.liftNamespace) private var ns
 
+    /// Room inside the rounded clip so glyph side bearings ("B", "s") and
+    /// corners aren't cut (QA quick-log 1); taken back outside, so layout is unchanged.
+    var inset: CGFloat = 6
+
     func body(content: Content) -> some View {
         if let ns {
             if #available(iOS 18, *) {
-                content.matchedTransitionSource(id: id, in: ns) { source in
-                    source.clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
-                }
+                content
+                    .padding(inset)
+                    .matchedTransitionSource(id: id, in: ns) { source in
+                        source.clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
+                    }
+                    .padding(-inset)
             } else {
                 content
             }
@@ -40,13 +47,15 @@ private struct LiftZoomSource: ViewModifier {
     }
 }
 
-/// iOS 18+: zoom destination. iOS 17: the standard transition.
+/// iOS 18+: zoom destination. iOS 17, or Reduce Motion: the plain push/pop,
+/// so an interactive dismiss never scales the surface (AC 60).
 private struct LiftZoomDestination: ViewModifier {
     let id: LiftTransitionID
     @Environment(\.liftNamespace) private var ns
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     func body(content: Content) -> some View {
-        if let ns {
+        if let ns, !reduceMotion {
             if #available(iOS 18, *) {
                 content.navigationTransition(.zoom(sourceID: id, in: ns))
             } else {

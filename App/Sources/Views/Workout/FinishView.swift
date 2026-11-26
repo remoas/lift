@@ -27,10 +27,15 @@ struct FinishView: View {
     enum HealthLine: Equatable { case idle, ask, willSave, denied, unavailable }
 
     struct Beaten: Identifiable {
+        /// "Last time 110 × 8 · New best" (QA quick-log 12): New best only for an all-time best.
+        var detail: String {
+            [lastTop.map { "Last time \($0)" }, isAllTimeBest ? "New best" : nil].compactMap { $0 }.joined(separator: " · ")
+        }
         let id: UUID
         let exercise: Exercise
         let best: String
-        let target: String
+        /// Last session's top set ("110 × 8"), never the target itself.
+        let lastTop: String?
         let isAllTimeBest: Bool
     }
 
@@ -67,7 +72,7 @@ struct FinishView: View {
                                 }
                                 .font(.body.monospacedDigit())
                                 .padding(.bottom, i == 0 ? Theme.Spacing.s1 : 0)
-                            } detail: { "Target was \(b.target)" + (b.isAllTimeBest ? " · New best" : "") }
+                            } detail: { b.detail }
                         }
                     }
                 }
@@ -98,7 +103,7 @@ struct FinishView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Button("Done", action: done).buttonStyle(PrimaryButtonStyle())
                 if !noting {
-                    Button("Add a note") { noting = true; noteFocused = true }.buttonStyle(TextActionStyle())
+                    Button("Add a note") { noting = true; noteFocused = true }.buttonStyle(TextActionStyle(secondary: true))
                 }
             }
             .screenMargins()
@@ -159,7 +164,7 @@ struct FinishView: View {
             HStack(spacing: Theme.Spacing.s4) {
                 Button("Save workouts to Apple Health") { Task { await askHealth() } }.buttonStyle(TextActionStyle())
                 Button("Not now") { settings.healthEnabled = false; health = .idle }
-                    .buttonStyle(TextActionStyle()).foregroundStyle(Theme.Colors.textSecondary)
+                    .buttonStyle(TextActionStyle(secondary: true))
             }
         case .denied:
             Button {
@@ -213,10 +218,12 @@ struct FinishView: View {
                 s.kind != .warmup && Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t)
             }
             guard let best = hits.max(by: { ($0.snapshot.weightKg, $0.reps) < ($1.snapshot.weightKg, $1.reps) }) else { continue }
+            let beat = LiftStore.beatIt(for: g.exercise, excluding: workout, unit: u)
+            let top = beat.topIndex.map { beat.last[$0] }
             out.append(Beaten(id: best.id, exercise: g.exercise,
                               best: "\(UnitMath.format(best.weight)) × \(best.reps)",
-                              target: "\(UnitMath.format(t.weight)) × \(t.reps)",
-                              isAllTimeBest: g.sets.contains { bestIDs.contains($0.id) }))
+                              lastTop: top.map { "\(UnitMath.format($0.weight)) × \($0.reps)" },
+                              isAllTimeBest: bestIDs.contains(best.id)))
         }
         beaten = out
         targetCount = count
