@@ -28,14 +28,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode 16
+        timeout-minutes: 8
         run: |
           ls -d /Applications/Xcode*.app
           XC=$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)
           sudo xcode-select -s "$XC"
           xcodebuild -version
           mkdir -p review-logs screenshots-review
-          xcrun simctl list devicetypes | grep -iE "iPhone 16|Apple Watch" | tee review-logs/devicetypes.txt
-          xcrun simctl list runtimes | tee review-logs/runtimes.txt
+          # simctl can hang on a cold runner; these lists are diagnostics only.
+          perl -e 'alarm 120; exec @ARGV' xcrun simctl list devicetypes | grep -iE "iPhone 16|Apple Watch" | tee review-logs/devicetypes.txt || true
+          perl -e 'alarm 120; exec @ARGV' xcrun simctl list runtimes | tee review-logs/runtimes.txt || true
       - name: LiftCore unit tests (Target rule, rep counter, rest timer, sync)
         working-directory: Packages/LiftKit
         run: |
