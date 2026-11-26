@@ -11,6 +11,8 @@ final class ToastCenter {
         let id = UUID()
         let message: String
         let undo: (() -> Void)?
+        /// Button label for `undo` ("Undo", or "View" for the auto-save toast).
+        var actionLabel: String = "Undo"
         static func == (a: Toast, b: Toast) -> Bool { a.id == b.id }
     }
 
@@ -24,8 +26,8 @@ final class ToastCenter {
     /// - Parameters:
     ///   - undo: restores the previous state inside the 5 s window.
     ///   - onCommit: makes the action final once it can no longer be undone.
-    func show(_ message: String, undo: (() -> Void)? = nil, onCommit: (() -> Void)? = nil) {
-        let toast = Toast(message: message, undo: undo)
+    func show(_ message: String, action: String = "Undo", undo: (() -> Void)? = nil, onCommit: (() -> Void)? = nil) {
+        let toast = Toast(message: message, undo: undo, actionLabel: action)
         if let previous = window.begin(toast.id, at: Date()) { commit(previous) }
         if let onCommit { commits[toast.id] = onCommit }
         current = toast
@@ -76,7 +78,7 @@ struct ToastOverlay: View {
                         .lineLimit(2)
                     Spacer(minLength: 0)
                     if toast.undo != nil {
-                        Button("Undo") { toasts.performUndo() }
+                        Button(toast.actionLabel) { toasts.performUndo() }
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Theme.Colors.accent)
                             .brightness(colorScheme == .dark ? -0.1 : 0.15)

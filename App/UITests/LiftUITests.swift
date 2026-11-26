@@ -29,14 +29,19 @@ final class LiftUITests: XCTestCase {
         XCTAssertEqual(app.alerts.count, 0)
     }
 
-    func testSaveAsRoutineFieldIsInline() {
-        let app = launch("27-finish-save-routine")
-        XCTAssertTrue(app.textFields["Routine name"].waitForExistence(timeout: 10))
-        XCTAssertEqual(app.alerts.count, 0)
+    /// AC 62: launch lands on the Log, never setup.
+    func testLaunchOpensLogWithAddExercise() {
+        let app = launch("01-log-empty")
+        XCTAssertTrue(app.buttons["Add exercise"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Log what you lift. Lift remembers it for next time."].exists)
+        XCTAssertFalse(app.buttons["Finish"].exists)
     }
 
-    func testTodayStartsPush() {
-        let app = launch("01-today")
-        XCTAssertTrue(app.buttons["Start Push"].waitForExistence(timeout: 10))
+    /// AC 64/65: Last and Beat it lines; Finish is the primary once an exercise is in.
+    func testActiveLogShowsLastAndTarget() {
+        let app = launch("01b-log-active")
+        XCTAssertTrue(app.buttons["Finish"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label BEGINSWITH %@", "Last · ")).firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any).containing(NSPredicate(format: "label BEGINSWITH %@", "Beat it")).firstMatch.exists)
     }
 }

@@ -21,12 +21,12 @@ struct SetRowView: View {
                         Spacer(minLength: 0)
                         ring
                     }
-                    lastTime.padding(.leading, Theme.Spacing.s7)
+                    if model.lastTime != nil { lastTime.padding(.leading, Theme.Spacing.s7) }
                 }
             } else {
                 HStack(spacing: Theme.Spacing.s3) {
                     number.frame(width: 24, alignment: .leading)
-                    lastTime.frame(width: 92, alignment: .leading)
+                    if model.lastTime != nil { lastTime.frame(width: 92, alignment: .leading) }
                     value
                     Spacer(minLength: 0)
                     ring

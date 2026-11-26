@@ -21,7 +21,6 @@ struct LiftApp: App {
         container = LiftStore.makeContainer()
         _settings = State(initialValue: AppSettings())
         let context = container.mainContext
-        LiftStore.ensureRoutines(context)
         LiftStore.mergeLibrary(context: context)
         LiftStore.dedupe(context)
     }

@@ -2,174 +2,117 @@ import SwiftUI
 import SwiftData
 import LiftCore
 
-/// Today / History / Routines, the first-run gate, and the workout flow:
-/// full-screen workout → (Close minimises to a bar) → Finish summary → Today.
+/// Two tabs: Log (today's workout, open from launch, no setup ever) and History.
+/// Finish → summary → Done → a fresh blank Log.
 struct RootView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(\.modelContext) private var context
     @Environment(ToastCenter.self) private var toasts
-    @Query(filter: #Predicate<Workout> { $0.endedAt == nil }, sort: \Workout.startedAt, order: .reverse)
-    private var activeWorkouts: [Workout]
+    @Environment(\.scenePhase) private var scenePhase
 
     @State private var tab: Tab
-    @State private var presented: Workout?
+    /// Today's open workout, shown in the Log tab.
+    @State private var log: Workout?
     @State private var finishing: Workout?
-    @State private var didRestore = false
-    /// A discarded workout stays in memory (and the store) until its Undo
-    /// window ends, hidden from Today, then it is deleted.
-    @State private var pendingDiscard: Workout?
-    /// Which source the workout cover zooms from (iOS 18): Today's block or the mini bar.
-    @State private var zoomSource: LiftTransitionID?
-    /// The mini bar appears once the cover has finished dismissing, never before (AC 57).
-    @State private var miniVisible = false
+    /// A past workout being logged from History (its own cover, with Close).
+    @State private var backLog: Workout?
     @Namespace private var liftNS
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var activeWorkout: Workout? { activeWorkouts.first { $0 !== pendingDiscard } }
+    enum Tab: Hashable { case log, history }
 
-    enum Tab: Hashable { case today, history, routines }
-
-    init(initialTab: Tab = .today) { _tab = State(initialValue: initialTab) }
+    /// `workout`: DEBUG fixtures pass their own; otherwise the open log is found or made.
+    init(initialTab: Tab = .log, workout: Workout? = nil) {
+        _tab = State(initialValue: initialTab)
+        _log = State(initialValue: workout)
+    }
 
     var body: some View {
-        Group {
-            if settings.hasOnboarded {
-                tabs
-            } else {
-                SetupFlow { tab = .today }
+        TabView(selection: $tab) {
+            Group {
+                if let w = log {
+                    ActiveWorkoutView(workout: w, onFinished: { finishing = $0 }, onDiscard: discard)
+                        .id(w.id)
+                } else {
+                    Theme.Colors.bgCanvas.ignoresSafeArea()
+                }
             }
+            .tabItem { Label("Log", systemImage: "figure.strengthtraining.traditional") }
+            .tag(Tab.log)
+            HistoryView(onGoToLog: { tab = .log }, onOpenWorkout: { backLog = $0 })
+                .tabItem { Label("History", systemImage: "clock") }
+                .tag(Tab.history)
         }
         .overlay { ToastOverlay() }
         .environment(\.liftNamespace, liftNS)
-    }
-
-    private var tabs: some View {
-        TabView(selection: $tab) {
-            TodayView(onOpenWorkout: { open($0, from: .workout($0.id)) })
-                .safeAreaInset(edge: .bottom) { minimisedBar(tagged: true) }
-                .tabItem { Label("Today", systemImage: "sun.max") }
-                .tag(Tab.today)
-            HistoryView(onGoToToday: { tab = .today }, onOpenWorkout: { open($0, from: nil) })
-                .safeAreaInset(edge: .bottom) { minimisedBar(tagged: false) }
-                .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
-                .tag(Tab.history)
-            RoutinesView()
-                .safeAreaInset(edge: .bottom) { minimisedBar(tagged: false) }
-                .tabItem { Label("Routines", systemImage: "list.bullet") }
-                .tag(Tab.routines)
-        }
-        .fullScreenCover(item: $presented) { workout in
+        .fullScreenCover(item: $backLog) { workout in
             ActiveWorkoutView(workout: workout,
-                              onClose: { presented = nil },
+                              onClose: { backLog = nil },
                               onFinished: { done in
-                                  presented = nil
+                                  backLog = nil
                                   finishing = done
                               },
                               onDiscard: discard)
                 .overlay { ToastOverlay() }
                 .environment(\.liftNamespace, liftNS)
-                .modifier(CoverZoom(source: zoomSource))
         }
         .fullScreenCover(item: $finishing) { workout in
             FinishView(workout: workout,
                        onDone: {
                            finishing = nil
-                           tab = .today
+                           if workout.isBackLog { tab = .history } else { refreshLog() }
                        },
                        onBack: {
                            finishing = nil
-                           open(workout, from: nil)
+                           if workout.isBackLog { backLog = workout }
                        },
                        onDiscard: discard)
             .overlay { ToastOverlay() }
             .environment(\.liftNamespace, liftNS)
         }
-        .onChange(of: presented == nil && finishing == nil) { _, closed in
-            if closed {
-                DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.15 : 0.45) / Theme.Motion.slowFactor) {
-                    guard presented == nil, finishing == nil else { return }
-                    withAnimation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springZoom) { miniVisible = true }
-                }
-            } else {
-                miniVisible = false
-            }
-        }
-        .onAppear {
-            if presented == nil, finishing == nil { miniVisible = true }
-            // Reopen a workout that was in progress when the app was closed.
-            guard !didRestore else { return }
-            didRestore = true
-            if presented == nil, let active = activeWorkout { presented = active }
+        .onAppear { if log == nil { refreshLog() } }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { refreshLog() }
         }
     }
 
-    private func open(_ workout: Workout, from source: LiftTransitionID?) {
-        zoomSource = source
-        presented = workout
+    /// Finds or makes the open log; a workout idle for 3 h is saved (with
+    /// Health) and a new blank one opens, with a 5 s "Saved …" toast (AC 67).
+    private func refreshLog() {
+        guard finishing == nil, backLog == nil else { return }
+        #if DEBUG
+        if Fixtures.requested != nil, log != nil { return }
+        #endif
+        let result = LiftStore.openLog(context)
+        if log?.id != result.open.id { log = result.open }
+        if let saved = result.autoFinished {
+            if settings.healthEnabled == true { HealthSync.save(saved, context: context, toasts: toasts) }
+            let day = saved.startedAt.formatted(.dateTime.weekday(.wide))
+            toasts.show("Saved \(day)'s workout", action: "View", undo: { tab = .history })
+        }
     }
 
-    /// Discard: no alert. Back to Today with a 5 s Undo; deleted when it ends.
+    /// Nothing logged: nothing is saved, no toast (AC 63). Otherwise Discard with
+    /// a 5 s Undo; deleted when the window ends.
     private func discard(_ workout: Workout) {
-        presented = nil
         finishing = nil
-        tab = .today
-        pendingDiscard = workout
-        let name = workout.routineName.isEmpty ? "Workout" : workout.routineName
-        toasts.show("\(name) discarded", undo: {
-            pendingDiscard = nil
-            presented = workout
+        backLog = nil
+        if workout.doneSets.isEmpty {
+            context.delete(workout)
+            _ = LiftStore.save(context)
+            if !workout.isBackLog { log = LiftStore.startBlank(context: context) }
+            return
+        }
+        let replacement: Workout? = workout.isBackLog ? nil : LiftStore.startBlank(context: context)
+        if let replacement { log = replacement; tab = .log }
+        toasts.show("Workout discarded", undo: {
+            if let replacement, replacement.allSets.isEmpty {
+                context.delete(replacement)
+                _ = LiftStore.save(context)
+            }
+            if workout.isBackLog { backLog = workout } else { log = workout }
         }, onCommit: {
-            if pendingDiscard === workout { pendingDiscard = nil }
             context.delete(workout)
             _ = LiftStore.save(context)
         })
-    }
-
-    /// "Push · 18:42 · Resume" while a workout is minimised.
-    /// `tagged`: only Today's copy is the zoom / matched source, so IDs stay unique.
-    @ViewBuilder private func minimisedBar(tagged: Bool) -> some View {
-        if miniVisible, presented == nil, finishing == nil, let w = activeWorkout {
-            Button { open(w, from: .workoutMini(w.id)) } label: {
-                HStack(spacing: Theme.Spacing.s2) {
-                    Text(w.routineName.isEmpty ? "Workout" : w.routineName).font(Theme.Fonts.label)
-                    Text("·").foregroundStyle(Theme.Colors.textTertiary)
-                    Text(timerInterval: w.startedAt...Date.distantFuture, countsDown: false)
-                        .font(Theme.Fonts.bodyNumber)
-                    Spacer()
-                    Text("Resume").font(Theme.Fonts.label).foregroundStyle(Theme.Colors.accent)
-                }
-                .foregroundStyle(Theme.Colors.textPrimary)
-                .padding(.horizontal, Theme.Spacing.s4)
-                .frame(minHeight: Theme.Size.setRow)
-                .background(Theme.Colors.bgRaised, in: .continuous(Theme.Radius.button))
-                .overlay(RoundedRectangle.smooth(Theme.Radius.button).stroke(Theme.Colors.separator, lineWidth: 0.5))
-            }
-            .buttonStyle(.plain)
-            .modifier(MiniBarSource(id: w.id, tagged: tagged))
-            .screenMargins()
-            .padding(.bottom, Theme.Spacing.s2)
-            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
-            .accessibilityLabel("\(w.routineName) in progress. Resume")
-        }
-    }
-}
-
-/// The workout cover zooms from its source on iOS 18; standard cover on 17.
-private struct CoverZoom: ViewModifier {
-    let source: LiftTransitionID?
-    func body(content: Content) -> some View {
-        if let source { content.liftZoomDestination(source) } else { content }
-    }
-}
-
-private struct MiniBarSource: ViewModifier {
-    let id: UUID
-    let tagged: Bool
-    func body(content: Content) -> some View {
-        if tagged {
-            content.liftZoomSource(.workoutMini(id)).liftMatched(.workoutMini(id))
-        } else {
-            content
-        }
     }
 }

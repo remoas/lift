@@ -1,0 +1,424 @@
+motion_id,tier,family,base,position,grip_path,path_equipment,prop_swaps,renders,exercises,camera,loop_s,cues,member_ids
+M001,B,arms,Curl,-,-,band,band,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,band-bicep-curl
+M002,A,arms,Curl,-,-,bodyweight,bodyweight,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,lower-back-curl
+M003,A,arms,Curl,-,-,cable,cable,1,6,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,cable-curl cable-preacher-curl cable-wrist-curl high-cable-curls overhead-cable-curl reverse-cable-curl
+M004,A,arms,Curl,-,-,free weight,EZ bar; barbell; dumbbell; plate,4,23,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,barbell-curl concentration-curl concentration-curls dumbbell-bicep-curl dumbbell-preacher-curl dumbbell-reverse-wrist-curl dumbbell-wrist-curl ez-bar-curl finger-curls palms-down-dumbbell-wrist-curl-over-a-bench palms-down-wrist-curl-over-a-bench preacher-curl reverse-barbell-curl reverse-barbell-preacher-curls reverse-curl reverse-plate-curls reverse-wrist-curl reverse-grip-barbell-curl spider-curl two-arm-dumbbell-preacher-curl wrist-curl zottman-curl zottman-preacher-curl
+M005,A,arms,Curl,-,-,machine,machine,1,3,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,machine-bicep-curl machine-preacher-curl machine-preacher-curls
+M006,B,arms,Curl,-,-,other,other,1,2,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,backpack-biceps-curl suspension-biceps-curl
+M007,A,arms,Curl,-,close,free weight,EZ bar,1,2,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,close-grip-ez-bar-curl close-grip-ez-bar-curl-with-band
+M008,A,arms,Curl,-,"neutral, rope",cable,cable,1,2,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,cable-hammer-curls-rope-attachment rope-hammer-curl
+M009,A,arms,Curl,-,"neutral, single-arm",free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,alternate-hammer-curl
+M010,A,arms,Curl,-,neutral,free weight,dumbbell,1,5,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,cross-body-hammer-curl hammer-curls-2 hammer-curls dumbbell-hammer-preacher-curl preacher-hammer-dumbbell-curl
+M011,A,arms,Curl,-,single-arm,cable,cable,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,single-arm-cable-curl
+M012,A,arms,Curl,-,single-arm,free weight,dumbbell,1,3,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,alternating-dumbbell-curl dumbbell-alternate-bicep-curl one-arm-dumbbell-preacher-curl
+M013,A,arms,Curl,-,underhand,free weight,barbell; dumbbell,2,2,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,palms-up-barbell-wrist-curl-over-a-bench palms-up-dumbbell-wrist-curl-over-a-bench
+M014,A,arms,Curl,"incline, lying",-,free weight,barbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,barbell-curls-lying-against-an-incline
+M015,A,arms,Curl,"incline, prone",-,free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,dumbbell-prone-incline-curl
+M016,A,arms,Curl,incline,-,free weight,dumbbell,1,3,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,flexor-incline-dumbbell-curls incline-dumbbell-curl incline-inner-biceps-curl
+M017,A,arms,Curl,incline,neutral,free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,incline-hammer-curls
+M018,A,arms,Curl,incline,single-arm,free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,alternate-incline-dumbbell-curl
+M019,A,arms,Curl,"lying, supine",-,free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,lying-supine-dumbbell-curl
+M020,A,arms,Curl,lying,-,cable,cable,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,lying-cable-curl
+M021,A,arms,Curl,lying,-,free weight,barbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,lying-high-bench-barbell-curl
+M022,A,arms,Curl,seated,-,free weight,barbell; dumbbell,2,6,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,seated-dumbbell-curl seated-dumbbell-inner-biceps-curl seated-dumbbell-palms-down-wrist-curl seated-palm-up-barbell-wrist-curl seated-palms-down-barbell-wrist-curl seated-barbell-wrist-curl
+M023,A,arms,Curl,seated,close,free weight,barbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,seated-close-grip-concentration-barbell-curl
+M024,A,arms,Curl,seated,single-arm,free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,seated-one-arm-dumbbell-palms-down-wrist-curl
+M025,A,arms,Curl,seated,"underhand, single-arm",free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,seated-one-arm-dumbbell-palms-up-wrist-curl
+M026,A,arms,Curl,seated,underhand,cable,cable,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,seated-two-arm-palms-up-low-pulley-wrist-curl
+M027,A,arms,Curl,seated,underhand,free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,seated-dumbbell-palms-up-wrist-curl
+M028,A,arms,Curl,"standing, incline",single-arm,free weight,dumbbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,standing-one-arm-dumbbell-curl-over-incline-bench
+M029,A,arms,Curl,standing,-,cable,cable,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,standing-biceps-cable-curl
+M030,A,arms,Curl,standing,-,free weight,dumbbell,1,3,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,standing-concentration-curl standing-dumbbell-reverse-curl standing-inner-biceps-curl
+M031,A,arms,Curl,standing,close,free weight,barbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,close-grip-standing-barbell-curl
+M032,A,arms,Curl,standing,single-arm,cable,cable,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,standing-one-arm-cable-curl
+M033,A,arms,Curl,standing,underhand,free weight,barbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,standing-palms-up-barbell-behind-the-back-wrist-curl
+M034,A,arms,Curl,standing,wide,free weight,barbell,1,1,side,2.8,Elbows pinned at the sides; Curl without swinging; Full extension at the bottom,wide-grip-standing-barbell-curl
+M035,B,arms,Lying triceps extension,-,-,band,band,1,1,side,2.8,,band-skull-crusher
+M036,A,arms,Lying triceps extension,-,-,free weight,EZ bar; dumbbell,2,4,side,2.8,,dumbbell-skull-crusher ez-bar-skullcrusher skull-crushers tate-press
+M037,A,arms,Lying triceps extension,decline,close,free weight,barbell,1,1,side,2.8,,decline-close-grip-bench-to-skull-crusher
+M038,A,arms,Lying triceps extension,lying,-,cable,cable,1,1,side,2.8,,cable-lying-triceps-extension
+M039,A,arms,Lying triceps extension,lying,-,free weight,EZ bar,1,1,side,2.8,,lying-triceps-press
+M040,B,arms,Triceps extension,-,-,band,band,1,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,band-tricep-pushdown speed-band-overhead-triceps
+M041,A,arms,Triceps extension,-,-,bodyweight,bodyweight,1,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,body-tricep-press overhead-triceps
+M042,A,arms,Triceps extension,-,-,cable,cable,1,5,side,2.8,Upper arm still; Extend to lockout; Control the stretch,cable-overhead-triceps-extension cable-triceps-kickback low-cable-triceps-extension tricep-pushdowns triceps-pushdown
+M043,A,arms,Triceps extension,-,-,free weight,dumbbell; kettlebell,2,6,side,2.8,Upper arm still; Extend to lockout; Control the stretch,dumbbell-tricep-extension-pronated-grip kettlebell-halo-with-overhead-extension kettlebell-overhead-triceps-extension overhead-triceps-extension tricep-dumbbell-kickback dumbbell-kickback
+M044,A,arms,Triceps extension,-,-,machine,machine,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,machine-triceps-extension
+M045,B,arms,Triceps extension,-,-,other,other,1,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,suspension-triceps-extension thoracic-extensions
+M046,A,arms,Triceps extension,-,neutral,cable,cable,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,triceps-pushdown-v-bar-attachment
+M047,A,arms,Triceps extension,-,rope,cable,cable,1,3,side,2.8,Upper arm still; Extend to lockout; Control the stretch,cable-rope-overhead-triceps-extension triceps-overhead-extension-with-rope triceps-pushdown-rope-attachment
+M048,A,arms,Triceps extension,-,single-arm,cable,cable,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,cable-one-arm-tricep-extension
+M049,A,arms,Triceps extension,-,single-arm,free weight,dumbbell,1,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,dumbbell-one-arm-triceps-extension one-arm-pronated-dumbbell-triceps-extension
+M050,A,arms,Triceps extension,-,single-leg,cable,cable,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,one-legged-cable-kickback
+M051,A,arms,Triceps extension,-,"underhand, single-arm",free weight,dumbbell,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,one-arm-supinated-dumbbell-triceps-extension
+M052,A,arms,Triceps extension,-,underhand,cable,cable,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,reverse-grip-triceps-pushdown
+M053,A,arms,Triceps extension,decline,-,free weight,EZ bar; dumbbell,2,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,decline-dumbbell-triceps-extension decline-ez-bar-triceps-extension
+M054,A,arms,Triceps extension,incline,-,cable,cable,1,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,cable-incline-pushdown cable-incline-triceps-extension
+M055,A,arms,Triceps extension,kneeling,-,cable,cable,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,kneeling-cable-triceps-extension
+M056,A,arms,Triceps extension,lying,-,free weight,dumbbell,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,lying-dumbbell-tricep-extension
+M057,A,arms,Triceps extension,lying,"close, behind-neck",free weight,barbell,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,lying-close-grip-barbell-triceps-extension-behind-the-head
+M058,A,arms,Triceps extension,lying,"close, underhand",free weight,EZ bar,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,lying-close-grip-barbell-triceps-press-to-chin
+M059,A,arms,Triceps extension,seated,-,free weight,dumbbell,1,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,seated-bent-over-two-arm-dumbbell-triceps-extension seated-triceps-press
+M060,A,arms,Triceps extension,seated,single-arm,free weight,dumbbell,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,seated-bent-over-one-arm-dumbbell-triceps-extension
+M061,A,arms,Triceps extension,standing,-,free weight,barbell; dumbbell,2,3,side,2.8,Upper arm still; Extend to lockout; Control the stretch,standing-bent-over-two-arm-dumbbell-triceps-extension standing-dumbbell-triceps-extension standing-overhead-barbell-triceps-extension
+M062,A,arms,Triceps extension,standing,single-arm,cable,cable,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,standing-low-pulley-one-arm-triceps-extension
+M063,A,arms,Triceps extension,standing,single-arm,free weight,dumbbell,1,2,side,2.8,Upper arm still; Extend to lockout; Control the stretch,standing-bent-over-one-arm-dumbbell-triceps-extension standing-one-arm-dumbbell-triceps-extension
+M064,A,arms,Triceps extension,standing,towel,bodyweight,bodyweight,1,1,side,2.8,Upper arm still; Extend to lockout; Control the stretch,standing-towel-triceps-extension
+M065,A,arms,Wrist / grip,-,-,free weight,barbell; plate,2,3,side,2.4,,plate-pinch wrist-roller wrist-rotations-with-straight-bar
+M066,B,arms,Wrist / grip,-,-,other,other,1,2,side,2.4,,ab-roller side-wrist-pull
+M067,A,arms,Wrist / grip,-,close,free weight,EZ bar,1,1,side,2.4,,close-grip-ez-bar-press
+M068,A,arms,Wrist / grip,lying,-,free weight,dumbbell,1,2,side,2.4,,dumbbell-lying-pronation dumbbell-lying-supination
+M069,B,calf,Calf raise,-,-,band,band,1,2,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,band-ankle-dorsiflexion calf-raises-with-bands
+M070,A,calf,Calf raise,-,-,free weight,dumbbell; smith,2,4,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,calf-raise-on-a-dumbbell dumbbell-calf-raise smith-machine-calf-raise smith-machine-reverse-calf-raises
+M071,A,calf,Calf raise,-,-,machine,machine,1,4,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,calf-press calf-raises calf-machine-shoulder-shrug tibialis-raise-machine
+M072,B,calf,Calf raise,-,-,other,other,1,2,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,donkey-calf-raises wall-tibialis-raise
+M073,B,calf,Calf raise,-,single-leg,other,other,1,1,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,single-leg-calf-raise
+M074,A,calf,Calf raise,seated,-,free weight,barbell,1,1,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,barbell-seated-calf-raise
+M075,A,calf,Calf raise,seated,-,machine,machine,1,2,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,seated-calf-raise seated-calf-raise-machine
+M076,A,calf,Calf raise,seated,single-leg,free weight,dumbbell,1,1,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,dumbbell-seated-one-leg-calf-raise
+M077,A,calf,Calf raise,standing,-,free weight,barbell; dumbbell,2,3,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,rocking-standing-calf-raise standing-barbell-calf-raise standing-dumbbell-calf-raise
+M078,A,calf,Calf raise,standing,-,machine,machine,1,2,side,2.4,Full stretch at the bottom; Rise onto the big toe; Pause at the top,standing-calf-raise-machine standing-calf-raises
+M079,C,conditioning,Cardio / conditioning,-,-,bodyweight,bodyweight,1,14,side,2,,air-bike bicycle-crunch cross-body-crunch crunches-2 crunch-hands-overhead crunch-legs-on-exercise-ball crunches fast-skipping oblique-crunch oblique-crunches reverse-crunch suspended-reverse-crunch tuck-crunch wind-sprints
+M080,C,conditioning,Cardio / conditioning,-,-,cable,cable,1,3,side,2,,bosu-ball-cable-crunch-with-side-bends cable-crunch cable-reverse-crunch
+M081,C,conditioning,Cardio / conditioning,-,-,free weight,med ball; plate,2,3,side,2,,chest-push-with-run-release weighted-crunches weighted-crunch
+M082,C,conditioning,Cardio / conditioning,-,-,machine,machine,1,11,side,2,,ab-crunch-machine bicycling-stationary elliptical-trainer jogging-treadmill lunge-sprint recumbent-bike rowing-stationary running-treadmill stairmaster step-mill walking-treadmill
+M083,C,conditioning,Cardio / conditioning,-,-,other,other,1,10,side,2,,bench-sprint bicycling box-skip exercise-ball-crunch power-stairs side-hop-sprint single-cone-sprint-drill stability-ball-crunch stair-climber trail-running-walking
+M084,C,conditioning,Cardio / conditioning,-,-,sled,sled,1,1,side,2,,prowler-sprint
+M085,C,conditioning,Cardio / conditioning,-,rope,cable,cable,1,1,side,2,,rope-crunch
+M086,C,conditioning,Cardio / conditioning,-,rope,other,other,1,4,side,2,,battle-rope-double-waves battling-ropes jump-rope rope-jumping
+M087,C,conditioning,Cardio / conditioning,-,underhand,bodyweight,bodyweight,1,1,side,2,,gorilla-chin-crunch
+M088,C,conditioning,Cardio / conditioning,decline,-,bodyweight,bodyweight,1,3,side,2,,decline-crunch decline-oblique-crunch decline-reverse-crunch
+M089,C,conditioning,Cardio / conditioning,floor,-,bodyweight,bodyweight,1,1,side,2,,oblique-crunches-on-the-floor
+M090,C,conditioning,Cardio / conditioning,incline,-,other,other,1,1,side,2,,treadmill-incline-walk
+M091,C,conditioning,Cardio / conditioning,kneeling,single-arm,cable,cable,1,1,side,2,,kneeling-cable-crunch-with-alternating-oblique-twists
+M092,C,conditioning,Cardio / conditioning,seated,-,cable,cable,1,1,side,2,,cable-seated-crunch
+M093,C,conditioning,Cardio / conditioning,standing,rope,cable,cable,1,1,side,2,,standing-rope-crunch
+M094,B,core,Core,-,-,band,band,1,3,side,2.8,,band-pallof-press cross-over-with-bands weighted-sit-ups-with-bands
+M095,B,core,Core,-,-,bodyweight,bodyweight,1,39,side,2.8,,3-4-sit-up bear-plank bird-dog bottoms-up butt-ups captains-chair-knee-raise cocoons copenhagen-plank dead-bug elbow-to-knee flat-bench-leg-pull-in flutter-kicks isometric-wipers jackknife-sit-up janda-sit-up knee-plank knee-side-plank leg-lift leg-pull-in leg-raises mountain-climbers-2 mountain-climbers plank plank-jack plank-shoulder-tap plank-up-down rear-leg-raises reverse-plank russian-twist scissor-kick side-jackknife side-leg-raises side-plank side-plank-hip-dip side-plank-leg-raise sit-up stomach-vacuum toe-touchers toes-to-bar
+M096,B,core,Core,-,-,cable,cable,1,4,side,2.8,,cable-russian-twists horizontal-cable-twist pallof-press split-stance-cable-lift
+M097,B,core,Core,-,-,free weight,barbell; dumbbell; kettlebell; med ball; plate,5,14,side,2.8,,around-the-worlds barbell-ab-rollout barbell-ab-rollout-on-knees barbell-rollout-from-bench barbell-side-bend dumbbell-side-bend kettlebell-halo kettlebell-pirate-ships landmine-180s medicine-ball-full-twist medicine-ball-russian-twist plate-twist press-sit-up turkish-get-up
+M098,B,core,Core,-,-,other,other,1,13,side,2.8,,ab-wheel-rollout exercise-ball-pull-in flutter-kicks-2 heel-taps hollow-body-hold hollow-body-rock knee-across-the-body stability-ball-knee-tuck stability-ball-rollout suspended-fallout toe-touches weighted-ball-side-bend windshield-wipers
+M099,B,core,Core,-,L-sit,other,other,1,1,side,2.8,,l-sit
+M100,B,core,Core,-,single-arm,bodyweight,bodyweight,1,1,side,2.8,,alternate-heel-touchers
+M101,B,core,Core,-,single-arm,cable,cable,1,1,side,2.8,,one-arm-high-pulley-cable-side-bends
+M102,B,core,Core,decline,-,bodyweight,bodyweight,1,1,side,2.8,,decline-sit-up
+M103,B,core,Core,hanging,-,bodyweight,bodyweight,1,2,side,2.8,,hanging-knee-raise hanging-leg-raise
+M104,B,core,Core,incline,-,free weight,barbell,1,1,side,2.8,,straight-raises-on-incline-bench
+M105,B,core,Core,kneeling,-,cable,cable,1,1,side,2.8,,tall-kneeling-cable-lift
+M106,B,core,Core,lying,-,bodyweight,bodyweight,1,1,side,2.8,,flat-bench-lying-leg-raise
+M107,B,core,Core,seated,-,bodyweight,bodyweight,1,2,side,2.8,,seated-flat-bench-leg-pull-in seated-leg-tucks
+M108,B,core,Core,seated,-,free weight,barbell,1,1,side,2.8,,seated-barbell-twist
+M109,B,core,Core,seated,-,other,other,1,1,side,2.8,,seated-knee-tuck
+M110,B,core,Core,standing,-,cable,cable,1,1,side,2.8,,standing-cable-lift
+M111,B,core,Core,standing,-,machine,machine,1,1,side,2.8,,standing-twister
+M112,B,core,Core,standing,-,other,other,1,1,side,2.8,,standing-toe-touches
+M113,A,hinge,Back extension,-,-,bodyweight,bodyweight,1,4,side,3.0,"Hinge at the hips; Rise to a straight line, no over-arch; Lower under control",back-extensions hyperextensions-with-no-hyperextension-bench natural-glute-ham-raise superman
+M114,A,hinge,Back extension,-,-,machine,machine,1,2,side,3.0,"Hinge at the hips; Rise to a straight line, no over-arch; Lower under control",glute-ham-raise reverse-hyperextension
+M115,B,hinge,Back extension,-,-,other,other,1,3,side,3.0,"Hinge at the hips; Rise to a straight line, no over-arch; Lower under control",hyperextensions-back-extensions reverse-hyperextension-2 weighted-ball-hyperextension
+M116,B,hinge,Back extension,floor,-,other,other,1,1,side,3.0,"Hinge at the hips; Rise to a straight line, no over-arch; Lower under control",floor-glute-ham-raise
+M117,B,hinge,Deadlift,-,-,band,band,1,1,side,3.6,"Bar over mid-foot, flat back; Push the floor away, hips and shoulders rise together; Stand tall, no lean back",band-deadlift
+M118,A,hinge,Deadlift,-,-,cable,cable,1,1,side,3.6,"Bar over mid-foot, flat back; Push the floor away, hips and shoulders rise together; Stand tall, no lean back",cable-deadlifts
+M119,A,hinge,Deadlift,-,-,free weight,barbell; dumbbell; kettlebell; trap bar,4,17,side,3.6,"Bar over mid-foot, flat back; Push the floor away, hips and shoulders rise together; Stand tall, no lean back",barbell-deadlift deadlift deadlift-with-bands deadlift-with-chains deficit-deadlift dumbbell-deadlift kettlebell-deadlift kettlebell-sumo-deadlift rack-pull rack-pull-with-bands rack-pulls reverse-band-deadlift reverse-band-sumo-deadlift sumo-deadlift sumo-deadlift-with-bands sumo-deadlift-with-chains trap-bar-deadlift
+M120,A,hinge,Deadlift,-,-,machine,machine,1,1,side,3.6,"Bar over mid-foot, flat back; Push the floor away, hips and shoulders rise together; Stand tall, no lean back",leverage-deadlift
+M121,A,hinge,Deadlift,-,single-arm,free weight,barbell,1,1,side,3.6,"Bar over mid-foot, flat back; Push the floor away, hips and shoulders rise together; Stand tall, no lean back",one-arm-side-deadlift
+M122,A,hinge,Deadlift,-,single-leg,free weight,kettlebell,1,1,side,3.6,"Bar over mid-foot, flat back; Push the floor away, hips and shoulders rise together; Stand tall, no lean back",kettlebell-one-legged-deadlift
+M123,B,hinge,Hip thrust / glute bridge,-,-,band,band,1,1,side,3.0,"Chin tucked, ribs down; Drive through heels to full hip extension; Shins vertical at the top",banded-glute-bridge
+M124,A,hinge,Hip thrust / glute bridge,-,-,bodyweight,bodyweight,1,6,side,3.0,"Chin tucked, ribs down; Drive through heels to full hip extension; Shins vertical at the top",bent-knee-hip-raise bodyweight-hip-thrust butt-lift-bridge glute-bridge glute-bridge-march side-bridge
+M125,A,hinge,Hip thrust / glute bridge,-,-,free weight,barbell; dumbbell; smith,3,5,side,3.0,"Chin tucked, ribs down; Drive through heels to full hip extension; Shins vertical at the top",barbell-glute-bridge barbell-hip-thrust dumbbell-hip-thrust smith-machine-hip-raise smith-machine-hip-thrust
+M126,A,hinge,Hip thrust / glute bridge,-,-,machine,machine,1,1,side,3.0,"Chin tucked, ribs down; Drive through heels to full hip extension; Shins vertical at the top",hip-thrust-machine
+M127,B,hinge,Hip thrust / glute bridge,-,-,other,other,1,3,side,3.0,"Chin tucked, ribs down; Drive through heels to full hip extension; Shins vertical at the top",london-bridges pelvic-tilt-into-bridge physioball-hip-bridge
+M128,B,hinge,Hip thrust / glute bridge,-,neutral,other,other,1,1,side,3.0,"Chin tucked, ribs down; Drive through heels to full hip extension; Shins vertical at the top",knee-hip-raise-on-parallel-bars
+M129,A,hinge,Hip thrust / glute bridge,-,single-leg,bodyweight,bodyweight,1,1,side,3.0,"Chin tucked, ribs down; Drive through heels to full hip extension; Shins vertical at the top",single-leg-glute-bridge
+M130,B,hinge,Kettlebell swing,-,-,band,band,1,1,side,2.0,"Hike the bell back, hips snap forward; Arms float, no shoulder lift; Plank at the top",hip-lift-with-band
+M131,A,hinge,Kettlebell swing,-,-,cable,cable,1,1,side,2.0,"Hike the bell back, hips snap forward; Arms float, no shoulder lift; Plank at the top",cable-pull-through
+M132,A,hinge,Kettlebell swing,-,-,free weight,dumbbell; kettlebell,2,4,side,2.0,"Hike the bell back, hips snap forward; Arms float, no shoulder lift; Plank at the top",kettlebell-figure-8 kettlebell-pass-between-the-legs kettlebell-swing vertical-swing
+M133,B,hinge,Kettlebell swing,-,-,other,other,1,1,side,2.0,"Hike the bell back, hips snap forward; Arms float, no shoulder lift; Plank at the top",leg-swings
+M134,A,hinge,Kettlebell swing,-,single-arm,free weight,kettlebell,1,1,side,2.0,"Hike the bell back, hips snap forward; Arms float, no shoulder lift; Plank at the top",one-arm-kettlebell-swings
+M135,B,hinge,Romanian deadlift / good morning,-,-,band,band,1,2,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",band-good-morning band-good-morning-pull-through
+M136,A,hinge,Romanian deadlift / good morning,-,-,bodyweight,bodyweight,1,1,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",bodyweight-good-mornings
+M137,A,hinge,Romanian deadlift / good morning,-,-,cable,cable,1,1,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",pull-through
+M138,A,hinge,Romanian deadlift / good morning,-,-,free weight,barbell; dumbbell; kettlebell; smith,4,12,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",dumbbell-romanian-deadlift good-morning good-morning-off-pins kettlebell-romanian-deadlift landmine-romanian-deadlift romanian-deadlift romanian-deadlift-from-deficit smith-machine-romanian-deadlift smith-machine-stiff-legged-deadlift stiff-leg-barbell-good-morning stiff-legged-barbell-deadlift stiff-legged-dumbbell-deadlift
+M139,A,hinge,Romanian deadlift / good morning,-,single-leg,free weight,dumbbell,1,1,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",single-leg-romanian-deadlift
+M140,A,hinge,Romanian deadlift / good morning,-,wide,free weight,barbell,1,1,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",wide-stance-stiff-legs
+M141,A,hinge,Romanian deadlift / good morning,hanging,-,free weight,barbell,1,1,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",hanging-bar-good-morning
+M142,A,hinge,Romanian deadlift / good morning,seated,-,free weight,barbell,1,1,side,3.6,"Soft knees, hips push back; Bar or weights slide along the legs; Flat back, stop at hamstring stretch",seated-good-mornings
+M143,B,hip,Glute kickback,-,-,band,band,1,2,side,3.0,,band-glute-kickback hip-extension-with-bands
+M144,A,hip,Glute kickback,-,-,bodyweight,bodyweight,1,1,side,3.0,,glute-kickback
+M145,A,hip,Glute kickback,-,-,cable,cable,1,1,side,3.0,,cable-kickback
+M146,A,hip,Glute kickback,-,-,machine,machine,1,1,side,3.0,,machine-glute-kickback
+M147,B,hip,Glute kickback,-,-,other,other,1,1,side,3.0,,donkey-kicks
+M148,B,hip,Hip ab/adduction,-,-,band,band,1,1,front,3.0,,band-hip-adductions
+M149,A,hip,Hip ab/adduction,-,-,bodyweight,bodyweight,1,2,front,3.0,,clamshells fire-hydrants
+M150,A,hip,Hip ab/adduction,-,-,cable,cable,1,2,front,3.0,,cable-hip-abduction cable-hip-adduction
+M151,A,hip,Hip ab/adduction,-,-,machine,machine,1,5,front,3.0,,hip-abduction-machine hip-adduction-machine hip-adduction-machine-2 thigh-abductor thigh-adductor
+M152,B,hip,Hip ab/adduction,-,-,other,other,1,1,front,3.0,,adductor
+M153,B,hip,Hip ab/adduction,lying,-,other,other,1,1,front,3.0,,side-lying-leg-raise
+M154,A,hip,Hip ab/adduction,standing,-,cable,cable,1,1,front,3.0,,standing-cable-hip-abduction
+M155,B,hip,Hip ab/adduction,standing,-,other,other,1,1,front,3.0,,standing-hip-abduction
+M156,B,horizontal-pull,Row,-,-,band,band,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",band-row
+M157,A,horizontal-pull,Row,-,-,bodyweight,bodyweight,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",bodyweight-mid-row
+M158,A,horizontal-pull,Row,-,-,cable,cable,1,3,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",elevated-cable-rows shotgun-row upright-cable-row
+M159,A,horizontal-pull,Row,-,-,free weight,barbell; dumbbell; kettlebell; med ball,4,19,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",backward-medicine-ball-throw bent-over-row catch-and-overhead-throw chest-supported-dumbbell-row dumbbell-row feet-elevated-inverted-row inverted-row kettlebell-row meadows-row medicine-ball-rotational-throw medicine-ball-scoop-throw pendlay-row renegade-row seal-row straight-bar-bench-mid-rows t-bar-row t-bar-row-with-handle two-arm-kettlebell-row upright-barbell-row
+M160,A,horizontal-pull,Row,-,-,machine,machine,1,5,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",chest-supported-t-bar-row leverage-high-row leverage-iso-row machine-high-row rowing-machine
+M161,B,horizontal-pull,Row,-,-,other,other,1,6,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",backpack-row doorway-row inverted-row-with-straps suspended-row suspension-row table-inverted-row
+M162,A,horizontal-pull,Row,-,rope,cable,cable,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",cable-rope-rear-delt-rows
+M163,A,horizontal-pull,Row,-,single-arm,cable,cable,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",single-arm-cable-row
+M164,A,horizontal-pull,Row,-,single-arm,free weight,barbell; dumbbell; kettlebell,3,5,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",alternating-kettlebell-row alternating-renegade-row one-arm-dumbbell-row one-arm-kettlebell-row one-arm-long-bar-row
+M165,B,horizontal-pull,Row,-,towel,other,other,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",towel-row
+M166,A,horizontal-pull,Row,-,underhand,free weight,barbell,1,2,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",reverse-grip-barbell-row reverse-grip-bent-over-rows
+M167,A,horizontal-pull,Row,bent over,-,free weight,barbell; dumbbell; smith,3,4,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",bent-over-barbell-row bent-over-two-arm-long-bar-row bent-over-two-dumbbell-row smith-machine-bent-over-row
+M168,A,horizontal-pull,Row,bent over,neutral,free weight,dumbbell,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",bent-over-two-dumbbell-row-with-palms-in
+M169,A,horizontal-pull,Row,bent over,single-arm,free weight,barbell,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",bent-over-one-arm-long-bar-row
+M170,A,horizontal-pull,Row,incline,-,free weight,dumbbell,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",dumbbell-incline-row
+M171,B,horizontal-pull,Row,"lying, supine",-,free weight,med ball,1,2,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",supine-chest-throw supine-two-arm-overhead-throw
+M172,B,horizontal-pull,Row,"lying, supine",single-arm,free weight,med ball,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",supine-one-arm-overhead-throw
+M173,A,horizontal-pull,Row,lying,-,free weight,barbell,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",lying-cambered-barbell-row
+M174,A,horizontal-pull,Row,lying,-,machine,machine,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",lying-t-bar-row
+M175,A,horizontal-pull,Row,seated,-,cable,cable,1,2,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",seated-cable-row seated-cable-rows
+M176,A,horizontal-pull,Row,seated,-,machine,machine,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",machine-row
+M177,A,horizontal-pull,Row,seated,single-arm,cable,cable,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",seated-one-arm-cable-pulley-rows
+M178,B,horizontal-pull,Row,standing,-,free weight,med ball,1,1,side,3.0,"Flat back, neck neutral; Pull elbows back past the torso; Squeeze shoulder blades, lower to a full stretch",standing-two-arm-overhead-throw
+M179,B,horizontal-push,Bench press,-,-,band,band,1,2,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",band-chest-press bench-press-with-bands
+M180,A,horizontal-push,Bench press,-,-,cable,cable,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",cable-chest-press
+M181,A,horizontal-push,Bench press,-,-,free weight,barbell; dumbbell; smith,3,15,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",arnold-dumbbell-press bench-press barbell-bench-press-medium-grip barbell-guillotine-bench-press bench-press-powerlifting bench-press-with-chains board-press dumbbell-bench-press dumbbell-squeeze-press jm-press pin-presses reverse-band-bench-press reverse-triceps-bench-press smith-machine-bench-press exercise-ball-dumbbell-bench-press
+M182,A,horizontal-push,Bench press,-,-,machine,machine,1,3,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",leverage-chest-press machine-bench-press chest-press-machine
+M183,B,horizontal-push,Bench press,-,-,other,other,1,2,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",chain-press suspension-chest-press
+M184,A,horizontal-push,Bench press,-,close,free weight,barbell; dumbbell; smith,3,4,side,3.2,,close-grip-barbell-bench-press close-grip-bench-press close-grip-dumbbell-press smith-machine-close-grip-bench-press
+M185,A,horizontal-push,Bench press,-,neutral,free weight,dumbbell,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",dumbbell-bench-press-with-neutral-grip
+M186,A,horizontal-push,Bench press,-,single-arm,free weight,dumbbell,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",one-arm-dumbbell-bench-press
+M187,A,horizontal-push,Bench press,-,wide,free weight,barbell,1,2,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",wide-grip-bench-press wide-grip-barbell-bench-press
+M188,A,horizontal-push,Bench press,decline,-,free weight,barbell; dumbbell; smith,3,6,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",decline-barbell-bench-press decline-bench-press decline-dumbbell-bench-press decline-smith-press dumbbell-decline-press smith-machine-decline-press
+M189,A,horizontal-push,Bench press,decline,-,machine,machine,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",leverage-decline-chest-press
+M190,A,horizontal-push,Bench press,decline,wide,free weight,barbell,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",wide-grip-decline-barbell-bench-press
+M191,A,horizontal-push,Bench press,floor,-,free weight,barbell; dumbbell; kettlebell,3,5,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",barbell-floor-press dumbbell-floor-press floor-press floor-press-with-chains leg-over-floor-press
+M192,A,horizontal-push,Bench press,floor,single-arm,free weight,barbell; kettlebell,2,4,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",alternating-floor-press extended-range-one-arm-kettlebell-floor-press one-arm-floor-press one-arm-kettlebell-floor-press
+M193,A,horizontal-push,Bench press,incline,-,cable,cable,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",incline-cable-chest-press
+M194,A,horizontal-push,Bench press,incline,-,free weight,barbell; dumbbell; smith,3,7,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",barbell-incline-bench-press-medium-grip incline-barbell-triceps-extension incline-bench-press incline-dumbbell-bench-with-palms-facing-in incline-dumbbell-press smith-machine-incline-bench-press smith-machine-incline-press
+M195,A,horizontal-push,Bench press,incline,-,machine,machine,1,2,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",leverage-incline-chest-press plate-loaded-incline-chest-press
+M196,A,horizontal-push,Bench press,incline,neutral,free weight,dumbbell,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",hammer-grip-incline-db-bench-press
+M197,A,horizontal-push,Bench press,standing,-,cable,cable,1,1,side,3.2,"Shoulder blades back and down, feet planted; Lower to mid-chest, forearms vertical; Press up and slightly back to lockout",standing-cable-chest-press
+M198,B,horizontal-push,Chest fly,-,-,band,band,1,1,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",back-flyes-with-bands
+M199,A,horizontal-push,Chest fly,-,-,cable,cable,1,6,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",cable-crossover cable-fly-high-to-low cable-fly-low-to-high cable-rear-delt-fly flat-bench-cable-flyes low-cable-crossover
+M200,A,horizontal-push,Chest fly,-,-,free weight,EZ bar; dumbbell; plate,3,5,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",bodyweight-flyes dumbbell-flyes rear-delt-fly reverse-flyes svend-press
+M201,A,horizontal-push,Chest fly,-,-,machine,machine,1,4,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",butterfly pec-deck reverse-machine-flyes reverse-pec-deck
+M202,A,horizontal-push,Chest fly,-,single-arm,cable,cable,1,1,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",single-arm-cable-crossover
+M203,A,horizontal-push,Chest fly,-,single-arm,free weight,dumbbell,1,1,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",one-arm-flat-bench-dumbbell-flye
+M204,A,horizontal-push,Chest fly,decline,-,free weight,dumbbell,1,1,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",decline-dumbbell-flyes
+M205,A,horizontal-push,Chest fly,incline,-,cable,cable,1,1,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",incline-cable-flye
+M206,A,horizontal-push,Chest fly,incline,-,free weight,dumbbell,1,3,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",incline-dumbbell-fly incline-dumbbell-flyes incline-dumbbell-flyes-with-a-twist
+M207,A,horizontal-push,Chest fly,lying,-,bodyweight,bodyweight,1,1,3/4 front,3.2,"Slight bend in the elbows, fixed; Open wide to a chest stretch; Hug back together over the chest",lying-crossover
+M208,A,horizontal-push,Push-up,-,-,bodyweight,bodyweight,1,14,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",clock-push-up deficit-push-up handstand-push-up handstand-push-ups hindu-push-up knee-push-up pike-push-up push-up-to-side-plank push-ups-with-feet-elevated pushups scap-push-ups sphinx-push-up suspended-push-up wall-push-up
+M209,B,horizontal-push,Push-up,-,-,other,other,1,3,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",drop-push otis-up push-ups-with-feet-on-an-exercise-ball
+M210,A,horizontal-push,Push-up,-,close,bodyweight,bodyweight,1,2,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",diamond-push-up push-ups-close-triceps-position
+M211,A,horizontal-push,Push-up,-,close,free weight,dumbbell,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",close-grip-push-up-off-of-a-dumbbell
+M212,A,horizontal-push,Push-up,-,side-to-side,bodyweight,bodyweight,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",archer-push-up
+M213,A,horizontal-push,Push-up,-,single-arm,bodyweight,bodyweight,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",single-arm-push-up
+M214,A,horizontal-push,Push-up,-,"wide, close",bodyweight,bodyweight,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",pushups-close-and-wide-hand-positions
+M215,A,horizontal-push,Push-up,-,wide,bodyweight,bodyweight,1,2,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",push-up-wide wide-push-up
+M216,A,horizontal-push,Push-up,decline,-,bodyweight,bodyweight,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",decline-push-up
+M217,A,horizontal-push,Push-up,incline,-,bodyweight,bodyweight,1,2,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",incline-push-up incline-push-up-medium
+M218,A,horizontal-push,Push-up,incline,close,bodyweight,bodyweight,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",incline-push-up-close-grip
+M219,A,horizontal-push,Push-up,incline,underhand,bodyweight,bodyweight,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",incline-push-up-reverse-grip
+M220,A,horizontal-push,Push-up,incline,wide,bodyweight,bodyweight,1,1,side,2.8,"Hands under shoulders, body one line; Lower chest to an inch off the floor, elbows ~45°; Press back to locked arms",incline-push-up-wide
+M221,A,leg-machine,Leg curl,-,-,bodyweight,bodyweight,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,nordic-hamstring-curl
+M222,A,leg-machine,Leg curl,-,-,machine,machine,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,leg-curl
+M223,B,leg-machine,Leg curl,-,-,other,other,1,6,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,ball-leg-curl reverse-nordic sliding-hamstring-curl stability-ball-hamstring-curl exercise-ball-leg-curl suspension-hamstring-curl
+M224,B,leg-machine,Leg curl,lying,-,band,band,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,band-lying-leg-curl
+M225,A,leg-machine,Leg curl,lying,-,machine,machine,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,lying-leg-curls
+M226,B,leg-machine,Leg curl,seated,-,band,band,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,seated-band-hamstring-curl
+M227,A,leg-machine,Leg curl,seated,-,machine,machine,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,seated-leg-curl
+M228,A,leg-machine,Leg curl,standing,-,machine,machine,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,standing-leg-curl
+M229,B,leg-machine,Leg curl,standing,-,other,other,1,1,side,3.0,Knees in line with pivot; Curl heels toward glutes; Hips stay down,standing-hamstring-curl
+M230,B,leg-machine,Leg extension,-,-,band,band,1,1,side,3.0,"Pad on lower shin, back against pad; Straighten fully, squeeze quads; Lower slowly",band-leg-extension
+M231,A,leg-machine,Leg extension,-,-,machine,machine,1,2,side,3.0,"Pad on lower shin, back against pad; Straighten fully, squeeze quads; Lower slowly",leg-extension leg-extensions
+M232,A,leg-machine,Leg extension,-,single-leg,machine,machine,1,1,side,3.0,"Pad on lower shin, back against pad; Straighten fully, squeeze quads; Lower slowly",single-leg-leg-extension
+M233,B,leg-machine,Leg extension,seated,-,other,other,1,1,side,3.0,"Pad on lower shin, back against pad; Straighten fully, squeeze quads; Lower slowly",seated-knee-extension
+M234,A,lunge,Lunge,-,-,bodyweight,bodyweight,1,6,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",bodyweight-walking-lunge crossover-reverse-lunge curtsy-lunge lateral-lunge alternating-lateral-lunge-with-overhead-reach reverse-lunge
+M235,A,lunge,Lunge,-,-,free weight,barbell; dumbbell; kettlebell; smith,4,12,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",barbell-lunge barbell-reverse-lunge barbell-walking-lunge dumbbell-lunge dumbbell-lunges dumbbell-rear-lunge dumbbell-reverse-lunge elevated-back-lunge kettlebell-goblet-lunge kettlebell-turkish-get-up-lunge-style lunge-pass-through smith-machine-lunge
+M236,B,lunge,Lunge,-,-,other,other,1,1,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",step-down
+M237,A,lunge,Split squat,-,-,free weight,barbell; dumbbell,2,4,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",barbell-side-split-squat barbell-split-squat bulgarian-split-squat split-squat-with-dumbbells
+M238,B,lunge,Split squat,-,-,other,other,1,2,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",split-squats suspended-split-squat
+M239,A,lunge,Split squat,-,single-leg,free weight,smith,1,1,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",smith-single-leg-split-squat
+M240,A,lunge,Step-up,-,-,bodyweight,bodyweight,1,1,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",step-up-with-knee-raise
+M241,A,lunge,Step-up,-,-,free weight,barbell; dumbbell,2,4,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",barbell-step-ups barbell-step-up dumbbell-step-up dumbbell-step-ups
+M242,B,lunge,Step-up,-,-,other,other,1,2,side,3.6,"Torso tall, front knee over mid-foot; Back knee drops straight down; Drive through the front heel",lateral-step-up step-ups
+M243,C,mobility,Misc drill / stretch,-,-,bodyweight,bodyweight,1,1,3/4,4,,spider-crawl
+M244,C,mobility,Misc drill / stretch,-,-,free weight,barbell; dumbbell; med ball,3,4,3/4,4,,power-partials rack-delivery return-push-from-stance spell-caster
+M245,C,mobility,Misc drill / stretch,-,-,machine,machine,1,1,3/4,4,,ski-machine
+M246,C,mobility,Misc drill / stretch,-,-,other,other,1,15,3/4,4,,circus-bell overhead-lat palmar-fascia-lacrosse-ball plantar-fascia-lacrosse-ball platform-hamstring-slides pyramid quick-leap reverse-snow-angels shadow-boxing shoulder-blade-squeezes side-to-side-box-shuffle skating stationary-bike step-jack the-straddle
+M247,C,mobility,Misc drill / stretch,-,single-leg,other,other,1,1,3/4,4,,single-leg-push-off
+M248,C,mobility,Misc drill / stretch,-,towel,other,other,1,1,3/4,4,,towel-wring
+M249,C,mobility,Misc drill / stretch,prone,-,other,other,1,1,3/4,4,,prone-manual-hamstring
+M250,C,mobility,Misc drill / stretch,seated,-,bodyweight,bodyweight,1,3,3/4,4,,seated-biceps seated-front-deltoid seated-glute
+M251,C,mobility,Misc drill / stretch,seated,-,other,other,1,1,3/4,4,,seated-hamstring
+M252,C,mobility,Misc drill / stretch,standing,-,free weight,plate,1,1,3/4,4,,standing-olympic-plate-hand-squeeze
+M253,C,mobility,Misc drill / stretch,standing,-,other,other,1,3,3/4,4,,glute-squeeze standing-knee-drive standing-pelvic-tilt
+M254,C,mobility,Self-massage (SMR),-,-,band,band,1,1,side,4,,it-band-foam-rolling
+M255,C,mobility,Self-massage (SMR),-,-,other,other,1,15,side,4,,anterior-tibialis-smr brachialis-smr calves-smr foam-rolling-quads foam-rolling-upper-back foot-smr hamstring-smr iliotibial-tract-smr latissimus-dorsi-smr lower-back-smr neck-smr peroneals-smr piriformis-smr quadriceps-smr rhomboids-smr
+M256,C,mobility,Stretch / mobility,-,-,band,band,1,5,3/4,6,,band-dislocates band-external-rotation band-internal-rotation hip-flexion-with-band it-band-and-glute-stretch
+M257,C,mobility,Stretch / mobility,-,-,bodyweight,bodyweight,1,14,3/4,6,,90-90-hamstring all-fours-quad-stretch ankle-circles arm-circles cat-cow fire-hydrant-circles groiners inchworm isometric-chest-squeezes isometric-neck-exercise-front-and-back isometric-neck-exercise-sides knee-circles side-lunge-adductor-stretch wrist-circles
+M258,C,mobility,Stretch / mobility,-,-,cable,cable,1,5,3/4,6,,cable-external-rotation cable-internal-rotation cable-iron-cross low-pulley-row-to-neck pallof-press-with-rotation
+M259,C,mobility,Stretch / mobility,-,-,free weight,barbell; dumbbell,2,8,3/4,6,,external-rotation heaving-snatch-balance iron-cross jerk-balance landmine-rotation neck-press reverse-flyes-with-external-rotation snatch-balance
+M260,C,mobility,Stretch / mobility,-,-,other,other,1,75,3/4,6,,ninety-ninety-hip-stretch adductor-rock-backs adductor-groin ankle-on-the-knee ankle-rocks arm-crossovers balance-board behind-head-chest-stretch butterfly-stretch calf-stretch-elbows-against-wall calf-stretch-hands-against-wall cat-stretch chair-leg-extended-stretch chair-lower-back-stretch chair-upper-body-stretch chest-and-front-of-shoulder-stretch doorway-chest-stretch chest-stretch-on-stability-ball childs-pose cobra-stretch cross-body-shoulder-stretch dancers-stretch downward-dog downward-facing-balance dynamic-back-stretch dynamic-chest-stretch elbow-circles elbows-back figure-four-stretch groin-and-back-stretch hamstring-stretch hug-a-ball hug-knees-to-chest intermediate-groin-stretch intermediate-hip-flexor-and-quad-stretch iron-crosses-stretch knees-to-chest lateral-neck-raise leg-up-hamstring-stretch looking-at-ceiling middle-back-stretch moving-claw-series neck-extension neck-flexion neck-tiger-tail neck-side-stretch on-your-side-quad-stretch on-your-back-quad-stretch one-half-locust one-knee-to-chest overhead-lat-side-bend overhead-stretch overhead-triceps-stretch peroneals-stretch pigeon-stretch posterior-tibialis-stretch quad-stretch round-the-world-shoulder-stretch runners-stretch shoulder-circles shoulder-stretch side-neck-stretch spinal-stretch thoracic-rotations torso-rotation tricep-side-stretch triceps-stretch upper-back-stretch upper-back-leg-grab upward-stretch wall-calf-stretch wall-slides worlds-greatest-stretch wrist-extensor-stretch wrist-flexor-stretch
+M261,C,mobility,Stretch / mobility,-,behind-neck,free weight,barbell,1,1,3/4,6,,push-press-behind-the-neck
+M262,C,mobility,Stretch / mobility,-,single-arm,other,other,1,1,3/4,6,,one-arm-against-wall
+M263,C,mobility,Stretch / mobility,-,underhand,bodyweight,bodyweight,1,1,3/4,6,,chin-to-chest-stretch
+M264,C,mobility,Stretch / mobility,-,"wide, behind-neck",cable,cable,1,1,3/4,6,,wide-grip-pulldown-behind-the-neck
+M265,C,mobility,Stretch / mobility,kneeling,-,bodyweight,bodyweight,1,1,3/4,6,,kneeling-posterior-hip-capsule-mobilization
+M266,C,mobility,Stretch / mobility,kneeling,-,other,other,1,4,3/4,6,,kneeling-arm-drill kneeling-forearm-stretch kneeling-hip-flexor kneeling-hip-flexor-stretch
+M267,C,mobility,Stretch / mobility,"lying, floor",-,other,other,1,1,3/4,6,,side-lying-floor-stretch
+M268,C,mobility,Stretch / mobility,"lying, prone",-,bodyweight,bodyweight,1,1,3/4,6,,lying-prone-quadriceps
+M269,C,mobility,Stretch / mobility,"lying, prone",-,free weight,plate,1,1,3/4,6,,lying-face-down-plate-neck-resistance
+M270,C,mobility,Stretch / mobility,lying,-,bodyweight,bodyweight,1,1,3/4,6,,lying-glute
+M271,C,mobility,Stretch / mobility,lying,-,free weight,plate,1,1,3/4,6,,lying-face-up-plate-neck-resistance
+M272,C,mobility,Stretch / mobility,lying,-,other,other,1,4,3/4,6,,lying-bent-leg-groin lying-hamstring lying-spinal-twist side-lying-groin-stretch
+M273,C,mobility,Stretch / mobility,prone,-,bodyweight,bodyweight,1,1,3/4,6,,hip-circles-prone
+M274,C,mobility,Stretch / mobility,"seated, floor",-,other,other,1,1,3/4,6,,seated-floor-hamstring-stretch
+M275,C,mobility,Stretch / mobility,seated,-,other,other,1,6,3/4,6,,seated-calf-stretch seated-hamstring-and-calf-stretch seated-hamstring-stretch seated-head-harness-neck-resistance seated-overhead-stretch seated-spinal-twist
+M276,C,mobility,Stretch / mobility,standing,-,bodyweight,bodyweight,1,1,3/4,6,,standing-hip-circles
+M277,C,mobility,Stretch / mobility,standing,-,other,other,1,9,3/4,6,,standing-biceps-stretch standing-elevated-quad-stretch standing-gastrocnemius-calf-stretch standing-hamstring-and-calf-stretch standing-hamstring-stretch standing-hip-flexors standing-lateral-stretch standing-quad-stretch standing-soleus-and-achilles-stretch
+M278,B,olympic,Olympic / power lift,-,-,free weight,barbell; dumbbell; kettlebell; smith,4,48,side,3,"Bar close to body; Hips drive, then arms; Stable catch",bottoms-up-clean-from-the-hang-position clean clean-and-jerk clean-and-press clean-deadlift clean-from-blocks clean-pull clean-shrug double-kettlebell-jerk double-kettlebell-push-press double-kettlebell-snatch dumbbell-clean dumbbell-push-press dumbbell-thruster front-squat-clean-grip hang-clean hang-clean-below-the-knees hang-snatch hang-snatch-below-knees jerk-dip-squat kettlebell-clean kettlebell-dead-clean kettlebell-hang-clean kettlebell-snatch kettlebell-sumo-high-pull kettlebell-thruster muscle-snatch open-palm-kettlebell-clean power-clean power-clean-from-blocks power-jerk power-snatch power-snatch-from-blocks push-jerk push-press smith-machine-hang-power-clean snatch snatch-deadlift snatch-from-blocks snatch-pull snatch-shrug split-clean split-jerk split-snatch squat-jerk thruster two-arm-kettlebell-clean two-arm-kettlebell-jerk
+M279,B,olympic,Olympic / power lift,-,single-arm,free weight,kettlebell,1,10,side,3,"Bar close to body; Hips drive, then arms; Stable catch",alternating-hang-clean double-kettlebell-alternating-hang-clean one-arm-kettlebell-clean one-arm-kettlebell-clean-and-jerk one-arm-kettlebell-jerk one-arm-kettlebell-push-press one-arm-kettlebell-snatch one-arm-kettlebell-split-jerk one-arm-kettlebell-split-snatch one-arm-open-palm-kettlebell-clean
+M280,B,olympic,Olympic / power lift,kneeling,-,cable,cable,1,1,side,3,"Bar close to body; Hips drive, then arms; Stable catch",kneeling-high-pulley-row
+M281,B,olympic,Olympic / power lift,kneeling,single-arm,cable,cable,1,1,side,3,"Bar close to body; Hips drive, then arms; Stable catch",kneeling-single-arm-high-pulley-row
+M282,B,olympic,Olympic / power lift,lying,close,cable,cable,1,1,side,3,"Bar close to body; Hips drive, then arms; Stable catch",lying-close-grip-bar-curl-on-high-pulley
+M283,C,plyometric,Plyometric,-,-,bodyweight,bodyweight,1,19,side,2,,bench-jump box-jump-multiple-response burpees butt-kicks clap-push-up double-leg-butt-kick freehand-jump-squat frog-sit-ups front-box-jump high-knees jumping-jacks knee-tuck-jump lateral-bound lateral-box-jump plyo-push-up rocket-jump scissors-jump split-jump star-jump
+M284,C,plyometric,Plyometric,-,-,cable,cable,1,2,side,2,,cable-judo-flip cable-woodchopper
+M285,C,plyometric,Plyometric,-,-,free weight,barbell; kettlebell; med ball; trap bar,4,13,side,2,,chest-push-multiple-response chest-push-single-response chest-push-from-3-point-stance landmine-linear-jammer medicine-ball-chest-pass medicine-ball-overhead-slam medicine-ball-slam medicine-ball-wall-ball medicine-ball-woodchop overhead-slam plyo-kettlebell-pushups trap-bar-jump weighted-jump-squat
+M286,C,plyometric,Plyometric,-,-,other,other,1,17,side,2,,box-jump carioca-quick-step depth-jump-leap frog-hops frog-pumps front-cone-hops-or-hurdle-hops heavy-bag-thrust hurdle-hops jump-squat lateral-cone-hops linear-3-part-start-technique linear-acceleration-wall-drill linear-depth-jump marching-in-place skater-jump stride-jump-crossover tuck-jump
+M287,C,plyometric,Plyometric,-,single-arm,free weight,barbell; med ball,2,2,side,2,,one-arm-medicine-ball-slam single-arm-linear-jammer
+M288,C,plyometric,Plyometric,-,single-arm,other,other,1,1,side,2,,alternate-leg-diagonal-bound
+M289,C,plyometric,Plyometric,-,single-leg,bodyweight,bodyweight,1,1,side,2,,single-leg-butt-kick
+M290,C,plyometric,Plyometric,-,single-leg,other,other,1,3,side,2,,single-leg-hop-progression single-leg-lateral-hop single-leg-stride-jump
+M291,C,plyometric,Plyometric,incline,-,bodyweight,bodyweight,1,1,side,2,,incline-push-up-depth-jump
+M292,C,plyometric,Plyometric,kneeling,-,cable,cable,1,1,side,2,,tall-kneeling-cable-chop
+M293,C,plyometric,Plyometric,kneeling,-,free weight,barbell,1,1,side,2,,kneeling-jump-squat
+M294,C,plyometric,Plyometric,seated,-,free weight,dumbbell,1,1,side,2,,dumbbell-seated-box-jump
+M295,C,plyometric,Plyometric,standing,-,bodyweight,bodyweight,1,1,side,2,,standing-long-jump
+M296,C,plyometric,Plyometric,standing,-,cable,cable,1,1,side,2,,standing-cable-wood-chop
+M297,C,plyometric,Plyometric,standing,-,other,other,1,1,side,2,,side-standing-long-jump
+M298,A,shoulder-iso,Front raise,-,-,bodyweight,bodyweight,1,1,side,2.8,,front-leg-raises
+M299,A,shoulder-iso,Front raise,-,-,cable,cable,1,2,side,2.8,,cable-front-raise front-cable-raise
+M300,A,shoulder-iso,Front raise,-,-,free weight,dumbbell; plate,2,7,side,2.8,,dumbbell-raise front-dumbbell-raise front-plate-raise front-raises front-two-dumbbell-raise plate-front-raise single-dumbbell-raise
+M301,B,shoulder-iso,Front raise,-,-,other,other,1,1,side,2.8,,shoulder-raise
+M302,A,shoulder-iso,Front raise,incline,-,free weight,barbell; dumbbell; smith,3,4,side,2.8,,barbell-incline-shoulder-raise dumbbell-incline-shoulder-raise front-incline-dumbbell-raise smith-incline-shoulder-raise
+M303,A,shoulder-iso,Front raise,standing,-,free weight,barbell,1,1,side,2.8,,standing-front-barbell-raise-over-head
+M304,B,shoulder-iso,Lateral raise,-,-,band,band,1,2,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",band-lateral-raise lateral-raise-with-bands
+M305,A,shoulder-iso,Lateral raise,-,-,cable,cable,1,2,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",cable-lateral-raise cable-y-raise
+M306,A,shoulder-iso,Lateral raise,-,-,free weight,dumbbell,1,4,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",cuban-press dumbbell-lateral-raise side-lateral-raise side-laterals-to-front-raise
+M307,A,shoulder-iso,Lateral raise,-,-,machine,machine,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",machine-lateral-raise
+M308,A,shoulder-iso,Lateral raise,-,single-arm,free weight,dumbbell,1,2,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",alternating-deltoid-raise one-arm-side-laterals
+M309,A,shoulder-iso,Lateral raise,bent over,-,cable,cable,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",bent-over-low-pulley-side-lateral
+M310,A,shoulder-iso,Lateral raise,incline,single-arm,free weight,dumbbell,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",one-arm-incline-lateral-raise
+M311,A,shoulder-iso,Lateral raise,lying,-,free weight,dumbbell,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",dumbbell-lying-rear-lateral-raise
+M312,A,shoulder-iso,Lateral raise,lying,single-arm,free weight,dumbbell,1,2,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",dumbbell-lying-one-arm-rear-lateral-raise lying-one-arm-lateral-raise
+M313,B,shoulder-iso,Lateral raise,prone,-,other,other,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",prone-y-raise
+M314,A,shoulder-iso,Lateral raise,seated,-,cable,cable,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",cable-seated-lateral-raise
+M315,A,shoulder-iso,Lateral raise,seated,-,free weight,dumbbell,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",seated-side-lateral-raise
+M316,A,shoulder-iso,Lateral raise,standing,-,cable,cable,1,1,front,2.8,"Slight elbow bend; Lift out to shoulder height, lead with elbows; Lower slowly, no swing",standing-low-pulley-deltoid-raise
+M317,B,shoulder-iso,Rear delt / rotator cuff,-,-,band,band,1,3,3/4,2.8,,band-pull-apart external-rotation-with-band internal-rotation-with-band
+M318,A,shoulder-iso,Rear delt / rotator cuff,-,-,cable,cable,1,2,3/4,2.8,,external-rotation-with-cable face-pull
+M319,A,shoulder-iso,Rear delt / rotator cuff,-,-,free weight,barbell; dumbbell,2,2,3/4,2.8,,barbell-rear-delt-row dumbbell-scaption
+M320,A,shoulder-iso,Rear delt / rotator cuff,bent over,-,free weight,dumbbell,1,1,3/4,2.8,,bent-over-dumbbell-rear-delt-raise-with-head-on-bench
+M321,A,shoulder-iso,Rear delt / rotator cuff,lying,-,free weight,dumbbell,1,1,3/4,2.8,,lying-rear-delt-raise
+M322,B,shoulder-iso,Rear delt / rotator cuff,prone,-,other,other,1,2,3/4,2.8,,prone-t-raise prone-w-raise
+M323,A,shoulder-iso,Rear delt / rotator cuff,seated,-,free weight,dumbbell,1,1,3/4,2.8,,seated-bent-over-rear-delt-raise
+M324,A,shoulder-iso,Shrug,-,-,cable,cable,1,2,front,2.4,"Arms long; Shoulders straight up to ears; Pause, lower fully",cable-shrug cable-shrugs
+M325,A,shoulder-iso,Shrug,-,-,free weight,barbell; dumbbell; smith; trap bar,4,7,front,2.4,"Arms long; Shoulders straight up to ears; Pause, lower fully",barbell-shrug barbell-shrug-behind-the-back dumbbell-shrug middle-back-shrug smith-machine-behind-the-back-shrug smith-machine-shrug trap-bar-shrug
+M326,A,shoulder-iso,Shrug,-,-,machine,machine,1,1,front,2.4,"Arms long; Shoulders straight up to ears; Pause, lower fully",leverage-shrug
+M327,B,shoulder-iso,Upright row,-,-,band,band,1,1,front,2.8,,upright-row-with-bands
+M328,A,shoulder-iso,Upright row,-,-,cable,cable,1,1,front,2.8,,cable-upright-row
+M329,A,shoulder-iso,Upright row,-,-,free weight,barbell; dumbbell; smith,3,4,front,2.8,,barbell-upright-row dumbbell-upright-row smith-machine-upright-row upright-row
+M330,A,shoulder-iso,Upright row,-,single-arm,free weight,dumbbell; smith,2,2,front,2.8,,dumbbell-one-arm-upright-row smith-machine-one-arm-upright-row
+M331,A,shoulder-iso,Upright row,standing,-,free weight,dumbbell,1,1,front,2.8,,standing-dumbbell-upright-row
+M332,A,squat,Front-loaded squat,-,-,free weight,barbell; kettlebell,2,6,side,3.6,"Elbows up, torso upright; Sit between the hips; Drive up keeping chest tall",front-squat front-squats-with-two-kettlebells goblet-squat kettlebell-goblet-squat zercher-squat zercher-squats
+M333,A,squat,Leg press,-,-,free weight,smith,1,1,side,3.4,"Feet mid-plate, knees track toes; Lower until hips stay down; Press without locking knees hard",smith-machine-leg-press
+M334,A,squat,Leg press,-,-,machine,machine,1,3,side,3.4,"Feet mid-plate, knees track toes; Lower until hips stay down; Press without locking knees hard",calf-press-on-the-leg-press-machine leg-press leg-press-calf-raise
+M335,A,squat,Leg press,-,close,machine,machine,1,1,side,3.4,"Feet mid-plate, knees track toes; Lower until hips stay down; Press without locking knees hard",narrow-stance-leg-press
+M336,A,squat,Leg press,-,single-leg,machine,machine,1,1,side,3.4,"Feet mid-plate, knees track toes; Lower until hips stay down; Press without locking knees hard",single-leg-leg-press
+M337,A,squat,Leg press,seated,-,machine,machine,1,2,side,3.4,"Feet mid-plate, knees track toes; Lower until hips stay down; Press without locking knees hard",leg-press-moving-plate seated-leg-press
+M338,A,squat,Machine squat,-,-,free weight,barbell,1,1,side,3.4,,barbell-hack-squat
+M339,A,squat,Machine squat,-,-,machine,machine,1,4,side,3.4,,belt-squat hack-squat pendulum-squat v-squat
+M340,A,squat,Machine squat,-,close,machine,machine,1,1,side,3.4,,narrow-stance-hack-squats
+M341,A,squat,Single-leg / sissy squat,-,-,free weight,barbell,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",weighted-sissy-squat
+M342,B,squat,Single-leg / sissy squat,-,-,other,other,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",sissy-squat
+M343,A,squat,Single-leg / sissy squat,-,single-leg,free weight,kettlebell; smith,2,2,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",kettlebell-pistol-squat smith-machine-pistol-squat
+M344,B,squat,Single-leg / sissy squat,-,single-leg,other,other,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",pistol-squat
+M345,B,squat,Squat,-,-,band,band,1,2,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",band-squat squats-with-bands
+M346,A,squat,Squat,-,-,bodyweight,bodyweight,1,2,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",bodyweight-squat deep-squat-prying
+M347,A,squat,Squat,-,-,free weight,barbell; dumbbell; kettlebell; med ball; smith,5,27,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",barbell-full-squat barbell-squat barbell-squat-to-a-bench box-squat box-squat-with-bands box-squat-with-chains dumbbell-squat dumbbell-squat-to-a-bench frankenstein-squat front-barbell-squat front-barbell-squat-to-a-bench jefferson-squats kettlebell-turkish-get-up-squat-style landmine-squat medicine-ball-squat-to-press olympic-squat overhead-squat plie-dumbbell-squat reverse-band-box-squat reverse-band-power-squat smith-machine-squat speed-box-squat speed-squats squat-with-bands squat-with-chains squat-with-plate-movers sumo-squat
+M348,A,squat,Squat,-,-,machine,machine,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",chair-squat
+M349,B,squat,Squat,-,-,other,other,1,7,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",cossack-squat hindu-squat sit-squats squat-thrust squat-to-stand stability-ball-wall-squat weighted-squat
+M350,B,squat,Squat,-,assisted,other,other,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",suspension-assisted-squat
+M351,A,squat,Squat,-,close,free weight,barbell,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",narrow-stance-squats
+M352,A,squat,Squat,-,single-arm,free weight,kettlebell,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",one-arm-overhead-kettlebell-squats
+M353,A,squat,Squat,-,single-leg,free weight,barbell,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",one-leg-barbell-squat
+M354,B,squat,Squat,-,single-leg,other,other,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",single-leg-high-box-squat
+M355,A,squat,Squat,-,wide,free weight,barbell,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",wide-stance-barbell-squat
+M356,A,squat,Squat,kneeling,-,free weight,barbell,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",kneeling-squat
+M357,A,squat,Squat,lying,-,machine,machine,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",lying-machine-squat
+M358,A,squat,Wall sit,-,L-sit,bodyweight,bodyweight,1,1,side,3.6,"Brace, knees track over toes; Hips down to at least parallel, chest up; Stand by pushing the floor away",wall-sit
+M359,C,strongman,Carry / sled / strongman,-,-,band,band,1,1,side,3,,monster-walk
+M360,C,strongman,Carry / sled / strongman,-,-,bodyweight,bodyweight,1,2,side,3,,bear-crawl cradle-walk
+M361,C,strongman,Carry / sled / strongman,-,-,free weight,barbell; dumbbell; plate; trap bar,4,7,side,3,,car-drivers dumbbell-front-rack-carry farmers-walk overhead-carry plate-pinch-carry suitcase-carry trap-bar-farmer-carry
+M362,C,strongman,Carry / sled / strongman,-,-,other,other,1,17,side,3,,atlas-stone-trainer atlas-stones axle-deadlift car-deadlift chain-handle-extension conans-wheel crab-walk crucifix dragon-flag hamstring-walkout keg-load log-lift rickshaw-carry rickshaw-deadlift sandbag-load tire-flip yoke-walk
+M363,C,strongman,Carry / sled / strongman,-,-,sled,sled,1,13,side,3,,backward-drag backward-sled-pull bear-crawl-sled-drags drag-curl forward-drag-with-press lateral-sled-drag sled-drag-harness sled-overhead-backward-walk sled-overhead-triceps-extension sled-pull sled-push sled-reverse-flye sled-row
+M364,C,strongman,Carry / sled / strongman,-,neutral,other,other,1,1,side,3,,sledgehammer-swings
+M365,A,vertical-pull,Chin-up,-,"close, underhand",bar,bodyweight,1,1,3/4 front,3.2,"Underhand grip, dead hang; Chin over the bar, chest up; Lower under control",close-grip-chin-up
+M366,A,vertical-pull,Chin-up,-,"underhand, mixed",bar,bodyweight,1,1,3/4 front,3.2,"Underhand grip, dead hang; Chin over the bar, chest up; Lower under control",mixed-grip-chin
+M367,A,vertical-pull,Chin-up,-,"underhand, single-arm",bar,bodyweight,1,1,3/4 front,3.2,"Underhand grip, dead hang; Chin over the bar, chest up; Lower under control",one-arm-chin-up
+M368,A,vertical-pull,Chin-up,-,underhand,bar,bodyweight,1,4,3/4 front,3.2,"Underhand grip, dead hang; Chin over the bar, chest up; Lower under control",chin-up side-to-side-chins gironda-sternum-chins weighted-chin-up
+M369,A,vertical-pull,Chin-up,-,"wide, underhand",bar,bodyweight,1,1,3/4 front,3.2,"Underhand grip, dead hang; Chin over the bar, chest up; Lower under control",wide-grip-chin-up
+M370,A,vertical-pull,Dead hang,-,-,bar,bodyweight; other,2,2,3/4 front,3.2,"Shoulders active, not shrugged; Ribs down; Breathe and hold",dead-hang one-handed-hang
+M371,A,vertical-pull,Lat pulldown,-,-,bar,band; bodyweight,2,2,3/4 front,3.2,"Lean back slightly, chest up; Pull the bar to upper chest, elbows down; Let arms straighten fully",band-lat-pulldown superman-pulldown
+M372,A,vertical-pull,Lat pulldown,-,-,cable,cable,1,2,3/4 front,3.2,"Lean back slightly, chest up; Pull the bar to upper chest, elbows down; Let arms straighten fully",full-range-of-motion-lat-pulldown reverse-grip-lat-pulldown
+M373,A,vertical-pull,Lat pulldown,-,close,cable,cable,1,1,3/4 front,3.2,"Lean back slightly, chest up; Pull the bar to upper chest, elbows down; Let arms straighten fully",close-grip-front-lat-pulldown
+M374,A,vertical-pull,Lat pulldown,-,neutral,cable,cable,1,1,3/4 front,3.2,"Lean back slightly, chest up; Pull the bar to upper chest, elbows down; Let arms straighten fully",v-bar-pulldown
+M375,A,vertical-pull,Lat pulldown,-,single-arm,cable,cable,1,1,3/4 front,3.2,"Lean back slightly, chest up; Pull the bar to upper chest, elbows down; Let arms straighten fully",one-arm-lat-pulldown
+M376,A,vertical-pull,Lat pulldown,-,underhand,cable,cable,1,1,3/4 front,3.2,"Lean back slightly, chest up; Pull the bar to upper chest, elbows down; Let arms straighten fully",underhand-cable-pulldowns
+M377,A,vertical-pull,Lat pulldown,-,wide,cable,cable,1,1,3/4 front,3.2,"Lean back slightly, chest up; Pull the bar to upper chest, elbows down; Let arms straighten fully",wide-grip-lat-pulldown
+M378,A,vertical-pull,Muscle-up,-,-,bar,bodyweight; other,2,2,3/4 front,3.2,"False grip, explosive pull to hips; Lean over the bar fast; Press out to support",kipping-muscle-up muscle-up
+M379,A,vertical-pull,Pull-up,-,-,bar,bodyweight,1,7,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",body-up jumping-pull-up negative-pull-up pullups ring-pull-up rocky-pull-ups-pulldowns weighted-pull-ups
+M380,A,vertical-pull,Pull-up,-,L-sit,bar,bodyweight,1,1,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",l-sit-pull-up
+M381,A,vertical-pull,Pull-up,-,assisted,bar,band; machine,2,2,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",assisted-pull-up band-assisted-pull-up
+M382,A,vertical-pull,Pull-up,-,chest-to-bar,bar,bodyweight,1,1,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",chest-to-bar-pull-up
+M383,A,vertical-pull,Pull-up,-,close,bar,bodyweight,1,1,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",close-grip-pull-up
+M384,A,vertical-pull,Pull-up,-,mixed,bar,bodyweight,1,1,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",mixed-grip-pull-up
+M385,A,vertical-pull,Pull-up,-,neutral,bar,bodyweight,1,2,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",neutral-grip-pull-up v-bar-pullup
+M386,A,vertical-pull,Pull-up,-,side-to-side,bar,bodyweight,1,3,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",archer-pull-up commando-pull-up typewriter-pull-up
+M387,A,vertical-pull,Pull-up,-,towel,bar,bodyweight,1,1,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",towel-pull-up
+M388,A,vertical-pull,Pull-up,-,wide,bar,bodyweight,1,2,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",wide-grip-pull-up wide-grip-rear-pull-up
+M389,A,vertical-pull,Pull-up,incline,-,free weight,barbell,1,1,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",incline-bench-pull
+M390,B,vertical-pull,Rope climb,-,rope,bar,other,1,1,3/4 front,3.2,"Start from a dead hang, shoulders set; Pull chest toward the bar, elbows down and back; Lower under control to full hang",rope-climb
+M391,A,vertical-pull,Scapular pull-up,-,-,bar,bodyweight,1,2,3/4 front,3.2,Arms stay straight; Pull shoulders down and back; Lower to full hang,scap-pulls scapular-pull-up
+M392,A,vertical-pull,Straight-arm pulldown / pullover,-,-,bar,machine,1,1,3/4 front,3.2,,machine-pullover
+M393,A,vertical-pull,Straight-arm pulldown / pullover,-,-,cable,cable,1,1,3/4 front,3.2,,straight-arm-pulldown
+M394,A,vertical-pull,Straight-arm pulldown / pullover,-,-,free weight,barbell; dumbbell,2,6,3/4 front,3.2,,barbell-pullover bent-arm-barbell-pullover bent-arm-dumbbell-pullover dumbbell-pullover front-raise-and-pullover straight-arm-dumbbell-pullover
+M395,A,vertical-pull,Straight-arm pulldown / pullover,-,rope,cable,cable,1,1,3/4 front,3.2,,rope-straight-arm-pulldown
+M396,A,vertical-pull,Straight-arm pulldown / pullover,decline,wide,free weight,barbell,1,1,3/4 front,3.2,,wide-grip-decline-barbell-pullover
+M397,A,vertical-pull,Straight-arm pulldown / pullover,standing,-,free weight,dumbbell,1,1,3/4 front,3.2,,standing-dumbbell-straight-arm-front-delt-raise-above-head
+M398,A,vertical-push,Arnold press,-,-,free weight,dumbbell; kettlebell,2,2,side,3.2,Start palms facing you at the chin; Rotate palms forward as you press; Reverse on the way down,arnold-press kettlebell-arnold-press
+M399,A,vertical-push,Behind-the-neck / Bradford press,-,-,free weight,barbell,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",bradford-rocky-presses
+M400,A,vertical-push,Behind-the-neck / Bradford press,standing,-,free weight,barbell,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",standing-bradford-press
+M401,A,vertical-push,Behind-the-neck / Bradford press,standing,behind-neck,free weight,barbell,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",standing-barbell-press-behind-neck
+M402,A,vertical-push,Bent press,-,-,free weight,kettlebell,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",bent-press
+M403,A,vertical-push,Dip,-,-,bodyweight,bodyweight,1,7,side,3.0,"Shoulders down, slight forward lean; Lower until upper arm is parallel; Press to lockout",bench-dip bench-dips chest-dip dips dips-triceps-version weighted-bench-dip weighted-tricep-dips
+M404,A,vertical-push,Dip,-,-,machine,machine,1,1,side,3.0,"Shoulders down, slight forward lean; Lower until upper arm is parallel; Press to lockout",dip-machine
+M405,B,vertical-push,Dip,-,-,other,other,1,2,side,3.0,"Shoulders down, slight forward lean; Lower until upper arm is parallel; Press to lockout",dips-chest-version ring-dips
+M406,A,vertical-push,Dip,-,assisted,machine,machine,1,1,side,3.0,"Shoulders down, slight forward lean; Lower until upper arm is parallel; Press to lockout",assisted-dip-machine
+M407,A,vertical-push,Dip,-,neutral,bodyweight,bodyweight,1,1,side,3.0,"Shoulders down, slight forward lean; Lower until upper arm is parallel; Press to lockout",parallel-bar-dip
+M408,A,vertical-push,Dip,seated,-,machine,machine,1,1,side,3.0,"Shoulders down, slight forward lean; Lower until upper arm is parallel; Press to lockout",seated-dip-machine
+M409,A,vertical-push,Kettlebell windmill,-,-,free weight,kettlebell,1,3,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",advanced-kettlebell-windmill double-kettlebell-windmill kettlebell-windmill
+M410,B,vertical-push,Kettlebell windmill,-,-,other,other,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",windmills
+M411,A,vertical-push,Landmine press,-,-,free weight,barbell,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",landmine-press
+M412,B,vertical-push,Overhead press,-,-,band,band,1,2,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",band-overhead-press shoulder-press-with-bands
+M413,A,vertical-push,Overhead press,-,-,cable,cable,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",cable-shoulder-press
+M414,A,vertical-push,Overhead press,-,-,free weight,barbell; dumbbell; kettlebell; smith,4,8,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",anti-gravity-press barbell-shoulder-press dumbbell-shoulder-press kettlebell-press kettlebell-seesaw-press smith-machine-overhead-press smith-machine-overhead-shoulder-press two-arm-kettlebell-military-press
+M415,A,vertical-push,Overhead press,-,-,machine,machine,1,3,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",leverage-shoulder-press machine-shoulder-military-press shoulder-press-machine
+M416,A,vertical-push,Overhead press,-,single-arm,cable,cable,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",alternating-cable-shoulder-press
+M417,A,vertical-push,Overhead press,-,single-arm,free weight,dumbbell; kettlebell,2,6,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",alternating-kettlebell-press dumbbell-one-arm-shoulder-press one-arm-kettlebell-military-press-to-the-side one-arm-kettlebell-para-press see-saw-press-alternating-side-press single-arm-overhead-press
+M418,A,vertical-push,Overhead press,seated,-,cable,cable,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",seated-cable-shoulder-press
+M419,A,vertical-push,Overhead press,seated,-,free weight,barbell; dumbbell; kettlebell,3,3,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",kettlebell-seated-press seated-barbell-military-press seated-dumbbell-press
+M420,A,vertical-push,Overhead press,standing,-,free weight,barbell; dumbbell,2,3,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",standing-dumbbell-press standing-military-press standing-palms-in-dumbbell-press
+M421,A,vertical-push,Overhead press,standing,single-arm,free weight,dumbbell,1,2,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",standing-alternating-dumbbell-press standing-palm-in-one-arm-dumbbell-press
+M422,B,vertical-push,Pike / handstand push-up,-,-,other,other,1,2,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",stability-ball-pike wall-handstand-hold
+M423,A,vertical-push,Pike / handstand push-up,hanging,-,bodyweight,bodyweight,1,1,side,3.2,"Ribs down, glutes tight, no lumbar arch; Wrists stacked over elbows; Press to lockout over the mid-foot / shoulders",hanging-pike

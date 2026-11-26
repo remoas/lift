@@ -154,29 +154,6 @@ final class PlateTests: XCTestCase {
     }
 }
 
-final class RotationTests: XCTestCase {
-    func testNext() {
-        let order = ["Push", "Pull", "Legs"]
-        XCTAssertEqual(Rotation.next(order: order, lastCompleted: nil), "Push")
-        XCTAssertEqual(Rotation.next(order: order, lastCompleted: "Push"), "Pull")
-        XCTAssertEqual(Rotation.next(order: order, lastCompleted: "Legs"), "Push")
-        XCTAssertEqual(Rotation.next(order: order, lastCompleted: "Deleted"), "Push")
-        XCTAssertNil(Rotation.next(order: [String](), lastCompleted: nil))
-    }
-}
-
-final class ProgressionTests: XCTestCase {
-    func testAddsStepWhenAllAtTop() {
-        let r = Progression.doubleProgression(lastWorkingSets: [.init(weight: 135, reps: 12), .init(weight: 135, reps: 12)], repRange: 8...12, step: 5)
-        XCTAssertEqual(r, [.init(weight: 140, reps: 8), .init(weight: 140, reps: 8)])
-    }
-
-    func testAddsRepOtherwise() {
-        let r = Progression.doubleProgression(lastWorkingSets: [.init(weight: 135, reps: 12), .init(weight: 135, reps: 10)], repRange: 8...12, step: 5)
-        XCTAssertEqual(r, [.init(weight: 135, reps: 12), .init(weight: 135, reps: 11)])
-    }
-}
-
 final class CSVTests: XCTestCase {
     func testCSV() {
         let w = UUID()
@@ -235,7 +212,6 @@ final class LibraryTests: XCTestCase {
     func testStableIDIsDeterministic() {
         XCTAssertEqual(StableID.uuid("lib:bench-press"), StableID.uuid("lib:bench-press"))
         XCTAssertNotEqual(StableID.uuid("lib:bench-press"), StableID.uuid("lib:bench-pres"))
-        XCTAssertEqual(Defaults.routineNames.map(\.name), ["Push", "Pull", "Legs"])
     }
 
     var entries: [SearchEntry] {

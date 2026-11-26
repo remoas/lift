@@ -320,11 +320,6 @@ public enum Search {
 
 /// Fixed app-level lists.
 public enum Defaults {
-    /// Push, Pull and Legs exist as names only and start empty (AC 34).
-    public static let routineNames: [(id: UUID, name: String)] = [
-        (StableID.uuid("routine:push"), "Push"), (StableID.uuid("routine:pull"), "Pull"), (StableID.uuid("routine:legs"), "Legs"),
-    ]
-
     /// Preset rep ranges in the build screen's reps menu.
     public static let repRangePresets: [ClosedRange<Int>] = [3...5, 5...8, 6...8, 8...10, 8...12, 10...12, 12...15, 15...20]
 }

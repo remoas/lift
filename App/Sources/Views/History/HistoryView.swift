@@ -4,7 +4,7 @@ import LiftCore
 
 /// §3.9 History, grouped by Monday-start week.
 struct HistoryView: View {
-    var onGoToToday: () -> Void
+    var onGoToLog: () -> Void
     var onOpenWorkout: (Workout) -> Void
 
     @Environment(\.modelContext) private var context
@@ -13,6 +13,7 @@ struct HistoryView: View {
     @Query(filter: #Predicate<Workout> { $0.endedAt != nil }, sort: \Workout.startedAt, order: .reverse)
     private var finished: [Workout]
     @State private var backLogging = false
+    @State private var showSettings = false
 
     private var weeks: [(start: Date, workouts: [Workout])] {
         let grouped = Dictionary(grouping: finished) { Week.start(of: $0.startedAt) }
@@ -26,7 +27,7 @@ struct HistoryView: View {
                     VStack(alignment: .leading, spacing: Theme.Spacing.s3) {
                         Text("Your workouts land here once you finish one. Every set, every best, kept on this iPhone and backed up to iCloud.")
                             .font(.body).foregroundStyle(Theme.Colors.textSecondary)
-                        Button("Go to Today", action: onGoToToday).buttonStyle(TextActionStyle())
+                        Button("Go to Log", action: onGoToLog).buttonStyle(TextActionStyle())
                         Spacer()
                     }
                     .screenMargins()
@@ -42,7 +43,7 @@ struct HistoryView: View {
                                         .swipeActions { Button("Delete", role: .destructive) { delete(w) } }
                                 }
                             } header: {
-                                Text("\(label(week.start)) · \(week.workouts.count) of \(settings.daysPerWeek)")
+                                Text(label(week.start))
                                     .font(.subheadline.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary).textCase(nil)
                             }
                         }
@@ -55,15 +56,22 @@ struct HistoryView: View {
             .navigationTitle("History")
             .navigationDestination(for: Workout.self) { WorkoutDetailView(workout: $0) }
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { showSettings = true } label: {
+                        Image(systemName: "gearshape").frame(width: Theme.Size.hit, height: Theme.Size.hit)
+                    }
+                    .accessibilityLabel("Settings")
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { backLogging = true } label: { Image(systemName: "plus").frame(width: Theme.Size.hit, height: Theme.Size.hit) }
                         .accessibilityLabel("Log a past workout")
                 }
             }
+            .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $backLogging) {
-                BackLogSheet { routine, date in
+                BackLogSheet { date in
                     backLogging = false
-                    onOpenWorkout(LiftStore.start(routine, globalUnit: settings.unit, at: date, backLog: true, context: context))
+                    onOpenWorkout(LiftStore.startBlank(at: date, backLog: true, context: context))
                 }
             }
         }
@@ -74,7 +82,7 @@ struct HistoryView: View {
         let minutes = Int(((w.endedAt ?? w.startedAt).timeIntervalSince(w.startedAt) / 60).rounded())
         return HStack {
             VStack(alignment: .leading, spacing: 2) {
-                Text(w.routineName).font(.body).foregroundStyle(Theme.Colors.textPrimary)
+                Text(Self.title(w)).font(.body).foregroundStyle(Theme.Colors.textPrimary).lineLimit(1)
                 Text("\(w.startedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))) · \(minutes) min")
                     .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
             }
@@ -84,6 +92,14 @@ struct HistoryView: View {
             }
         }
         .frame(minHeight: Theme.Size.setRow)
+    }
+
+    /// Old routine names stay; quick-log workouts are named by what was done.
+    static func title(_ w: Workout) -> String {
+        if !w.routineName.isEmpty, w.routineName != "Workout" { return w.routineName }
+        let names = w.groups.map(\.exercise.name)
+        guard let first = names.first else { return "Workout" }
+        return names.count == 1 ? first : "\(first) + \(names.count - 1) more"
     }
 
     private func label(_ start: Date) -> String {
@@ -98,7 +114,7 @@ struct HistoryView: View {
         let snapshot = WorkoutArchive(w)
         context.delete(w)
         _ = LiftStore.save(context)
-        toasts.show("\(snapshot.routineName) deleted") {
+        toasts.show("Workout deleted") {
             snapshot.restore(into: context)
         }
     }
@@ -116,7 +132,8 @@ struct WorkoutArchive {
     }
 
     @MainActor func restore(into context: ModelContext) {
-        let w = Workout(routineID: routineID, routineName: routineName, startedAt: startedAt)
+        let w = Workout(startedAt: startedAt)
+        w.routineID = routineID; w.routineName = routineName
         w.id = id; w.endedAt = endedAt; w.healthKitID = healthKitID; w.note = note; w.isBackLog = isBackLog
         context.insert(w)
         for (r, ex) in sets {
@@ -128,30 +145,23 @@ struct WorkoutArchive {
     }
 }
 
-/// Back-log: pick the routine and the date, then log as usual (no rest timer).
+/// Back-log: pick the date, then log as usual (no rest timer).
 struct BackLogSheet: View {
-    var onStart: (Routine?, Date) -> Void
-    @Query(sort: \Routine.order) private var routines: [Routine]
+    var onStart: (Date) -> Void
     @State private var date = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
-    @State private var routineID: UUID?
 
     var body: some View {
         NavigationStack {
             Form {
                 DatePicker("Date", selection: $date, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
                     .datePickerStyle(.compact)
-                Picker("Workout", selection: $routineID) {
-                    ForEach(routines) { Text($0.name).tag(UUID?.some($0.id)) }
-                    Text("Blank workout").tag(UUID?.none)
-                }
             }
             .navigationTitle("Log a past workout")
             .navigationBarTitleDisplayMode(.inline)
             .safeAreaInset(edge: .bottom) {
-                Button("Start logging") { onStart(routines.first { $0.id == routineID }, date) }
+                Button("Start logging") { onStart(date) }
                     .buttonStyle(PrimaryButtonStyle()).screenMargins()
             }
-            .onAppear { routineID = routineID ?? routines.first?.id }
         }
         .presentationDetents([.medium])
         .presentationDragIndicator(.visible)
@@ -185,7 +195,7 @@ struct WorkoutDetailView: View {
             }
             if !workout.note.isEmpty { Section("Note") { Text(workout.note) } }
         }
-        .navigationTitle(workout.routineName)
+        .navigationTitle(HistoryView.title(workout))
         .sheet(item: $editing) { s in
             SetEditorSheet(entry: s, title: s.exercise?.name ?? "", lastTime: nil) { _ = LiftStore.save(context) }
         }

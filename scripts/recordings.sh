@@ -19,11 +19,11 @@ boot() {
   xcrun simctl ui "$UDID" content_size large
 }
 boot
-FLOWS=(testFlow1TodayToWorkout testFlow2ExerciseRowToDetail testFlow3PRBanner)
-NAMES=(flow1-today-to-workout flow2-row-to-detail flow3-pr-banner)
+FLOWS=(testFlow2ExerciseRowToDetail testFlow3PRBanner)
+NAMES=(flow2-row-to-detail flow3-pr-banner)
 rec() { # variant appearance slowFactor
   xcrun simctl ui "$UDID" appearance "$2"
-  for i in 0 1 2; do
+  for i in "${!FLOWS[@]}"; do
     xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
     FILE="$OUT/${NAMES[$i]}-$1.mp4"
     echo "== ${NAMES[$i]} $1" >> "$LOG"

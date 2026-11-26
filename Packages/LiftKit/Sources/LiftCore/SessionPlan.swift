@@ -153,3 +153,13 @@ public enum History {
             .sorted { $0.date < $1.date }
     }
 }
+
+extension History {
+    /// Sets from the most recent workout (any routine, or blank) that included
+    /// this exercise. "Last time" and prefill both come from here.
+    public static func lastSession(for exerciseID: UUID, in all: [LoggedSet], excluding workoutID: UUID? = nil) -> [LoggedSet] {
+        let sets = all.filter { $0.exerciseID == exerciseID && $0.isDone && $0.snapshot.workoutID != workoutID }
+        guard let latest = sets.max(by: { $0.snapshot.date < $1.snapshot.date })?.snapshot.workoutID else { return [] }
+        return sets.filter { $0.snapshot.workoutID == latest }.sorted { $0.snapshot.date < $1.snapshot.date }
+    }
+}

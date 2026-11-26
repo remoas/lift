@@ -27,18 +27,7 @@ enum LiftStore {
         do { try context.save(); return true } catch { return false }
     }
 
-    // MARK: Library and routines (nothing is seeded into routines, AC 34)
-
-    /// Creates empty Push, Pull and Legs once. Fixed IDs, so a second device
-    /// never ends up with duplicates.
-    static func ensureRoutines(_ context: ModelContext) {
-        let routines = (try? context.fetch(FetchDescriptor<Routine>())) ?? []
-        guard routines.isEmpty else { return }
-        for (i, r) in Defaults.routineNames.enumerated() {
-            context.insert(Routine(id: r.id, name: r.name, order: i, isSeeded: true))
-        }
-        _ = save(context)
-    }
+    // MARK: Library
 
     /// Applies a newer bundled seed to library rows already in use. Custom
     /// exercises and history are never touched.
@@ -95,20 +84,9 @@ enum LiftStore {
         for ex in exercises {
             if let keeper = keepers[ex.id] {
                 for set in ex.sets ?? [] { set.exercise = keeper }
-                for item in ex.routineItems ?? [] { item.exercise = keeper }
                 context.delete(ex)
             } else {
                 keepers[ex.id] = ex
-            }
-        }
-        let routines = (try? context.fetch(FetchDescriptor<Routine>())) ?? []
-        var seen: [UUID: Routine] = [:]
-        for r in routines {
-            if let keeper = seen[r.id] {
-                if (keeper.items ?? []).isEmpty { for item in r.items ?? [] { item.routine = keeper } }
-                context.delete(r)
-            } else {
-                seen[r.id] = r
             }
         }
         _ = save(context)
@@ -136,57 +114,52 @@ enum LiftStore {
         return sets.filter { $0.workout === latest }.sorted { $0.order < $1.order }
     }
 
-    /// Next-in-line rotation: after the routine the last routine-based workout
-    /// was started from. Blank workouts don't advance it.
-    static func nextRoutine(routines: [Routine], finished: [Workout]) -> Routine? {
-        let ordered = routines.sorted { $0.order < $1.order }
-        let lastID = finished.first(where: { $0.routineID != nil })?.routineID
-        guard let id = Rotation.next(order: ordered.map(\.id), lastCompleted: lastID) else { return nil }
-        return ordered.first { $0.id == id }
-    }
-
     // MARK: Starting
 
-    /// A workout slot's plan: set count, rep range and rest.
-    struct Slot {
-        var sets: Int
-        var repRange: ClosedRange<Int>
-        var rest: Int
-    }
-
-    static func defaultSlot(for exercise: Exercise, sets: Int? = nil, restDefault: Int) -> Slot {
-        let lastCount = (exercise.sets ?? []).isEmpty ? nil : lastSessionSets(for: exercise).count
-        return Slot(sets: sets ?? lastCount ?? 3, repRange: exercise.repRange, rest: exercise.restSec ?? restDefault)
-    }
-
-    /// Starts a workout as a day-of copy of a routine. Editing it never touches the routine.
+    /// A new blank workout: today's log. Its clock starts at the first logged set.
     @discardableResult
-    static func start(_ routine: Routine?, globalUnit: WeightUnit, at date: Date = Date(), backLog: Bool = false, id: UUID? = nil, context: ModelContext) -> Workout {
-        let workout = Workout(routineID: routine?.id, routineName: routine?.name ?? "Workout", startedAt: date)
-        if let id { workout.id = id }   // reserved before presenting (shared zoom ID)
+    static func startBlank(at date: Date = Date(), backLog: Bool = false, context: ModelContext) -> Workout {
+        let workout = Workout(startedAt: date)
         workout.isBackLog = backLog
         context.insert(workout)
-        for (i, item) in (routine?.sortedItems ?? []).enumerated() {
-            guard let ex = item.exercise else { continue }
-            let slot = Slot(sets: item.targetSets, repRange: item.repRange, rest: ex.restSec ?? routine?.restSeconds ?? 120)
-            insertPrefilledSets(for: ex, slot: slot, exerciseOrder: i, into: workout, globalUnit: globalUnit, context: context)
-        }
         _ = save(context)
         return workout
     }
 
-    /// Prefills from the same set number the last time this exercise was done
-    /// (any workout). First time: no weight and reps at the top of the range.
-    static func insertPrefilledSets(for exercise: Exercise, slot: Slot, exerciseOrder: Int, into workout: Workout, globalUnit: WeightUnit, context: ModelContext) {
+    // MARK: Last time and Beat it
+
+    struct BeatIt {
+        /// Last session's sets in the display unit, in order ("185×8, 185×7…").
+        let last: [SetTarget]
+        let lastDate: Date?
+        /// nil the first time.
+        let target: SetTarget?
+        /// Index in `last` of the top set the target comes from.
+        let topIndex: Int?
+    }
+
+    /// The one source for the Last line, the Target line and the prefill (AC 64).
+    static func beatIt(for exercise: Exercise, excluding workout: Workout?, unit: WeightUnit) -> BeatIt {
+        let sets = lastSessionSets(for: exercise, excluding: workout).filter { $0.kind != .warmup }
+        let step = exercise.step(for: unit)
+        let last = sets.map { SetTarget(weight: UnitMath.convertLoadable($0.weight, from: $0.unit, to: unit, step: step), reps: $0.reps) }
+        let target = Target.next(lastSets: last, repGoal: exercise.repGoal, step: step, bodyweight: exercise.equipment == .bodyweight)
+        let top = Target.topSet(last)
+        return BeatIt(last: last, lastDate: sets.first?.workout?.startedAt,
+                      target: target, topIndex: top.flatMap { t in last.firstIndex(of: t) })
+    }
+
+    /// Sets prefilled from last time; the set the top set came from is prefilled
+    /// AT the target. First time: one set with no weight, so the first tap asks.
+    static func insertPrefilledSets(for exercise: Exercise, sets count: Int? = nil, rest: Int, exerciseOrder: Int, into workout: Workout, globalUnit: WeightUnit, context: ModelContext) {
         let unit = exercise.unit(global: globalUnit)
-        let last = lastSessionSets(for: exercise, excluding: workout)
-        for i in 0..<max(slot.sets, 1) {
-            let prev = i < last.count ? last[i] : last.last
-            let weight = prev.map { UnitMath.convertLoadable($0.weight, from: $0.unit, to: unit, step: exercise.step(for: unit)) } ?? 0
-            let set = SetEntry(order: i, exerciseOrder: exerciseOrder, kind: prev?.kind ?? .working, weight: weight, unit: unit, reps: prev?.reps ?? slot.repRange.upperBound, exercise: exercise)
-            set.repMin = slot.repRange.lowerBound
-            set.repMax = slot.repRange.upperBound
-            set.restSeconds = slot.rest
+        let beat = beatIt(for: exercise, excluding: workout, unit: unit)
+        let n = max(count ?? beat.last.count, 1)
+        for i in 0..<n {
+            var value = i < beat.last.count ? beat.last[i] : beat.last.last
+            if i == beat.topIndex, let t = beat.target { value = t }
+            let set = SetEntry(order: i, exerciseOrder: exerciseOrder, kind: .working, weight: value?.weight ?? 0, unit: unit, reps: value?.reps ?? exercise.repGoal, exercise: exercise)
+            set.restSeconds = rest
             context.insert(set)
             set.workout = workout
         }
@@ -210,7 +183,7 @@ enum LiftStore {
             return
         }
         let order = (workout.allSets.map(\.exerciseOrder).max() ?? -1) + 1
-        insertPrefilledSets(for: exercise, slot: defaultSlot(for: exercise, restDefault: restDefault), exerciseOrder: order, into: workout, globalUnit: globalUnit, context: context)
+        insertPrefilledSets(for: exercise, rest: exercise.restSec ?? restDefault, exerciseOrder: order, into: workout, globalUnit: globalUnit, context: context)
         _ = save(context)
     }
 
@@ -221,13 +194,10 @@ enum LiftStore {
         let oldSets = workout.allSets.filter { $0.exercise === old }
         let template = oldSets.first
         let unticked = oldSets.filter { !$0.isDone }
-        let slot = Slot(sets: max(unticked.count, 1),
-                        repRange: (template?.repMin ?? new.repMin)...(max(template?.repMax ?? new.repMax, template?.repMin ?? new.repMin)),
-                        rest: template?.restSeconds ?? 120)
         for set in unticked { context.delete(set) }
         let keepsLogged = oldSets.count > unticked.count
         for set in workout.allSets where set.exerciseOrder > slotIndex { set.exerciseOrder += 1 }
-        insertPrefilledSets(for: new, slot: slot, exerciseOrder: keepsLogged ? slotIndex + 1 : slotIndex, into: workout, globalUnit: globalUnit, context: context)
+        insertPrefilledSets(for: new, sets: max(unticked.count, 1), rest: new.restSec ?? template?.restSeconds ?? 120, exerciseOrder: keepsLogged ? slotIndex + 1 : slotIndex, into: workout, globalUnit: globalUnit, context: context)
         renumber(workout)
         _ = save(context)
     }
@@ -308,7 +278,7 @@ enum LiftStore {
                            kind: template?.kind == .warmup ? .working : (template?.kind ?? .working),
                            weight: template?.weight ?? 0,
                            unit: template?.unit ?? .lb,
-                           reps: template?.reps ?? exercise.repMax,
+                           reps: template?.reps ?? exercise.repGoal,
                            exercise: exercise)
         set.repMin = template?.repMin ?? exercise.repMin
         set.repMax = template?.repMax ?? exercise.repMax
@@ -352,38 +322,31 @@ enum LiftStore {
         _ = save(context)
     }
 
-    // MARK: Routine structure
+    // MARK: Opening (today's workout)
 
-    static func slots(of routine: Routine) -> [PlanSlot] {
-        routine.sortedItems.compactMap { item in item.exercise.map { PlanSlot(exerciseID: $0.id, name: $0.name, sets: item.targetSets) } }
-    }
+    /// Auto-finish window after the last logged set (AC 67).
+    static let staleAfter: TimeInterval = 3 * 3600
 
-    static func slots(of workout: Workout) -> [PlanSlot] {
-        workout.groups.map { PlanSlot(exerciseID: $0.exercise.id, name: $0.exercise.name, sets: $0.sets.count) }
-    }
-
-    /// Rewrites a routine from a workout's planned structure: exercises, order,
-    /// set counts (logged or not, so a skipped set never shrinks the routine)
-    /// and rep ranges. Never weights or reps. Call before `finish`.
-    static func update(_ routine: Routine, from workout: Workout, context: ModelContext) -> Bool {
-        for item in routine.items ?? [] { context.delete(item) }
-        for (i, g) in workout.groups.enumerated() {
-            let first = g.sets.first
-            let item = RoutineItem(order: i, targetSets: g.sets.count, repRange: (first?.repMin ?? 8)...max(first?.repMax ?? 12, first?.repMin ?? 8), exercise: g.exercise)
-            context.insert(item)
-            item.routine = routine
+    /// The open log, finishing a stale one first. Never more than one open
+    /// workout: extra empty ones (e.g. from another device) are dropped.
+    /// Returns the open workout and, if one was auto-finished, that workout.
+    static func openLog(_ context: ModelContext, now: Date = Date()) -> (open: Workout, autoFinished: Workout?) {
+        let d = FetchDescriptor<Workout>(predicate: #Predicate { $0.endedAt == nil }, sortBy: [SortDescriptor(\.startedAt, order: .reverse)])
+        var active = ((try? context.fetch(d)) ?? []).filter { !$0.isBackLog }
+        var finished: Workout?
+        if let w = active.first, let last = w.doneSets.compactMap(\.doneAt).max(), now.timeIntervalSince(last) > staleAfter {
+            finish(w, at: last, context: context)
+            finished = w
+            active.removeFirst()
         }
-        // Rest lives on each exercise, so the routine's day default is left alone.
-        return save(context)
-    }
-
-    /// "Save as routine" for a blank workout.
-    static func saveAsRoutine(_ workout: Workout, name: String, context: ModelContext) -> Routine {
-        let count = (try? context.fetchCount(FetchDescriptor<Routine>())) ?? 0
-        let routine = Routine(name: name, order: count)
-        context.insert(routine)
-        _ = update(routine, from: workout, context: context)
-        return routine
+        for extra in active.dropFirst() where extra.doneSets.isEmpty { context.delete(extra) }
+        if let open = active.first {
+            // Nothing logged yet: the clock hasn't started, so keep it fresh.
+            if open.doneSets.isEmpty { open.startedAt = now }
+            _ = save(context)
+            return (open, finished)
+        }
+        return (startBlank(at: now, context: context), finished)
     }
 
     // MARK: Export
