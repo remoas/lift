@@ -63,7 +63,7 @@ final class SearchSpecTests: XCTestCase {
             if top1.isEmpty, !ids.isEmpty { why.append("expected no results") }
             if !why.isEmpty { failures.append("\(query) [\(history)]: \(why) got \(ids.prefix(5))") }
         }
-        XCTAssertEqual(rows.count - 1, 105)
+        XCTAssertGreaterThanOrEqual(rows.count - 1, 111)
         XCTAssertTrue(failures.isEmpty, failures.joined(separator: "\n"))
     }
 

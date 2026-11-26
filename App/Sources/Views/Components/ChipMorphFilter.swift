@@ -37,6 +37,7 @@ struct ChipMorphBar: View {
                         HStack(spacing: Theme.Spacing.s1) {
                             Text(chipText(group, picked))
                                 .font(.subheadline.weight(picked.isEmpty ? .regular : .semibold).monospacedDigit())
+                                .lineLimit(1).fixedSize()
                             Image(systemName: "chevron.down").font(.caption2.weight(.semibold))
                         }
                         .foregroundStyle(picked.isEmpty ? Theme.Colors.textPrimary : Theme.Colors.accent)
@@ -57,8 +58,10 @@ struct ChipMorphBar: View {
                         .buttonStyle(TextActionStyle())
                 }
             }
-            .screenMargins()
         }
+        // Chips never wrap; they scroll sideways with 20 pt insets (qa-search Must 3, AX3).
+        .contentMargins(.horizontal, Theme.Spacing.s5, for: .scrollContent)
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
     }
 
     private func chipText(_ g: FilterGroup, _ picked: Set<String>) -> String {

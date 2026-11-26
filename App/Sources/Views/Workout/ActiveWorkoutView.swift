@@ -52,9 +52,14 @@ struct ActiveWorkoutView: View {
             applyFixture()
             #endif
         }
-        .sheet(item: $editing) { set in
+        // A best logged from the editor lands while the sheet is up; make sure the
+        // banner shows (or replaces the old one) once it closes (flow 3 bug).
+        .sheet(item: $editing, onDismiss: {
+            guard let session, let b = session.banner, shownBanner != b else { return }
+            bannerChanged(b, setID: session.bannerSetID)
+        }) { set in
             if let session {
-                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.previous(for: set).map { WeightText.pair($0.snapshot, in: set.unit, step: set.exercise?.step(for: set.unit) ?? set.unit.defaultStep) }) {
+                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.previous(for: set).map { WeightText.pair($0.snapshot, in: set.unit, step: set.exercise?.step(for: set.unit) ?? set.unit.defaultStep, bodyweight: set.exercise?.equipment == .bodyweight) }) {
                     if set.isDone { session.save(); session.refreshBests() } else { session.log(set) }
                 }
             }
@@ -245,7 +250,7 @@ struct ActiveWorkoutView: View {
                 .accessibilityLabel("\(ex.name) options")
             }
             if !beat.last.isEmpty {
-                Text(lastLine(beat, unit: session.unit(for: ex)))
+                Text(lastLine(beat, unit: session.unit(for: ex), bodyweight: ex.equipment == .bodyweight))
                     .font(.subheadline).foregroundStyle(Theme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -264,12 +269,18 @@ struct ActiveWorkoutView: View {
     }
 
     /// "Last · Mon · 185×8, 185×7, 185×6"
-    private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit) -> String {
+    private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit, bodyweight: Bool = false) -> String {
         // Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
         let day = beat.lastDate.map { d in
             Date().timeIntervalSince(d) > 6 * 86_400 ? d.formatted(.dateTime.day().month(.abbreviated)) : d.formatted(.dateTime.weekday(.abbreviated))
         }
-        let sets = beat.last.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
+        // Bodyweight: "9, 8, 7 reps" or "BW+25×9", never "0×9" (qa-search Must 5).
+        let sets: String
+        if bodyweight, beat.last.allSatisfy({ $0.weight <= 0 }) {
+            sets = beat.last.map { "\($0.reps)" }.joined(separator: ", ") + " reps"
+        } else {
+            sets = beat.last.map { bodyweight ? ($0.weight <= 0 ? "\($0.reps) reps" : "BW+\(UnitMath.format($0.weight))×\($0.reps)") : "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
+        }
         return (["Last", day].compactMap { $0 } + [sets]).joined(separator: " · ")
     }
 

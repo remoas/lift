@@ -54,14 +54,15 @@ struct ExerciseThumb: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle.smooth(Theme.Radius.control).fill(Theme.Colors.accentSoft)
+            // Neutral placeholder: Ember is only for the one primary and the bar (qa-search Should 3).
+            RoundedRectangle.smooth(Theme.Radius.control).fill(Theme.Colors.bgSunken)
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()
                     .transition(.opacity)
             } else {
-                Image(systemName: Theme.Symbols.region(primary.first?.region))
+                Image(systemName: "figure.strengthtraining.traditional")
                     .font(.system(size: side * 0.45, weight: .medium))
-                    .foregroundStyle(Theme.Colors.accent)
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
         }
         .frame(width: side, height: side)

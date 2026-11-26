@@ -47,6 +47,11 @@ pull up,,pullups,,,,'pull up' = 'pull-up' = 'pullup'
 pull-up,,pullups,,,,
 pullup,,pullups,,,,
 pullups,,pullups,,,,
+pull-ups,,pullups,neutral-grip-pull-up,,,"decision (a), 4pm: the compact form drops a final s whatever the last word's length, so 'pull-ups' = 'pull-up'; full pull-up family follows, no meta"
+Pull-Ups,,pullups,neutral-grip-pull-up,,,decision (a): case + hyphen + plural
+Pull Ups,,pullups,neutral-grip-pull-up,,,"decision (a): two words, 3-letter 'ups' (word stemming skips it, the compact rule catches it)"
+pull ups,,pullups,neutral-grip-pull-up,,,decision (a)
+chin ups,,chin-up,,pullups,,decision (a) applies to chin-ups too; pull-ups stay out
 chin,,chin-up,,,,chin-ups never return plain pull-ups first
 chin up,,chin-up,,pullups,,
 weighted pull up,,weighted-pull-ups,,,,
@@ -103,4 +108,6 @@ press,seated-dumbbell-press,seated-dumbbell-press,,,,your own lifts rise: logged
 curl,cable-curl|preacher-curl,cable-curl,preacher-curl,,,usage beats curated popularity inside a tier
 bench,dumbbell-bench-press,bench-press,dumbbell-bench-press,,,"your lifts float up under a query, right after exact matches: Bench stays first, your DB bench is second"
 hammer curls,hammer-curls,hammer-curls,,,,a logged duplicate row stays findable
+benhc,dumbbell-bench-press,bench-press,dumbbell-bench-press,,,"decision (b), 4pm: the typo is corrected to 'bench' first, then normal ranking: exact Bench beats the logged DB bench"
 zzqx,,,,,,no results: one line plus Create “zzqx”
+bench db incline,,incline-dumbbell-press,,,Incline DB Bench,"Nit 1 (qa-search): no alias equals or starts with the query, so the shortest matching alias is the hint"
