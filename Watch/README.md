@@ -19,3 +19,8 @@
 ## Rep counting
 
 See `RepCounter` in LiftCore. Each axis plus the gravity-vertical axis is band-passed and leak-integrated to a velocity. Out-and-back velocity lobes are counted with an adaptive Schmitt trigger. The counter is tested on synthetic 50 Hz fixtures only, with no real wrist recordings yet. The count is a starting estimate that the user corrects with the Crown before logging.
+
+## Shared code still to swap in (after quicklog-qa merges)
+
+- **Prefill:** `LiftCore.Prefill.next` is the interim rule (first set at the target, later sets = the set just logged). quicklog-qa adds `Target.prefill(justLogged:target:lastTime:)`; on rebase `Prefill.next` becomes a thin call to it so the phone and watch run one rule.
+- **Exercise search:** the watch's Add exercise list searches through `ExerciseFinder` (`CatalogFinder` = today's LiftCore `Search`). When the shared search from spec.md §10 lands, replace `CatalogFinder` with it; views don't change.
