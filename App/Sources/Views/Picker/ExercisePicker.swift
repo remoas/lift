@@ -24,6 +24,7 @@ struct ExercisePicker: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     /// Fixture 18a2 only: scroll to the Recents/Common boundary with the keyboard down.
     @State private var scrollTarget: UUID?
+    @State private var scrollAnchor: UnitPoint = .center
 
     /// A pick: an existing row or a library entry not yet in the database.
     enum Choice: Hashable, Identifiable {
@@ -130,8 +131,13 @@ struct ExercisePicker: View {
         choices = map
         refresh()
         #if DEBUG
+        // 18a2: the last Recents row whole, under the opaque sticky header, then Common.
+        // 18a3: further down, to the All exercises header (qa-search run 2, Should 4).
         if Fixtures.requested == "18a2-picker-empty-scrolled" {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { scrollTarget = common.first?.id }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { scrollAnchor = UnitPoint(x: 0.5, y: 0.22); scrollTarget = recent.last?.id ?? common.first?.id }
+        }
+        if Fixtures.requested == "18a3-picker-empty-all" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { scrollAnchor = UnitPoint(x: 0.5, y: 0.4); scrollTarget = common.last?.id }
         }
         if let q = Fixtures.pickerQuery, query.isEmpty {
             query = q
@@ -280,8 +286,12 @@ struct ExercisePicker: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .screenMargins()
             }
-            ChipMorphBar(groups: Self.filterGroups, selection: $filters, open: $openFilter, namespace: chipSpace)
-                .padding(.vertical, Theme.Spacing.s2)
+            // AX sizes while typing: the chips step aside rather than clip "Equipment" at
+            // the edge, and the first result gets the room (qa-search run 2, Must 3).
+            if !(typeSize.isAccessibilitySize && isTyping) {
+                ChipMorphBar(groups: Self.filterGroups, selection: $filters, open: $openFilter, namespace: chipSpace)
+                    .padding(.vertical, Theme.Spacing.s2)
+            }
             ScrollViewReader { proxy in
             List {
                 if isTyping {
@@ -309,7 +319,7 @@ struct ExercisePicker: View {
             .contentMargins(.bottom, isMulti && !selected.isEmpty ? Theme.Size.primaryButton + Theme.Spacing.s2 + 12 : 0, for: .scrollContent)
             .transaction { $0.animation = nil }   // no reorder animation while typing (§10.6)
             .onChange(of: query) { if let first = results.first?.id { proxy.scrollTo(first, anchor: .top) } }
-            .onChange(of: scrollTarget) { if let t = scrollTarget { proxy.scrollTo(t, anchor: .center) } }
+            .onChange(of: scrollTarget) { if let t = scrollTarget { proxy.scrollTo(t, anchor: scrollAnchor) } }
             }
             }
             .background(Theme.Colors.bgRaised)
@@ -346,7 +356,7 @@ struct ExercisePicker: View {
             }
             .onAppear {
                 #if DEBUG
-                if Fixtures.requested == "18a2-picker-empty-scrolled" { return }
+                if Fixtures.requested == "18a2-picker-empty-scrolled" || Fixtures.requested == "18a3-picker-empty-all" { return }
                 #endif
                 searchFocused = true
             }
@@ -360,7 +370,13 @@ struct ExercisePicker: View {
 
     /// Section headers: secondary text, sentence case (6.75:1 on white; qa-search Must 4).
     private func header(_ title: String) -> some View {
+        // Opaque, so a row scrolling under the sticky header is hidden, not overprinted (Should 4).
         Text(title).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary).textCase(nil)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, Theme.Spacing.s5)
+            .padding(.vertical, 6)
+            .background(Theme.Colors.bgRaised)
+            .listRowInsets(EdgeInsets())
     }
 
     /// Keeps the mode visible when the nav title can't be (iOS 17.0).
@@ -382,31 +398,59 @@ struct ExercisePicker: View {
                 toggle(item.choice)
             }
         } label: {
-            HStack(spacing: Theme.Spacing.s3) {
-                ExerciseThumb(mediaRef: item.mediaRef, primary: item.primary)
-                VStack(alignment: .leading, spacing: 2) {
-                    // Title is the name only (§10.5); the alias leads the detail line.
-                    Text(item.name).font(.body).foregroundStyle(Theme.Colors.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    // One line, truncating, below AX sizes; wraps at AX sizes (§10.5).
-                    Text(([item.alias].compactMap { $0 } + [item.detail]).joined(separator: " · "))
-                        .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-                        .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
-                        .truncationMode(.tail)
-                }
-                Spacer()
-                if isMulti {
-                    TickRing(state: isSelected ? .done : .upcoming) { toggle(item.choice) }
+            Group {
+                if typeSize.isAccessibilitySize {
+                    // AX: stacked (qa-search run 2, Must 3). The title has its own lines with
+                    // the tick ring on its first line; the detail runs full width below,
+                    // clear of the ring, ending at a word boundary rather than clipping.
+                    VStack(alignment: .leading, spacing: Theme.Spacing.s1) {
+                        HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.s2) {
+                            Text(item.name).font(.body).foregroundStyle(Theme.Colors.textPrimary)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            if isMulti {
+                                TickRing(state: isSelected ? .done : .upcoming) { toggle(item.choice) }
+                            }
+                        }
+                        DetailAtWords(parts: detailParts(item))
+                            .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    .padding(.vertical, Theme.Spacing.s2)
+                } else {
+                    HStack(spacing: Theme.Spacing.s3) {
+                        ExerciseThumb(mediaRef: item.mediaRef, primary: item.primary)
+                        VStack(alignment: .leading, spacing: 2) {
+                            // Title is the name only (§10.5); the alias leads the detail line.
+                            Text(item.name).font(.body).foregroundStyle(Theme.Colors.textPrimary)
+                                .lineLimit(2)
+                            // One line, truncating (§10.5).
+                            Text(detailParts(item).joined(separator: " · "))
+                                .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+                        }
+                        Spacer(minLength: 0)
+                        if isMulti {
+                            TickRing(state: isSelected ? .done : .upcoming) { toggle(item.choice) }
+                        }
+                    }
+                    // A 44 pt thumb and two lines in ~60 pt (Should 1; was 78).
+                    .padding(.vertical, Theme.Spacing.s2)
                 }
             }
-            .frame(minHeight: Theme.Size.setRow)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .listRowInsets(EdgeInsets(top: 0, leading: Theme.Spacing.s5, bottom: 0, trailing: Theme.Spacing.s4))
         .listRowBackground(Theme.Colors.bgRaised)
         .accessibilityElement(children: .combine)
         .accessibilityLabel([item.name, item.alias.map { "matches \($0)" }, item.detail].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    /// "RDL", "Last 200 × 8", "Barbell, Hamstrings": the pieces the detail line may end between.
+    private func detailParts(_ item: Item) -> [String] {
+        [item.alias].compactMap { $0 } + item.detail.components(separatedBy: " · ")
     }
 
     private func toggle(_ choice: Choice) {
@@ -563,5 +607,35 @@ private struct SearchFocus: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+/// AX detail: wraps over up to two lines; if even that is too long, it drops
+/// trailing pieces (then trailing words) and ends with "…" at a word boundary,
+/// never clipping mid-word (qa-search run 2, Must 3).
+private struct DetailAtWords: View {
+    let parts: [String]
+    /// One line of the secondary style at the current size.
+    @ScaledMetric(relativeTo: .subheadline) private var line: CGFloat = 20
+    var body: some View {
+        // Proposes at most two lines; the first candidate whose full height fits wins.
+        ViewThatFits(in: .vertical) {
+            ForEach(Self.candidates(parts), id: \.self) { Text($0).fixedSize(horizontal: false, vertical: true) }
+            Text(Self.candidates(parts).last ?? "").lineLimit(2)
+        }
+        .frame(maxWidth: .infinity, maxHeight: line * 2 + 4, alignment: .topLeading)
+    }
+
+    static func candidates(_ parts: [String]) -> [String] {
+        var out = [parts.joined(separator: " · ")]
+        var p = parts
+        while p.count > 1 {
+            let last = p.removeLast()
+            // "Barbell, Hamstrings" → "Barbell…" before the whole piece goes.
+            let words = last.components(separatedBy: ", ")
+            if words.count > 1 { out.append((p + [words.dropLast().joined(separator: ", ")]).joined(separator: " · ") + "…") }
+            out.append(p.joined(separator: " · ") + "…")
+        }
+        return out
     }
 }

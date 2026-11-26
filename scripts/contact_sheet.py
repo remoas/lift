@@ -7,7 +7,7 @@ src = pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else "screenshots-review")
 out = pathlib.Path(sys.argv[2] if len(sys.argv) > 2 else src / "contact-sheet.png")
 shots = sorted(p for p in src.glob("*.png") if p.name != out.name and not p.name.startswith("contact"))
 frames = sorted({p.stem.rsplit("-", 1)[0] if p.stem.endswith(("-light", "-dark")) else p.stem for p in shots})
-W, cols, pad, label = 220, 6, 12, 28
+W, cols, pad, label = 220, 6, 12, 30
 thumbs = []
 for f in frames:
     for variant in ("light", "dark"):
@@ -29,6 +29,15 @@ for i, (name, p) in enumerate(uniq):
     im.thumbnail((W, H))
     x = pad + (i % cols) * (W + pad); y = pad + (i // cols) * (H + label + pad)
     sheet.paste(im, (x, y + label))
-    draw.text((x, y + 6), name, fill=(20, 20, 20), font=font)
+    # Fit the caption to the column: shrink the id, then wrap (qa-search run 2, Nit 4).
+    words, lines, cur = name.split(" "), [], ""
+    for w in words:
+        trial = (cur + " " + w).strip()
+        if draw.textlength(trial, font=font) <= W or not cur: cur = trial
+        else: lines.append(cur); cur = w
+    lines.append(cur)
+    for k, ln in enumerate(lines[:2]):
+        while draw.textlength(ln, font=font) > W and len(ln) > 4: ln = ln[:-2] + "…"
+        draw.text((x, y + 1 + k * 13), ln, fill=(20, 20, 20), font=font)
 sheet.save(out)
 print(f"{len(uniq)} shots -> {out} ({sheet.size[0]}x{sheet.size[1]})")

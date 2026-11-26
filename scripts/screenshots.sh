@@ -7,7 +7,7 @@ APP="$1"; OUT="${2:-screenshots-review}"
 BUNDLE=com.benspink.lift
 FRAMES=(01-log-empty 01b-log-active 01c-target-hit 01d-stale-saved-toast 03-workout 04-rest 05-set-editor 06-pr-banner 07-finish 08-exercise
   10-history 11-settings 12-history-empty 13-first-workout 14-health-error 15-restoring 16-exercise-empty
-  18a-picker-empty 18a2-picker-empty-scrolled 18b-picker-bench 18c-picker-rdl 18d-picker-zzqx 18e-picker-press 18f-picker-squat
+  18a-picker-empty 18a2-picker-empty-scrolled 18a3-picker-empty-all 18b-picker-bench 18c-picker-rdl 18d-picker-zzqx 18e-picker-press 18f-picker-squat
   18g-picker-deadlift 18h-picker-pull-up 18i-picker-db-incline 18j-picker-benhc 18k-picker-pull-ups 19-reorder 24a-media-video 24b-media-stills 24c-media-reduce-motion 24d-media-loading
   24e-media-none 25-finish-sets-left 26-discard-toast)
 mkdir -p "$OUT"
