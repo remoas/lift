@@ -160,7 +160,7 @@ struct ExercisePage: View {
             } else {
                 if let last = BeatItText.last(exercise.last, date: exercise.lastDate) {
                     Text(last).font(.caption2).foregroundStyle(WatchTheme.textSecondary).monospacedDigit()
-                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                        .lineLimit(WatchTheme.isLarge ? 2 : 1).fixedSize(horizontal: false, vertical: true)
                 }
                 if !exercise.countable || !store.motionAvailable {
                     Text("Counting off.").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
