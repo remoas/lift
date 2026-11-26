@@ -24,20 +24,10 @@ until_log() { # pattern [timeout]
   for _ in $(seq 1 $(( ${2:-60} * 4 ))); do grep -q "$1" "$LOG" 2>/dev/null && return 0; sleep 0.25; done
   echo "timed out waiting for: $1"; return 0
 }
-until_log " 6 short rest"
-xcrun simctl launch "$UDID" com.apple.Preferences >/dev/null || true   # Lift to the background: the Island shows the rest
-sleep 5; xcrun simctl io "$UDID" screenshot "$OUT/island-phone-winner-running.png" >/dev/null || true
-until_log " 7 REST END" 30
-sleep 0.6; xcrun simctl io "$UDID" screenshot "$OUT/island-phone-winner-rest-over-alert.png" >/dev/null || true
-until_log " 8 after" 30
-xcrun simctl io "$UDID" screenshot "$OUT/island-phone-winner-settled.png" >/dev/null || true
-xcrun simctl openurl "$UDID" "lift://workout" || true                     # the tap target brings Lift back (AC 109)
-until_log " 9 WATCH WINNER" 30
-xcrun simctl launch "$UDID" com.apple.Preferences >/dev/null || true
-sleep 5; xcrun simctl io "$UDID" screenshot "$OUT/island-watch-winner-running.png" >/dev/null || true
-until_log "10 REST END" 30
-sleep 1; xcrun simctl io "$UDID" screenshot "$OUT/island-watch-winner-rest-over-quiet.png" >/dev/null || true
-sleep 2; xcrun simctl openurl "$UDID" "lift://workout" || true
+until_log "14 rest 150s" 150
+xcrun simctl launch "$UDID" com.apple.Preferences >/dev/null || true   # Lift to the background: the system Island
+sleep 4; xcrun simctl io "$UDID" screenshot "$OUT/island-system-running.png" >/dev/null || true
+xcrun simctl launch "$UDID" "$BUNDLE" >/dev/null || true                 # back to Lift (no relaunch while it runs)
 until_log "DONE" 60
 sleep 1; xcrun simctl io "$UDID" screenshot "$OUT/harness-log-end.png" >/dev/null || true
 kill -INT $REC; wait $REC || true

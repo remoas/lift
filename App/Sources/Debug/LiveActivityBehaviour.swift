@@ -46,7 +46,8 @@ struct LiveActivityBehaviour: View {
             let t = (r.trigger as? UNTimeIntervalNotificationTrigger)?.nextTriggerDate().map(RestActivityController.clock) ?? "?"
             return "\(r.identifier)@\(t)"
         }
-        let line = "\(RestActivityController.clock(Date())) \(s) | \(RestActivityController.shared.debugSnapshot) | notifications=\(notes.isEmpty ? "none" : notes.joined(separator: ","))"
+        let fallback = RestNotifications.debugScheduled.map { "requested@" + RestActivityController.clock($0) } ?? "none"
+        let line = "\(RestActivityController.clock(Date())) \(s) | \(RestActivityController.shared.debugSnapshot) | fallback notification=\(fallback) (system pending: \(notes.isEmpty ? "none" : notes.joined(separator: ",")))"
         lines.append(line)
         NSLog("LA-BEHAVIOUR %@", line)
         let all = lines.joined(separator: "\n") + "\n"
@@ -102,39 +103,45 @@ struct LiveActivityBehaviour: View {
         await log("5 UNDO (in-app toast path re-shows the rest) → one Activity again")
         await wait(1.5)
         RestActivityController.shared.end()
-        startRest(12)
-        await log("6 short rest 12s for the rest-end case; phone winner → fallback notification scheduled")
-        // The script backgrounds Lift now; a background task keeps this clock alive.
-        let bg = UIApplication.shared.beginBackgroundTask(withName: "la-behaviour")
-        await wait(12.2)
+        startRest(8)
+        await log("6 short rest 8s for the rest-end case; phone winner → fallback notification requested")
+        // The simulator suspends a backgrounded Lift within seconds, so this step plays
+        // "Lift not on screen" (appActive=false) while staying in the foreground.
+        RestActivityController.shared.debugAppActive = false
+        await wait(8.2)
         restEnds()
-        await log("7 REST END while backgrounded, phone winner → alert-style update (hl=true), local notification cancelled")
+        await log("7 REST END, phone winner, Lift not on screen (simulated) → alert-style update (hl=true), fallback notification cancelled")
         await wait(RestActivityPolicy.highlightSeconds + 1)
         await log("8 after the ~2 s highlight → settled Rest over, ended with dismissal .after(end+5m), stale end+2m")
-        UIApplication.shared.endBackgroundTask(bg)
-        await wait(6) // the script brings Lift back
+        await wait(1.5)
 
         // AC 106: watch winner, Lift suspended at rest-end → no phone notification at all.
         RestActivityController.shared.end()
         PhoneSync.shared.debugSetWatchSession(true)
-        startRest(12)
-        await log("9 WATCH WINNER: rest 12s with the watch session running → expect notifications=none")
-        let bg2 = UIApplication.shared.beginBackgroundTask(withName: "la-behaviour-2")
-        await wait(12.2)
+        startRest(8)
+        await log("9 WATCH WINNER: rest 8s with the watch session running → expect fallback notification=none")
+        await wait(8.2)
         restEnds()
-        await log("10 REST END, watch winner → quiet Rest over (hl=false), no Activity alert, no phone notification")
-        UIApplication.shared.endBackgroundTask(bg2)
-        await wait(6)
+        await log("10 REST END, watch winner, Lift not on screen (simulated) → quiet Rest over (hl=false), no Activity alert, no phone notification")
+        await wait(1.5)
+        RestActivityController.shared.debugAppActive = nil
         PhoneSync.shared.debugSetWatchSession(false)
+
 
         // AC 108: Finish ends it immediately, never via Rest over.
         startRest(90)
-        await log("11 rest 90s running before Finish")
+        await log("11 rest 90s running before Finish (Lift back on screen)")
         await wait(1.5)
         if let w = LiveBridge.currentOpen(container.mainContext) { LiftStore.finish(w, context: container.mainContext) }
         await log("12 FINISH (LiftStore.finish) → Activity ended .immediate, expect activities=0")
         // AC 109: the tap target.
         await log("13 widgetURL=\(RestLinks.workout.absoluteString) → RootView.onOpenURL selects the Log tab")
+        // The real system Island: a running rest with Lift actually in the background.
+        RestActivityController.shared.demo()
+        await log("14 rest 150s (demo content; the workout is finished) for the system Island shot (the script backgrounds Lift, then brings it back)")
+        await wait(10)
+        await log("15 back on screen")
+        RestActivityController.shared.end()
         await log("DONE")
     }
 }

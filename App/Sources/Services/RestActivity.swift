@@ -61,8 +61,11 @@ final class RestActivityController {
         let end = min(state.end, Date())
         state.end = end
         state.over = true
-        let kind = RestActivityPolicy.atRestEnd(watchAlerts: PhoneSync.shared.watchAlerts,
-                                                appActive: UIApplication.shared.applicationState == .active)
+        var appActive = UIApplication.shared.applicationState == .active
+        #if DEBUG
+        if let forced = debugAppActive { appActive = forced }
+        #endif
+        let kind = RestActivityPolicy.atRestEnd(watchAlerts: PhoneSync.shared.watchAlerts, appActive: appActive)
         state.highlight = kind == .alert
         let content = ActivityContent(state: state, staleDate: RestActivityPolicy.staleDate(end: end))
         let dismiss = ActivityUIDismissalPolicy.after(RestActivityPolicy.dismissAt(end: end))
@@ -116,6 +119,9 @@ final class RestActivityController {
     }
 
     #if DEBUG
+    /// The behaviour harness plays "Lift isn't on screen" without being suspended.
+    var debugAppActive: Bool?
+
     /// For the behaviour log: what the system holds right now.
     var debugSnapshot: String {
         let all = activities

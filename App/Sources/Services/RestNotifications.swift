@@ -19,8 +19,17 @@ enum RestNotifications {
     }
 
     /// "Rest over. Barbell Bench Press, 185 lb × 9." Only when no Live Activity can alert.
+    #if DEBUG
+    /// The Live Activity behaviour log: the fallback this code asked for (the
+    /// simulator may not grant notifications, so the request is logged too).
+    @MainActor static var debugScheduled: Date?
+    #endif
+
     static func schedule(at date: Date, body: String) {
         cancel()
+        #if DEBUG
+        Task { @MainActor in debugScheduled = date }
+        #endif
         let interval = date.timeIntervalSinceNow
         guard interval > 1 else { return }
         let content = UNMutableNotificationContent()
@@ -36,6 +45,9 @@ enum RestNotifications {
     }
 
     static func cancel() {
+        #if DEBUG
+        Task { @MainActor in debugScheduled = nil }
+        #endif
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
     }
 }
