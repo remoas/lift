@@ -145,7 +145,11 @@ final class WorkoutSession {
 
     func startRest(after set: SetEntry) {
         let seconds = set.kind == .warmup ? settings.warmupRestSeconds : set.restSeconds
-        guard seconds > 0 else { return }
+        guard seconds > 0 else {
+            // Rest Off on this lift: the Activity from the last break goes now.
+            if !workout.isBackLog { RestActivityController.shared.end() }
+            return
+        }
         rest = RestCountdown(seconds: seconds, setID: set.id)
         restDoneText = nil
         if let next = currentSet {
@@ -173,7 +177,8 @@ final class WorkoutSession {
         guard let r = rest else { stopRest(); return }
         let left = r.remaining(at: Date())
         let next = restNextText
-        stopRest()
+        stopRest(endActivity: false)
+        if !workout.isBackLog { RestActivityController.shared.skipped() }
         toasts.show("Rest skipped") { [weak self] in
             guard let self, left > 1 else { return }
             var back = r
@@ -184,12 +189,15 @@ final class WorkoutSession {
         }
     }
 
-    func stopRest() {
+    func stopRest(endActivity: Bool = true) {
         rest = nil
         restDoneText = nil
         restCaption = nil
         restTask?.cancel()
-        if !workout.isBackLog { PhoneSync.shared.setLocalRest(nil) }
+        if !workout.isBackLog {
+            PhoneSync.shared.setLocalRest(nil)
+            if endActivity { RestActivityController.shared.end() }
+        }
     }
 
     /// A rest started, extended or skipped on the watch: same countdown here,
@@ -217,11 +225,16 @@ final class WorkoutSession {
         guard let r = rest else { return }
         restTask?.cancel()
         let nextEx = currentSet?.exercise?.name
+        let unitNext = currentSet.map { s in
+            RestActivityText.load(weight: s.weight, unit: s.unit, reps: s.reps, bodyweight: s.exercise?.equipment == .bodyweight)
+        }
         if !workout.isBackLog {
             // Permission is asked at the first rest, never at launch (AC 76).
             RestNotifications.requestPermissionIfNeeded()
             checkNotificationsOnce()
-            PhoneSync.shared.setLocalRest(RestState(countdown: r, exercise: nextEx, next: restNextText, origin: .phone))
+            // The banner fallback reads in the exercise's unit: "185 lb × 9".
+            PhoneSync.shared.setLocalRest(RestState(countdown: r, exercise: nextEx, next: unitNext ?? restNextText, origin: .phone))
+            RestActivityController.shared.show(start: r.endsAt.addingTimeInterval(-r.total), end: r.endsAt)
         }
         runRestClock(r)
     }
@@ -238,6 +251,7 @@ final class WorkoutSession {
         restTask?.cancel()
         // The watch buzzes instead when it's running the workout (one alert).
         if !PhoneSync.shared.watchAlerts { Haptics.restDone() }
+        if !workout.isBackLog { RestActivityController.shared.restOver() }
         rest = nil
         restDoneText = restNextText.map { "Rest's up · \($0)" } ?? "Rest's up"
         Task { [weak self] in

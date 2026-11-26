@@ -154,8 +154,8 @@ final class RestTimerTests: XCTestCase {
     }
 
     func testAlertBody() {
-        XCTAssertEqual(RestState(seconds: 60, exercise: "Bench Press", next: "185 × 6", origin: .phone).alertBody, "Rest's up. Bench Press, 185 × 6.")
-        XCTAssertEqual(RestState(seconds: 60, origin: .phone).alertBody, "Rest's up.")
+        XCTAssertEqual(RestState(seconds: 60, exercise: "Bench Press", next: "185 lb × 6", origin: .phone).alertBody, "Rest over. Bench Press, 185 lb × 6.")
+        XCTAssertEqual(RestState(seconds: 60, origin: .phone).alertBody, "Rest over.")
     }
 
     func testPhoneOnlyGetsTheNotification() {

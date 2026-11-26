@@ -22,6 +22,7 @@ targets:
     platform: iOS
     sources:
       - path: App/Sources
+      - path: Shared/LiveActivity
       - path: App/Resources/Assets.xcassets
       - path: App/Resources/ExerciseMedia
         type: folder                # keeps stills/ and video/ paths in the bundle
@@ -34,6 +35,9 @@ targets:
       - sdk: WatchConnectivity.framework
       - target: LiftWatch
         embed: true
+      - target: LiftWidgets
+        embed: true
+      - sdk: ActivityKit.framework
     entitlements:
       path: App/Lift.entitlements
       properties:
@@ -52,6 +56,10 @@ targets:
           UIColorName: bgCanvas
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         UIBackgroundModes: [remote-notification]
+        NSSupportsLiveActivities: true
+        CFBundleURLTypes:
+          - CFBundleURLName: com.benspink.lift
+            CFBundleURLSchemes: [lift]
         NSHealthShareUsageDescription: Lift reads nothing from Health; this lets it confirm workouts it saved.
         NSHealthUpdateUsageDescription: Lift saves each finished workout to Apple Health as Traditional Strength Training.
         ITSAppUsesNonExemptEncryption: false
@@ -67,6 +75,34 @@ targets:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+  LiftWidgets:
+    # The rest-timer Live Activity (design/live-activity.md). Draws only;
+    # +30s / Skip are LiveActivityIntents that run in Lift's process.
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widgets/Sources
+      - path: Shared/LiveActivity
+    dependencies:
+      - package: LiftKit
+        product: LiftCore
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
+      - sdk: ActivityKit.framework
+    info:
+      path: Widgets/Info.plist
+      properties:
+        CFBundleDisplayName: Lift
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.benspink.lift.widgets
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+        INFOPLIST_KEY_CFBundleDisplayName: Lift
   LiftWatch:
     # Single-target watchOS app, embedded in the iPhone app. Talks to the
     # phone over WatchConnectivity; the phone's SwiftData store is the database.

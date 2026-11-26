@@ -33,11 +33,9 @@ public struct RestState: Codable, Equatable, Sendable {
         return r
     }
 
-    /// "Rest's up. Bench Press, 185 × 6."
-    public var alertBody: String {
-        if let exercise, let next { return "Rest's up. \(exercise), \(next)." }
-        return "Rest's up."
-    }
+    /// The phone's fallback banner when no Live Activity is running:
+    /// "Rest over. Barbell Bench Press, 185 lb × 9." (live-activity.md §5).
+    public var alertBody: String { RestActivityText.notificationBody(exercise: exercise, next: next) }
 }
 
 /// Who buzzes when rest ends, so there is exactly one alert.

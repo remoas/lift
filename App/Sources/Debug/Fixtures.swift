@@ -51,7 +51,8 @@ enum Fixtures {
 
     static let requested: String? = {
         let args = ProcessInfo.processInfo.arguments
-        guard let i = args.firstIndex(of: "-LiftFixture"), i + 1 < args.count, frames.contains(args[i + 1]) || recordings.contains(args[i + 1]) else { return nil }
+        guard let i = args.firstIndex(of: "-LiftFixture"), i + 1 < args.count,
+              frames.contains(args[i + 1]) || recordings.contains(args[i + 1]) || LiveActivityGallery.names.contains(args[i + 1]) else { return nil }
         return args[i + 1]
     }()
 

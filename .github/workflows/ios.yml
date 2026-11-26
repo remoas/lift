@@ -76,7 +76,14 @@ jobs:
           # The watch app ships inside the iPhone app.
           find build/dd/Build/Products/Debug-iphonesimulator/Lift.app -maxdepth 3 -name "LiftWatch.app" | tee review-logs/embedded-watch.txt
           test -s review-logs/embedded-watch.txt
+          # So does the rest Live Activity extension.
+          find build/dd/Build/Products/Debug-iphonesimulator/Lift.app/PlugIns -maxdepth 1 -name "LiftWidgets.appex" | tee review-logs/embedded-widgets.txt
+          test -s review-logs/embedded-widgets.txt
           xcrun simctl delete "$UDID" || true
+      - name: Live Activity screenshots
+        if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
+        continue-on-error: true
+        run: scripts/liveactivity-screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review/liveactivity
       - name: Screenshots
         if: ${{ !cancelled() && inputs.screenshots && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         run: scripts/screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review

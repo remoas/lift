@@ -198,6 +198,8 @@ struct FinishView: View {
     // MARK: Logic
 
     private func prepare() {
+        // Gone before the Finish screen lands, never via Rest over (AC 108).
+        if !workout.isBackLog { RestActivityController.shared.end() }
         computeBeaten()
         switch settings.healthEnabled {
         case nil: health = HealthService.shared.isAvailable ? .ask : .unavailable

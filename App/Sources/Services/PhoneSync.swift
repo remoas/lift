@@ -63,6 +63,22 @@ final class PhoneSync: NSObject {
         schedulePush(now: true)
     }
 
+    /// +30s from the Lock Screen or Island: this break only, never restSec.
+    func addRestFromActivity(_ seconds: Int) {
+        guard let r = rest, !r.isOver(at: Date()) else { return }
+        let longer = r.adding(seconds)
+        setLocalRest(longer)
+        onRemoteRest?(longer)
+        RestActivityController.shared.show(start: longer.countdown.endsAt.addingTimeInterval(-longer.countdown.total), end: longer.countdown.endsAt)
+    }
+
+    /// Skip from the Lock Screen or Island: no confirm, no alert.
+    func skipRestFromActivity() {
+        setLocalRest(nil)
+        onRemoteRest?(nil)
+        RestActivityController.shared.skipped()
+    }
+
     private func scheduleAlert() {
         let plan = RestAlertPolicy.plan(rest: rest, now: Date(), watchSessionActive: watchSessionActive, watchReachable: watchReachable)
         if let at = plan.phoneNotificationAt, let rest {
@@ -107,10 +123,20 @@ final class PhoneSync: NSObject {
         switch effect {
         case .none: break
         case .rest(let r):
+            let wasRunning = rest.map { !$0.isOver(at: Date()) } ?? false
             rest = r
             scheduleAlert()
             onRemoteRest?(r)
+            // The same Activity follows rests started, extended or skipped on the watch.
+            if let r {
+                RestActivityController.shared.show(start: r.countdown.endsAt.addingTimeInterval(-r.countdown.total), end: r.countdown.endsAt)
+            } else if wasRunning {
+                RestActivityController.shared.skipped()
+            } else {
+                RestActivityController.shared.end()
+            }
         case .finished(let w):
+            RestActivityController.shared.end()
             rest = nil
             scheduleAlert()
             onRemoteRest?(nil)
@@ -121,6 +147,7 @@ final class PhoneSync: NSObject {
         case .discarded(let w):
             // The watch already gave its 5 s Undo. A fresh log first, so the
             // screens never hold the deleted one.
+            RestActivityController.shared.end()
             rest = nil
             scheduleAlert()
             onRemoteRest?(nil)

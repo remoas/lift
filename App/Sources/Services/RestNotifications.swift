@@ -18,7 +18,7 @@ enum RestNotifications {
         }
     }
 
-    /// "Rest's up. Bench Press, 185 × 6."
+    /// "Rest over. Barbell Bench Press, 185 lb × 9." Only when no Live Activity can alert.
     static func schedule(at date: Date, body: String) {
         cancel()
         let interval = date.timeIntervalSinceNow

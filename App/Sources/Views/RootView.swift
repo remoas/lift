@@ -73,6 +73,8 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshLog() }
         }
+        // The rest Live Activity: a tap that isn't +30s or Skip opens the workout (AC 109).
+        .onOpenURL { url in if url.scheme == "lift", url.host == "workout" { tab = .log } }
         .onReceive(NotificationCenter.default.publisher(for: .liftWatchDiscarded)) { note in
             if let fresh = note.object as? Workout, finishing == nil, backLog == nil { log = fresh }
         }

@@ -87,6 +87,15 @@ jobs:
           [ "$WV" = "$V" ] && [ "$WS" = "1.0" ] && [ "$WB" = "com.benspink.lift.watchkitapp" ] && [ "$WC" = "com.benspink.lift" ] \
             || { echo "Watch app version, bundle ID or companion ID is wrong"; exit 1; }
           codesign -d --entitlements :- "$W" 2>/dev/null > tf-logs/watch-entitlements.plist || true
+          # The rest Live Activity extension (com.benspink.lift.widgets), same version and build.
+          X=build/Lift.xcarchive/Products/Applications/Lift.app/PlugIns/LiftWidgets.appex
+          [ -d "$X" ] || { echo "LiftWidgets.appex is not embedded in Lift.app"; exit 1; }
+          XV=$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$X/Info.plist")
+          XB=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$X/Info.plist")
+          echo "widgets $XB ($XV)" | tee -a tf-logs/watch.txt
+          [ "$XV" = "$V" ] && [ "$XB" = "com.benspink.lift.widgets" ] || { echo "Widget extension version or bundle ID is wrong"; exit 1; }
+          /usr/libexec/PlistBuddy -c "Print :NSSupportsLiveActivities" build/Lift.xcarchive/Products/Applications/Lift.app/Info.plist | grep -q true \
+            || { echo "NSSupportsLiveActivities missing"; exit 1; }
       - name: Export IPA (App Store Connect)
         run: |
           set -o pipefail
