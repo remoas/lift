@@ -59,6 +59,7 @@ jobs:
           /usr/libexec/PlistBuddy -c Print build/dd/Build/Products/Debug-watchsimulator/LiftWatch.app/Info.plist | tee review-logs/watch-info.txt
       - name: Watch screenshots
         if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-watchsimulator/LiftWatch.app/Info.plist') != '' }}
+        continue-on-error: true
         run: scripts/watch-screenshots.sh build/dd/Build/Products/Debug-watchsimulator/LiftWatch.app screenshots-review/watch
       - name: Build and UI-test (iPhone 16 simulator, unsigned)
         if: ${{ inputs.ios_tests }}
