@@ -1,7 +1,8 @@
 import Foundation
 import UserNotifications
 
-/// The local notification that fires when rest ends while Lift is in the background.
+/// The local notification that fires when rest ends while Lift is in the
+/// background. PhoneSync decides whether the phone or the watch alerts.
 enum RestNotifications {
     private static let id = "lift.rest"
 
@@ -18,20 +19,20 @@ enum RestNotifications {
     }
 
     /// "Rest's up. Bench Press, 185 × 6."
-    static func schedule(at date: Date, exercise: String?, next: String?) {
+    static func schedule(at date: Date, body: String) {
         cancel()
         let interval = date.timeIntervalSinceNow
         guard interval > 1 else { return }
         let content = UNMutableNotificationContent()
-        if let exercise, let next {
-            content.body = "Rest's up. \(exercise), \(next)."
-        } else {
-            content.body = "Rest's up."
-        }
+        content.body = body
         content.sound = .default
         content.interruptionLevel = .timeSensitive
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
+    }
+
+    static func isDenied() async -> Bool {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
     }
 
     static func cancel() {

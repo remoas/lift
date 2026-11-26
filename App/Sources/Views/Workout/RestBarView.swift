@@ -1,11 +1,14 @@
 import SwiftUI
 import LiftCore
 
-/// Rest bar: draining Ember line, countdown, "Next …", −15 · +15 · Skip.
+/// Rest bar: draining Ember line, countdown, "Next …", +30s · Skip (watch.md §3.8).
+/// +30s lengthens only this break; Skip has a 5 s Undo (the caller's toast).
 struct RestBarView: View {
     let countdown: RestCountdown?
     let nextText: String?
     let doneText: String?
+    /// One-time line when notifications are off (watch.md §3.9).
+    var caption: String? = nil
     var onAdjust: (Int) -> Void
     var onSkip: () -> Void
 
@@ -34,12 +37,16 @@ struct RestBarView: View {
                                         .font(Theme.Fonts.secondary)
                                         .foregroundStyle(Theme.Colors.textSecondary)
                                 }
+                                if let caption {
+                                    Text(caption)
+                                        .font(Theme.Fonts.secondary)
+                                        .foregroundStyle(Theme.Colors.textSecondary)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
                             }
                             Spacer(minLength: 0)
-                            Button("−15") { onAdjust(-15) }.buttonStyle(ChipStyle())
-                                .accessibilityLabel("Rest 15 seconds less")
-                            Button("+15") { onAdjust(15) }.buttonStyle(ChipStyle())
-                                .accessibilityLabel("Rest 15 seconds more")
+                            Button("+30s") { onAdjust(30) }.buttonStyle(ChipStyle())
+                                .accessibilityLabel("Rest 30 seconds more, this break only")
                             Button("Skip", action: onSkip).buttonStyle(ChipStyle(accent: true))
                         }
                         .padding(.horizontal, Theme.Spacing.s5)

@@ -31,6 +31,8 @@ struct ActiveWorkoutView: View {
     @State private var bannerCopyIn = false
     /// Exercise whose inline rep-goal stepper is showing.
     @State private var repGoalFor: UUID?
+    /// Exercise whose rest picker sheet is open (frame 28).
+    @State private var restFor: Exercise?
 
     var body: some View {
         NavigationStack {
@@ -45,9 +47,12 @@ struct ActiveWorkoutView: View {
             .toolbar { toolbar }
             .navigationDestination(item: $detail) { ExerciseDetailView(exercise: $0).liftZoomDestination(.exercise($0.id)) }
         }
+        .sheet(item: $restFor) { ex in
+            RestPickerSheet(exercise: ex, current: ex.restSec ?? settings.workingRestSeconds) { session?.setRest(for: ex, seconds: $0) }
+                .presentationDetents([.medium])
+        }
         .onAppear {
             if session == nil { session = WorkoutSession(workout: workout, context: context, settings: settings) }
-            RestNotifications.requestPermissionIfNeeded()
             #if DEBUG
             applyFixture()
             #endif
@@ -147,7 +152,8 @@ struct ActiveWorkoutView: View {
             .scrollContentBackground(.hidden)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 RestBarView(countdown: session.rest, nextText: session.restNextText, doneText: session.restDoneText,
-                            onAdjust: { session.adjustRest(by: $0) }, onSkip: { session.stopRest() })
+                            caption: session.restCaption,
+                            onAdjust: { session.adjustRest(by: $0) }, onSkip: { session.skipRest(toasts: toasts) })
                     .opacity(session.rest == nil && session.restDoneText == nil ? 0 : 1)
                     .frame(height: session.rest == nil && session.restDoneText == nil ? 0 : nil)
                     .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.rest == nil)
@@ -231,10 +237,7 @@ struct ActiveWorkoutView: View {
                 Menu {
                     Button("Swap") { picker = .swap(ex) }
                     Button("Add set") { session.addSet(to: ex) }
-                    Picker("Rest", selection: Binding(get: { rest }, set: { session.setRest(for: ex, seconds: $0) })) {
-                        ForEach(RestChoices.all(including: rest), id: \.self) { Text(RestCountdown.format(TimeInterval($0))).tag($0) }
-                    }
-                    .pickerStyle(.menu)
+                    Button("Rest · \(RestChoices.label(ex.restSec ?? rest))") { restFor = ex }
                     Button("Rep goal · \(ex.repGoal)") { repGoalFor = ex.id }
                     Button("Remove", role: .destructive) { session.remove(ex, toasts: toasts) }
                 } label: {
@@ -265,18 +268,13 @@ struct ActiveWorkoutView: View {
 
     /// "Last · Mon · 185×8, 185×7, 185×6"
     private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit) -> String {
-        // Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
-        let day = beat.lastDate.map { d in
-            Date().timeIntervalSince(d) > 6 * 86_400 ? d.formatted(.dateTime.day().month(.abbreviated)) : d.formatted(.dateTime.weekday(.abbreviated))
-        }
-        let sets = beat.last.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
-        return (["Last", day].compactMap { $0 } + [sets]).joined(separator: " · ")
+        BeatItText.last(beat.last, date: beat.lastDate) ?? "Last"
     }
 
     @ViewBuilder
     private func targetLine(_ beat: LiftStore.BeatIt, ex: Exercise, unit: WeightUnit, isCurrent: Bool, hit: Bool) -> some View {
         if let t = beat.target {
-            let number = ex.equipment == .bodyweight && t.weight <= 0 ? "\(t.reps) reps" : "\(UnitMath.format(t.weight)) × \(t.reps)"
+            let number = BeatItText.number(t, bodyweight: ex.equipment == .bodyweight)
             let layout = typeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.Spacing.s1))
                 : AnyLayout(HStackLayout(spacing: 0))
@@ -418,13 +416,6 @@ struct ActiveWorkoutView: View {
     }
 }
 
-/// Rest choices for the ••• menu and set editor (15 s steps up to 5 min).
-enum RestChoices {
-    static func all(including current: Int) -> [Int] {
-        let base = [30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]
-        return base.contains(current) ? base : (base + [current]).sorted()
-    }
-}
 
 private struct PickerItem: Identifiable {
     let mode: ExercisePicker.Mode

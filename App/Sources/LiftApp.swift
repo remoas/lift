@@ -21,10 +21,12 @@ struct LiftApp: App {
         }
         #endif
         container = LiftStore.makeContainer()
-        _settings = State(initialValue: AppSettings())
+        let settings = AppSettings()
+        _settings = State(initialValue: settings)
         let context = container.mainContext
         LiftStore.mergeLibrary(context: context)
         LiftStore.dedupe(context)
+        PhoneSync.shared.start(container: container, settings: settings)
     }
 
     var body: some Scene {

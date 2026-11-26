@@ -12,6 +12,10 @@ on:
         description: "Record the three shared-transition flows (AC 61)"
         type: boolean
         default: false
+      ios_tests:
+        description: "Run the iPhone UI tests (the watch build, counter tests and watch screenshots always run)"
+        type: boolean
+        default: true
 permissions:
   contents: read
 concurrency:
@@ -30,16 +34,35 @@ jobs:
           sudo xcode-select -s "$XC"
           xcodebuild -version
           mkdir -p review-logs screenshots-review
-          xcrun simctl list devicetypes | grep -i "iPhone 16" | tee review-logs/devicetypes.txt
+          xcrun simctl list devicetypes | grep -iE "iPhone 16|Apple Watch" | tee review-logs/devicetypes.txt
           xcrun simctl list runtimes | tee review-logs/runtimes.txt
-      - name: LiftCore unit tests
+      - name: LiftCore unit tests (Target rule, rep counter, rest timer, sync)
         working-directory: Packages/LiftKit
         run: |
           set -o pipefail
           swift test 2>&1 | tee ../../review-logs/liftcore-tests.log
+          grep -E "RepCounter|RestTimer|LiveWorkout" ../../review-logs/liftcore-tests.log | grep -E "passed|failed" | tee ../../review-logs/watch-engine-tests.log
       - name: Generate project
         run: brew install xcodegen && xcodegen generate
+      - name: Build the watch app (watchOS simulator, unsigned)
+        run: |
+          set -o pipefail
+          TYPE=$(xcrun simctl list devicetypes | grep -E "Apple Watch Series [0-9]+ \(4[56]mm\)" | tail -1 | sed -E 's/ \(com\.apple.*//')
+          echo "Watch device type: $TYPE"
+          WUDID=$(xcrun simctl create lift-watch-ci "$TYPE")
+          echo "WATCH_UDID=$WUDID" >> "$GITHUB_ENV"
+          xcodebuild -project Lift.xcodeproj -scheme LiftWatch -configuration Debug \
+            -destination "id=$WUDID" -derivedDataPath build/dd \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build > review-logs/watch-build.log 2>&1 \
+            || { grep -E "error:|warning: .*(Watch|watch)" review-logs/watch-build.log | sort -u | head -150; tail -60 review-logs/watch-build.log; exit 1; }
+          grep -cE "warning:" review-logs/watch-build.log || true
+          /usr/libexec/PlistBuddy -c Print build/dd/Build/Products/Debug-watchsimulator/LiftWatch.app/Info.plist | tee review-logs/watch-info.txt
+      - name: Watch screenshots
+        if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-watchsimulator/LiftWatch.app/Info.plist') != '' }}
+        continue-on-error: true
+        run: scripts/watch-screenshots.sh build/dd/Build/Products/Debug-watchsimulator/LiftWatch.app screenshots-review/watch
       - name: Build and UI-test (iPhone 16 simulator, unsigned)
+        if: ${{ inputs.ios_tests }}
         run: |
           set -o pipefail
           UDID=$(xcrun simctl create lift-ci "iPhone 16")
@@ -50,6 +73,9 @@ jobs:
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO test > review-logs/xcodebuild.log 2>&1 \
             || { grep -E "error:|failed|Failing|XCTAssert" review-logs/xcodebuild.log | sort -u | head -150; tail -60 review-logs/xcodebuild.log; exit 1; }
           grep -E "Test Suite|Executed|passed|failed" review-logs/xcodebuild.log | tail -30
+          # The watch app ships inside the iPhone app.
+          find build/dd/Build/Products/Debug-iphonesimulator/Lift.app -maxdepth 3 -name "LiftWatch.app" | tee review-logs/embedded-watch.txt
+          test -s review-logs/embedded-watch.txt
           xcrun simctl delete "$UDID" || true
       - name: Screenshots
         if: ${{ !cancelled() && inputs.screenshots && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
