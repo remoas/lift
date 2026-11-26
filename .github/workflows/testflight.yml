@@ -1,0 +1,98 @@
+# Manual only (workflow_dispatch). Never pull_request / pull_request_target:
+# the repo is public and this job holds the App Store Connect API key.
+# Standard free GitHub-hosted macOS runner. Archives a Release build, signs it
+# with automatic provisioning via the API key, and uploads it to TestFlight.
+name: TestFlight (internal)
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "CFBundleVersion"
+        required: true
+        default: "1"
+      upload:
+        description: "Upload the IPA to App Store Connect (needs the Lift app record)"
+        type: boolean
+        default: true
+permissions:
+  contents: read
+concurrency:
+  group: testflight
+  cancel-in-progress: false
+jobs:
+  archive:
+    if: github.repository == 'remoas/lift' && github.actor == 'remoas'
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Select Xcode 16
+        run: |
+          XC=$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)
+          sudo xcode-select -s "$XC"
+          xcodebuild -version
+          mkdir -p tf-logs
+      - name: API key
+        env:
+          ASC_KEY_P8_B64: ${{ secrets.ASC_KEY_P8_B64 }}
+        run: |
+          mkdir -p ~/.appstoreconnect/private_keys
+          KEY=~/.appstoreconnect/private_keys/AuthKey_${ASC_KEY_ID}.p8
+          printf %s "$ASC_KEY_P8_B64" | base64 --decode > "$KEY"
+          chmod 600 "$KEY"
+          echo "ASC_KEY_PATH=$KEY" >> "$GITHUB_ENV"
+      - name: Generate project
+        run: brew install xcodegen && xcodegen generate
+      - name: Archive (Release, automatic signing)
+        run: |
+          set -o pipefail
+          xcodebuild archive -project Lift.xcodeproj -scheme Lift -configuration Release \
+            -destination "generic/platform=iOS" -archivePath build/Lift.xcarchive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            DEVELOPMENT_TEAM="$TEAM_ID" CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="${{ inputs.build_number }}" MARKETING_VERSION=1.0 \
+            > tf-logs/archive.log 2>&1 \
+            || { grep -E "error:|warning: .*(sign|profile|entitle)" tf-logs/archive.log | sort -u | head -80; tail -40 tf-logs/archive.log; exit 1; }
+          tail -5 tf-logs/archive.log
+      - name: Export IPA (App Store Connect)
+        run: |
+          set -o pipefail
+          cat > build/ExportOptions.plist <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>export</string>
+            <key>teamID</key><string>${TEAM_ID}</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>uploadSymbols</key><true/>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict></plist>
+          PLIST
+          xcodebuild -exportArchive -archivePath build/Lift.xcarchive -exportPath build/export \
+            -exportOptionsPlist build/ExportOptions.plist -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+            > tf-logs/export.log 2>&1 \
+            || { grep -E "error" tf-logs/export.log | sort -u | head -60; tail -40 tf-logs/export.log; exit 1; }
+          ls -la build/export
+          codesign -d --entitlements :- build/export/../Lift.xcarchive/Products/Applications/Lift.app 2>/dev/null | tee tf-logs/archive-entitlements.plist >/dev/null || true
+      - name: Upload to TestFlight
+        if: ${{ inputs.upload }}
+        run: |
+          set -o pipefail
+          xcrun altool --upload-app -f build/export/Lift.ipa -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee tf-logs/upload.log
+      - name: Remove key
+        if: always()
+        run: rm -rf ~/.appstoreconnect
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: testflight-logs
+          path: tf-logs/
+          if-no-files-found: ignore
