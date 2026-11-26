@@ -15,7 +15,7 @@ enum WatchTheme {
     /// Clear of the system page dots on the trailing edge (CDO QA 1, item 4).
     static let trailingInset: CGFloat = 16
     /// Above the rounded bottom so a primary keeps its corners (QA 1, item 3).
-    static let bottomGap: CGFloat = 10
+    static var bottomGap: CGFloat { isLarge ? 14 : 10 }
     /// 44 pt everywhere (AC 72, 75; QA 1, item 13).
     static let primaryHeight: CGFloat = 44
     static let buttonRadius: CGFloat = 14
@@ -117,5 +117,7 @@ extension View {
                 .padding(.horizontal, WatchTheme.inset)
                 .padding(.bottom, WatchTheme.bottomGap)
         }
+        // Measured from the glass, not the system's bottom bar area.
+        .ignoresSafeArea(.container, edges: .bottom)
     }
 }

@@ -200,7 +200,7 @@ struct ExercisePage: View {
     // The log state: name, Last, Beat it with the bar, the prefill, Log set.
     private var logView: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 3) {
+            VStack(alignment: .leading, spacing: WatchTheme.isLarge ? 3 : 1) {
                 Text(exercise.name).watchTitle()
                 if let count = store.liveCount(for: exercise) {
                     countingBody(count)
@@ -286,7 +286,7 @@ struct ExercisePage: View {
                                       isContinuous: false, isHapticFeedbackEnabled: true)
                 .onTapGesture { take(.reps) }
         }
-        .font(WatchTheme.hero(26))
+        .font(WatchTheme.hero(WatchTheme.isLarge ? 26 : 24))
         .foregroundStyle(WatchTheme.textPrimary)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("This set, \(UnitMath.format(weight)) \(exercise.unit.symbol) times \(Int(reps))")
