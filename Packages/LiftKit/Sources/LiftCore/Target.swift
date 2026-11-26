@@ -1,7 +1,7 @@
 import Foundation
 
 /// A weight × reps pair, in the unit it's shown in.
-public struct SetTarget: Equatable, Sendable {
+public struct SetTarget: Codable, Hashable, Sendable {
     public var weight: Double
     public var reps: Int
     public init(weight: Double, reps: Int) {

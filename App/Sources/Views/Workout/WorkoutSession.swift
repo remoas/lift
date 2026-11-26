@@ -31,6 +31,10 @@ final class WorkoutSession {
         self.context = context
         self.settings = settings
         bestIDs = LiftStore.bestSetIDs(in: workout)
+        if !workout.isBackLog {
+            PhoneSync.shared.onRemoteRest = { [weak self] r in self?.applyRemoteRest(r) }
+            if let r = PhoneSync.shared.rest, !r.isOver(at: Date()) { applyRemoteRest(r) }
+        }
     }
 
     // MARK: Derived
@@ -173,21 +177,43 @@ final class WorkoutSession {
         guard var r = rest else { return }
         r.adjust(by: seconds)
         rest = r
-        if r.remaining(at: Date()) <= 0 { finishRest() } else { scheduleRestEnd() }
+        if r.remaining(at: Date()) <= 0 {
+            finishRest()
+            if !workout.isBackLog { PhoneSync.shared.setLocalRest(nil) }
+        } else {
+            scheduleRestEnd()
+        }
     }
 
     func stopRest() {
         rest = nil
         restDoneText = nil
         restTask?.cancel()
-        RestNotifications.cancel()
+        if !workout.isBackLog { PhoneSync.shared.setLocalRest(nil) }
+    }
+
+    /// A rest started, extended or skipped on the watch: same countdown here,
+    /// no notification of the phone's own unless the policy says so (PhoneSync).
+    func applyRemoteRest(_ r: RestState?) {
+        restTask?.cancel()
+        guard let r else { rest = nil; restDoneText = nil; return }
+        rest = r.countdown
+        restNextText = r.next
+        restDoneText = nil
+        runRestClock(r.countdown)
     }
 
     private func scheduleRestEnd() {
         guard let r = rest else { return }
         restTask?.cancel()
         let nextEx = currentSet?.exercise?.name
-        RestNotifications.schedule(at: r.endsAt, exercise: nextEx, next: restNextText)
+        if !workout.isBackLog {
+            PhoneSync.shared.setLocalRest(RestState(countdown: r, exercise: nextEx, next: restNextText, origin: .phone))
+        }
+        runRestClock(r)
+    }
+
+    private func runRestClock(_ r: RestCountdown) {
         restTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(max(r.endsAt.timeIntervalSinceNow, 0)))
             guard !Task.isCancelled else { return }
@@ -197,7 +223,8 @@ final class WorkoutSession {
 
     private func finishRest() {
         restTask?.cancel()
-        Haptics.restDone()
+        // The watch buzzes instead when it's running the workout (one alert).
+        if !PhoneSync.shared.watchAlerts { Haptics.restDone() }
         rest = nil
         restDoneText = restNextText.map { "Rest's up · \($0)" } ?? "Rest's up"
         Task { [weak self] in

@@ -259,15 +259,13 @@ struct ActiveWorkoutView: View {
 
     /// "Last · Mon · 185×8, 185×7, 185×6"
     private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit) -> String {
-        let day = beat.lastDate.map { $0.formatted(.dateTime.weekday(.abbreviated)) }
-        let sets = beat.last.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
-        return (["Last", day].compactMap { $0 } + [sets]).joined(separator: " · ")
+        BeatItText.last(beat.last, date: beat.lastDate) ?? "Last"
     }
 
     @ViewBuilder
     private func targetLine(_ beat: LiftStore.BeatIt, ex: Exercise, unit: WeightUnit, isCurrent: Bool, hit: Bool) -> some View {
         if let t = beat.target {
-            let number = ex.equipment == .bodyweight && t.weight <= 0 ? "\(t.reps) reps" : "\(UnitMath.format(t.weight)) × \(t.reps)"
+            let number = BeatItText.number(t, bodyweight: ex.equipment == .bodyweight)
             let layout = typeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.Spacing.s1))
                 : AnyLayout(HStackLayout(spacing: 0))
@@ -389,13 +387,6 @@ struct ActiveWorkoutView: View {
     }
 }
 
-/// Rest choices for the ••• menu and set editor (15 s steps up to 5 min).
-enum RestChoices {
-    static func all(including current: Int) -> [Int] {
-        let base = [30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]
-        return base.contains(current) ? base : (base + [current]).sorted()
-    }
-}
 
 private struct PickerItem: Identifiable {
     let mode: ExercisePicker.Mode
