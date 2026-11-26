@@ -11,6 +11,8 @@ enum WatchTheme {
     static let textTertiary = Color(red: 0x8E / 255, green: 0x8B / 255, blue: 0x86 / 255)
     static let separator = Color(red: 0x2C / 255, green: 0x2C / 255, blue: 0x30 / 255)
 
+    /// Room under the ••• / Finish row so the exercise name never sits behind it.
+    static var toolbarClearance: CGFloat { isLarge ? 30 : 26 }
     static let inset: CGFloat = 10
     static let primaryHeight: CGFloat = 44
     static let buttonRadius: CGFloat = 14

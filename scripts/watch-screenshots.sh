@@ -24,7 +24,7 @@ shoot_on() { # "name|udid" suffix
   for f in "${FRAMES[@]}"; do
     xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
     xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture "$f" >/dev/null
-    sleep 3
+    if [ "$f" = w09-add ]; then sleep 8; else sleep 3; fi
     xcrun simctl io "$UDID" screenshot "$OUT/$f-$2.png" >/dev/null
   done
   xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true

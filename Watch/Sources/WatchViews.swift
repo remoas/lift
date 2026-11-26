@@ -175,6 +175,7 @@ struct ExercisePage: View {
             logButton
         }
         .padding(.horizontal, WatchTheme.inset)
+        .padding(.top, WatchTheme.toolbarClearance)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
@@ -270,6 +271,7 @@ struct ExercisePage: View {
             Spacer()
         }
         .padding(.horizontal, WatchTheme.inset)
+        .padding(.top, WatchTheme.toolbarClearance)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 

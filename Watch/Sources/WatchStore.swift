@@ -64,6 +64,8 @@ final class WatchStore: NSObject {
     private struct Saved: Codable { var live: LiveWorkout; var pending: [LiveEnvelope]; var heard: Bool }
 
     init(fixture: LiveWorkout? = nil, dimmed: Bool = false, unreachable: Bool = false) {
+        // Index the catalog off the main thread so Add exercise opens instantly.
+        Task.detached(priority: .utility) { _ = WatchLibrary.index; _ = WatchLibrary.byID }
         self.fixture = fixture != nil
         forceDimmed = dimmed
         if let fixture {
