@@ -63,7 +63,7 @@ final class SearchSpecTests: XCTestCase {
             if top1.isEmpty, !ids.isEmpty { why.append("expected no results") }
             if !why.isEmpty { failures.append("\(query) [\(history)]: \(why) got \(ids.prefix(5))") }
         }
-        XCTAssertEqual(rows.count - 1, 105)
+        XCTAssertGreaterThanOrEqual(rows.count - 1, 111)
         XCTAssertTrue(failures.isEmpty, failures.joined(separator: "\n"))
     }
 
@@ -77,7 +77,7 @@ final class SearchSpecTests: XCTestCase {
     func testV3Library() {
         let lib = Self.library
         XCTAssertGreaterThanOrEqual(lib.version, 3)
-        XCTAssertEqual(lib.exercises.reduce(0) { $0 + $1.aliases.count }, 922)
+        XCTAssertEqual(lib.exercises.reduce(0) { $0 + $1.aliases.count }, 926)
         XCTAssertEqual(lib.exercises.filter { $0.duplicateOf != nil }.count, 17)
         XCTAssertNil(lib.exercise("triceps-pushdown")?.duplicateOf)
         XCTAssertEqual(lib.exercise("bench-press")?.popularity, 5)

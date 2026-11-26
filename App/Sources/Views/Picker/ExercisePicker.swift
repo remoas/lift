@@ -21,6 +21,9 @@ struct ExercisePicker: View {
     @State private var selected: [Choice] = []
     @State private var creating = false
     @FocusState private var searchFocused: Bool
+    @Environment(\.dynamicTypeSize) private var typeSize
+    /// Fixture 18a2 only: scroll to the Recents/Common boundary with the keyboard down.
+    @State private var scrollTarget: UUID?
 
     /// A pick: an existing row or a library entry not yet in the database.
     enum Choice: Hashable, Identifiable {
@@ -127,6 +130,9 @@ struct ExercisePicker: View {
         choices = map
         refresh()
         #if DEBUG
+        if Fixtures.requested == "18a2-picker-empty-scrolled" {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { scrollTarget = common.first?.id }
+        }
         if let q = Fixtures.pickerQuery, query.isEmpty {
             query = q
             refresh()
@@ -165,17 +171,19 @@ struct ExercisePicker: View {
         let media: String?
         switch c {
         case .row(let ex):
-            detail = lastText(ex) ?? subtitleTags(e)
+            detail = detailLine(last: lastText(ex), e, hint: hit.matchedAlias != nil)
             media = ex.mediaRef
         case .library(let l):
-            detail = subtitleTags(e)
+            detail = detailLine(last: nil, e, hint: hit.matchedAlias != nil)
             media = l.mediaRef
         }
         return Item(choice: c, name: e.name, detail: detail, alias: hit.matchedAlias, mediaRef: media, primary: e.primary)
     }
 
-    private func subtitleTags(_ e: SearchEntry) -> String {
-        "Not logged yet · " + ([e.equipment.label] + e.primary.prefix(2).map(\.label)).joined(separator: ", ")
+    /// Last set or "Not logged yet", then equipment and one muscle; with a hint, no muscle (qa-search Should 1).
+    private func detailLine(last: String?, _ e: SearchEntry, hint: Bool) -> String {
+        let tags = ([e.equipment.label] + (hint ? [] : e.primary.prefix(1).map(\.label))).joined(separator: ", ")
+        return [last ?? "Not logged yet", tags].joined(separator: " · ")
     }
 
     /// Last 8 logged, most recent first: "Last 185 × 8 · Mon" (§10.6).
@@ -225,7 +233,7 @@ struct ExercisePicker: View {
         let last = LiftStore.lastSessionSets(for: ex).filter { $0.kind.countsForRecords }
         guard let top = last.max(by: { $0.snapshot.weightKg < $1.snapshot.weightKg }) else { return nil }
         let unit = ex.unit(global: settings.unit)
-        return WeightText.pair(top.snapshot, in: unit, step: ex.step(for: unit))
+        return WeightText.pair(top.snapshot, in: unit, step: ex.step(for: unit), bodyweight: ex.equipment == .bodyweight)
     }
 
     private func lastText(_ ex: Exercise) -> String? { lastPair(ex).map { "Last \($0)" } }
@@ -266,14 +274,16 @@ struct ExercisePicker: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-            Text(subtitle).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .screenMargins()
+            // At AX sizes the subtitle steps aside while typing; it's the Add bar's hint instead.
+            if !(typeSize.isAccessibilitySize && isTyping) {
+                Text(subtitleLine).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .screenMargins()
+            }
             ChipMorphBar(groups: Self.filterGroups, selection: $filters, open: $openFilter, namespace: chipSpace)
                 .padding(.vertical, Theme.Spacing.s2)
             ScrollViewReader { proxy in
             List {
-                Color.clear.frame(height: 0).listRowSeparator(.hidden).listRowBackground(Color.clear).id("top")
                 if isTyping {
                     // Results replace the sections: no header, no Recents (logged matches float up).
                     if results.isEmpty {
@@ -283,17 +293,23 @@ struct ExercisePicker: View {
                     ForEach(results) { row($0) }
                     if !hasExact { createRow }
                 } else if hasChips {
-                    Section("\(results.count) exercises") { ForEach(results) { row($0) } }
+                    Section { ForEach(results) { row($0) } } header: { header("\(results.count) exercises") }
                 } else {
-                    if !recent.isEmpty { Section("Recents") { ForEach(recent) { row($0) } } }
-                    if !common.isEmpty { Section("Common") { ForEach(common) { row($0) } } }
-                    Section("All exercises") { ForEach(results) { row($0) } }
+                    if !recent.isEmpty { Section { ForEach(recent) { row($0) } } header: { header("Recents") } }
+                    if !common.isEmpty { Section { ForEach(common) { row($0) } } header: { header("Common") } }
+                    Section { ForEach(results) { row($0) } } header: { header("All exercises") }
                 }
             }
             .listStyle(.plain)
+            .listSectionSpacing(0)
             .scrollContentBackground(.hidden)
+            // First row 8 pt under the chips (the chips' own padding); no extra top inset.
+            .contentMargins(.top, 0, for: .scrollContent)
+            // The Add bar never covers the last visible row's detail (qa-search Must 3, Nit 3).
+            .contentMargins(.bottom, isMulti && !selected.isEmpty ? Theme.Size.primaryButton + Theme.Spacing.s2 + 12 : 0, for: .scrollContent)
             .transaction { $0.animation = nil }   // no reorder animation while typing (§10.6)
-            .onChange(of: query) { proxy.scrollTo("top", anchor: .top) }
+            .onChange(of: query) { if let first = results.first?.id { proxy.scrollTo(first, anchor: .top) } }
+            .onChange(of: scrollTarget) { if let t = scrollTarget { proxy.scrollTo(t, anchor: .center) } }
             }
             }
             .background(Theme.Colors.bgRaised)
@@ -303,6 +319,7 @@ struct ExercisePicker: View {
                 }
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
+            .modifier(KeepTitleWhileSearching())
             .onSubmit(of: .search) { submit() }
             .modifier(SearchFocus(focused: $searchFocused))
             .navigationTitle(title)
@@ -314,6 +331,7 @@ struct ExercisePicker: View {
                 if isMulti, !selected.isEmpty {
                     Button("Add \(selected.count)") { commit(selected) }
                         .buttonStyle(PrimaryButtonStyle())
+                        .accessibilityHint(subtitle)
                         .disabled(selected.isEmpty)
                         .screenMargins()
                         .padding(.bottom, Theme.Spacing.s2)
@@ -326,13 +344,29 @@ struct ExercisePicker: View {
                     commit([.row(ex)])
                 }
             }
-            .onAppear { searchFocused = true }
+            .onAppear {
+                #if DEBUG
+                if Fixtures.requested == "18a2-picker-empty-scrolled" { return }
+                #endif
+                searchFocused = true
+            }
             .task(id: exercises.count) { rebuildIndex() }
             .onChange(of: query) { refresh() }
             .onChange(of: filters) { refresh() }
         }
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
+    }
+
+    /// Section headers: secondary text, sentence case (6.75:1 on white; qa-search Must 4).
+    private func header(_ title: String) -> some View {
+        Text(title).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary).textCase(nil)
+    }
+
+    /// Keeps the mode visible when the nav title can't be (iOS 17.0).
+    private var subtitleLine: String {
+        if #available(iOS 17.1, *) { return subtitle }
+        return "\(title) · \(subtitle)"
     }
 
     private func row(_ item: Item) -> some View {
@@ -354,9 +388,11 @@ struct ExercisePicker: View {
                     // Title is the name only (§10.5); the alias leads the detail line.
                     Text(item.name).font(.body).foregroundStyle(Theme.Colors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
+                    // One line, truncating, below AX sizes; wraps at AX sizes (§10.5).
                     Text(([item.alias].compactMap { $0 } + [item.detail]).joined(separator: " · "))
-                        .font(Theme.Fonts.secondary.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                        .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+                        .lineLimit(typeSize.isAccessibilitySize ? nil : 1)
+                        .truncationMode(.tail)
                 }
                 Spacer()
                 if isMulti {
@@ -504,6 +540,17 @@ struct MusclePicker: View {
             }
         }
         .navigationTitle(title)
+    }
+}
+
+/// The sheet keeps "Add exercise" / "Swap …" in the nav bar while searching (iOS 17.1+).
+private struct KeepTitleWhileSearching: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 17.1, *) {
+            content.searchPresentationToolbarBehavior(.avoidHidingContent)
+        } else {
+            content
+        }
     }
 }
 

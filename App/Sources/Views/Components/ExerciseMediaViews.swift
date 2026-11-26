@@ -54,14 +54,15 @@ struct ExerciseThumb: View {
 
     var body: some View {
         ZStack {
-            RoundedRectangle.smooth(Theme.Radius.control).fill(Theme.Colors.accentSoft)
+            // Neutral placeholder: Ember is only for the one primary and the bar (qa-search Should 3).
+            RoundedRectangle.smooth(Theme.Radius.control).fill(Theme.Colors.bgSunken)
             if let image {
                 Image(uiImage: image).resizable().scaledToFill()
                     .transition(.opacity)
             } else {
-                Image(systemName: Theme.Symbols.region(primary.first?.region))
+                Image(systemName: "figure.strengthtraining.traditional")
                     .font(.system(size: side * 0.45, weight: .medium))
-                    .foregroundStyle(Theme.Colors.accent)
+                    .foregroundStyle(Theme.Colors.textSecondary)
             }
         }
         .frame(width: side, height: side)
@@ -242,14 +243,27 @@ struct ExerciseMediaHeader: View {
     }
 
     private var video: some View {
-        ZStack(alignment: .bottomLeading) {
-            if let player {
-                PlayerLayerView(player: player)
-                    .opacity(reduceMotion && !playing ? 0 : 1)
+        // Color.clear takes exactly the media box; a scaled-to-fill poster used to
+        // widen the ZStack, pushing the pill off the visible left edge (QA run 2 #5c).
+        Color.clear
+            .overlay {
+                ZStack {
+                    if let player {
+                        PlayerLayerView(player: player)
+                            .opacity(reduceMotion && !playing ? 0 : 1)
+                    }
+                    if reduceMotion, !playing {
+                        image(poster)
+                    }
+                }
             }
-            if reduceMotion, !playing {
-                image(poster)
-            }
+            .clipped()
+            .overlay(alignment: .bottomLeading) { playButton }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: toggle)
+    }
+
+    private var playButton: some View {
             Button(action: toggle) {
                 if reduceMotion && !playing {
                     Label("Play", systemImage: "play.fill")
@@ -269,9 +283,6 @@ struct ExerciseMediaHeader: View {
             .padding(.leading, 10)
             .padding(.bottom, 10)
             .accessibilityLabel(playing ? "Pause demonstration" : "Play demonstration")
-        }
-        .contentShape(Rectangle())
-        .onTapGesture(perform: toggle)
     }
 
     private func image(_ img: UIImage?) -> some View {

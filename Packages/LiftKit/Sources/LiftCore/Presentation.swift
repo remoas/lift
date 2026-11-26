@@ -46,8 +46,10 @@ public struct SetRowModel: Equatable, Sendable, Identifiable {
 
 public enum WeightText {
     /// "185 × 8" in `unit`, converting and snapping if needed.
-    public static func pair(_ set: SetSnapshot, in unit: WeightUnit, step: Double) -> String {
+    /// "185 × 8". Bodyweight: "9 reps", or "BW + 25 × 9" with added load (never "0 × 9").
+    public static func pair(_ set: SetSnapshot, in unit: WeightUnit, step: Double, bodyweight: Bool = false) -> String {
         let w = UnitMath.convertLoadable(set.weight, from: set.unit, to: unit, step: step)
+        if bodyweight { return w <= 0 ? "\(set.reps) reps" : "BW + \(UnitMath.format(w)) × \(set.reps)" }
         return "\(UnitMath.format(w)) × \(set.reps)"
     }
 

@@ -256,13 +256,15 @@ struct ExerciseDetailView: View {
     // MARK: Settings
 
     @ViewBuilder private var settingsRows: some View {
-        Stepper("Rep goal \(exercise.repGoal)", value: $exercise.repGoal, in: 3...30).monospacedDigit()
+        Stepper("Rep goal \(exercise.repGoal)", value: $exercise.repGoal, in: 3...30).monospacedDigit().frame(minHeight: Theme.Size.hit)
         Stepper(value: Binding(get: { exercise.restSec ?? settings.workingRestSeconds }, set: { exercise.restSec = $0 }), in: 15...600, step: 15) {
             Text("Rest \(RestCountdown.format(TimeInterval(exercise.restSec ?? settings.workingRestSeconds)))").monospacedDigit()
         }
+        .frame(minHeight: Theme.Size.hit)
         Stepper(value: Binding(get: { exercise.step(for: unit) }, set: { exercise.plateStep = $0 }), in: 0.5...20, step: unit == .kg ? 1.25 : 2.5) {
             Text("Plate step \(UnitMath.format(exercise.step(for: unit))) \(unit.symbol)").monospacedDigit()
         }
+        .frame(minHeight: Theme.Size.hit)
         Picker("Unit", selection: Binding(get: { exercise.unitOverride }, set: { exercise.unitOverride = $0; exercise.plateStep = nil })) {
             Text("Use default (\(settings.unit.symbol))").tag(WeightUnit?.none)
             ForEach(WeightUnit.allCases) { Text($0.symbol).tag(WeightUnit?.some($0)) }

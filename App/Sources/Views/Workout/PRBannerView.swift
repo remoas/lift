@@ -21,6 +21,7 @@ struct PRBannerView: View {
     private var morphing: Bool { setID != nil && !reduceMotion }
     private var atRow: Bool { morphing && !landed }
     private var copyHidden: Bool { atRow || (morphing && !copyIn) }
+    private var rowRect: CGRect? { setID.flatMap { SetValueFrames.shared.frames[$0] } }
 
     var body: some View {
         Button(action: onTap) {
@@ -50,10 +51,20 @@ struct PRBannerView: View {
                     .fill(Theme.Colors.bgRaised)
                     .overlay(RoundedRectangle(cornerRadius: r, style: .continuous).strokeBorder(Theme.Colors.separator, lineWidth: 0.5))
                     .shadow(color: Theme.Colors.scrim.opacity(atRow ? 0 : 0.35), radius: 14, y: 6)
-                    .modifier(MatchIf(id: setID.map(LiftTransitionID.prBanner), active: atRow))
             }
         }
         .buttonStyle(.plain)
+        // At the row, the card sits exactly on the set's value (the set that
+        // earned it); landing animates it to its own place, dismiss reverses.
+        .visualEffect { [atRow, rowRect] c, proxy in
+            let me = proxy.frame(in: .global)
+            var sx = 1.0, sy = 1.0, dx = 0.0, dy = 0.0
+            if atRow, let r = rowRect, me.width > 0, me.height > 0 {
+                sx = r.width / me.width; sy = r.height / me.height
+                dx = r.minX - me.minX; dy = r.minY - me.minY
+            }
+            return c.scaleEffect(x: sx, y: sy, anchor: .topLeading).offset(x: dx, y: dy)
+        }
         .padding(.horizontal, Theme.Spacing.s3)
         .offset(y: reduceMotion ? 0 : min(drag, 0))
         .gesture(
@@ -77,7 +88,6 @@ struct PRBannerView: View {
 
     @ViewBuilder private var headline: some View {
         let text = Text(content.headline).contentTransition(.numericText())
-            .modifier(MatchIf(id: setID.map(LiftTransitionID.prValue), active: atRow, properties: .position))
         // The bar draws only after the copy is in, never on the set row.
         if !morphing || (landed && copyIn) { text.theBar().id(content.headline) } else { text }
     }
@@ -95,4 +105,10 @@ private struct MatchIf: ViewModifier {
             content
         }
     }
+}
+
+/// Global frames of each set row's value, written by SetRowView. Main thread only.
+final class SetValueFrames: @unchecked Sendable {
+    static let shared = SetValueFrames()
+    var frames: [UUID: CGRect] = [:]
 }

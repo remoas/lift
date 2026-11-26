@@ -31,6 +31,11 @@ def stem(t):
     if t.endswith('s') and not t.endswith('ss') and not t.endswith('us'): return t[:-1]
     return t
 
+def cs(c):
+    """Compact form: words joined with nothing, then a final 's' dropped whatever the word length
+    (not after 'ss'), so 'Pull-Ups', 'pullups' and 'Pull Ups' all compact to 'pullup'. Spec §10.3 step 5."""
+    return c[:-1] if c.endswith('s') and not c.endswith('ss') and len(c)>=4 else c   # 'abs' stays 'abs'
+
 def tokens(s, phrases=True):
     """phrases=False keeps phrase abbreviations (OHP, RDL...) unexpanded: used to decide match-reason meta."""
     out=[]
@@ -76,11 +81,11 @@ def fuzzy_tok(q,k,last):
 class Key:
     def __init__(self,text,kind):
         self.text=text; self.kind=kind
-        self.t=tokens(text); self.p=' '.join(self.t); self.c=''.join(self.t)
-        self.raw=tokens(text,phrases=False); self.rawc=''.join(self.raw)
+        self.t=tokens(text); self.p=' '.join(self.t); self.c=cs(''.join(self.t))
+        self.raw=tokens(text,phrases=False); self.rawc=cs(''.join(self.raw))
 
 def tier(qt,key,attrs,generic):
-    qp=' '.join(qt); qc=''.join(qt)
+    qp=' '.join(qt); qc=cs(''.join(qt))
     if not qt: return None
     if key.p==qp or key.c==qc or sorted(key.t)==sorted(qt): return 1
     # CDO addendum (deadlift): starts-with and word-start share one tier, so Romanian and Sumo
@@ -120,19 +125,45 @@ class Index:
         pop={r['exercise_id']:(int(r['popularity']),int(r['rank']) if r['rank'] else 10**6) for r in csv.DictReader(open(os.path.join(OUT,'popularity.csv')))}
         # v3 fields; the Common list wins a duplicate pair (triceps-pushdown stays, tricep-pushdowns hides)
         dup={e['id']:e['duplicateOf'] for e in lib if e.get('duplicateOf')}
-        self.dup=dup; self.E=[]
+        self.dup=dup; self.E=[]; self.vocab={}
         for e in lib:
             eq=e['equipment'].replace('_',' ')
             self.E.append(dict(id=e['id'],name=e['name'],pop=pop[e['id']],
                 keys=[Key(e['name'],'name')]+[Key(a,'alias') for a in al.get(e['id'],[])],
                 primary=set(e['primaryMuscles']),
                 attrs=tokens(eq)+tokens(e.get('position') or '')))
+        for x in self.E:
+            if x['id'] in self.dup: continue
+            for w in {w for k in x['keys'] for w in k.t}: self.vocab[w]=self.vocab.get(w,0)+1
+    def correct(self,qt):
+        """Typo correction (§10.2 tier 6): each word of 4+ letters that matches no indexed word is replaced
+        by the closest indexed word (Damerau ≤1 for 4-7 letters, ≤2 for 8+, same first letter or swapped
+        first pair; the last word may match the start of a word). Ties: more exercises use the word, then A-Z."""
+        out=[]; changed=False
+        for n,q in enumerate(qt):
+            last=n==len(qt)-1
+            if any((v.startswith(q) if last else v==q) for v in self.vocab): out.append(q); continue
+            c=[(d,-self.vocab[v],v) for v in self.vocab for d in [fuzzy_tok(q,v,last)] if d is not None]
+            if c: out.append(min(c)[2]); changed=True
+            else: out.append(q)
+        return out if changed else None
+
     def search(self,query,history=()):
         """history: exercise ids, most recent first (stands in for logged-workout counts)."""
         qt=tokens(query); qraw=tokens(query,phrases=False)
         if not qt: return []
-        generic=len(qt)==1 and qt[0] in R['generic']
         use={i:len(history)-n for n,i in enumerate(history)}
+        res=self.rank(qt,qraw,use)
+        if len(res)<3:
+            fixed=self.correct(qt)
+            if fixed:
+                seen={r[0] for r in res}
+                more=[(i,n,m,6) for i,n,m,t in self.rank(fixed,fixed,use) if i not in seen]
+                res+=more[:8]
+        return res
+
+    def rank(self,qt,qraw,use):
+        generic=len(qt)==1 and qt[0] in R['generic']
         res=[]
         for e in self.E:
             if e['id'] in self.dup and e['id'] not in use: continue
@@ -150,27 +181,22 @@ class Index:
             for e in self.E:
                 if e['id'] in seen or (e['id'] in self.dup and e['id'] not in use): continue
                 if MUSCLE[qt[0]] & e['primary']: res.append([5,0,e,e['keys'][0]])
-        if len(res)<3:
-            seen={r[2]['id'] for r in res}; fz=[]
-            for e in self.E:
-                if e['id'] in seen or (e['id'] in self.dup and e['id'] not in use): continue
-                ds=[(d,k) for k in e['keys'] for d in [fuzzy(qt,k)] if d is not None]
-                if ds: d,k=min(ds,key=lambda x:x[0]); fz.append([6,d,e,k])
-            fz.sort(key=lambda r:(r[1],-use.get(r[2]['id'],0),-r[2]['pop'][0],r[2]['pop'][1],len(r[2]['name'])))
-            res+=fz[:8]
         # your lifts float up: a logged exercise matching at tiers 2-4 sits right after exact matches
         for x in res:
             if x[2]['id'] in use and 3<=x[0]<=4: x[0]=1.5
-        res.sort(key=lambda r:(r[0],r[1] if r[0]==6 else 0,-use.get(r[2]['id'],0),-r[2]['pop'][0],r[2]['pop'][1],r[1] if r[0]!=6 else 0,len(r[2]['name']),r[2]['name']))
+        res.sort(key=lambda r:(r[0],-use.get(r[2]['id'],0),-r[2]['pop'][0],r[2]['pop'][1],r[1],len(r[2]['name']),r[2]['name']))
         out=[]
         for t,_,e,k in res:
             # match-reason meta: only when the name itself does not show why the row is here
             meta=''
-            nk=e['keys'][0]; rc=''.join(qraw)
+            nk=e['keys'][0]; rc=cs(''.join(qraw))
             def hits(key): return rc in key.rawc or all(any(w.startswith(q) for w in key.raw) for q in qraw)
             if not hits(nk):
                 echo=[a for a in e['keys'][1:] if hits(a)]
-                echo.sort(key=lambda a:(a.rawc!=rc, not a.rawc.startswith(rc)))   # stable: aliases.csv order breaks ties
+                typed=''.join(qraw)
+                # Nit 1: when no alias equals or starts with the query, the shortest matching alias ("Incline DB Bench")
+                sw=lambda a:a.rawc==rc or a.rawc.startswith(rc)
+                echo.sort(key=lambda a:(a.rawc!=rc, ''.join(a.raw)!=typed, not a.rawc.startswith(rc), 0 if sw(a) else len(a.text)))   # stable: aliases.csv order breaks ties
                 meta=echo[0].text if echo else (k.text if k.kind=='alias' else '')
             out.append((e['id'],e['name'],meta,t))
         return out

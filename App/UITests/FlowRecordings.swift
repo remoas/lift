@@ -76,7 +76,7 @@ final class FlowRecordings: XCTestCase {
         // 1) Bench set 3: 215 × 5, a best.
         current.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
         XCTAssertTrue(banner.waitForExistence(timeout: 5))
-        pause(1.2)
+        pause(0.5)   // the second best has to land inside the first banner's 4 s
         // 2) Bench set 4 (prefilled with what was just logged) + 5 lb: a second best, replaces in place.
         let next = app.descendants(matching: .any)["current-set"].firstMatch
         if next.waitForExistence(timeout: 3) {
@@ -89,7 +89,7 @@ final class FlowRecordings: XCTestCase {
             }
         }
         XCTAssertTrue(banner.waitForExistence(timeout: 3))
-        pause(2)
+        pause(1)
         // 3) Swipe-up dismiss.
         let c = banner.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
         c.press(forDuration: 0.05, thenDragTo: banner.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -1.5)), withVelocity: .slow, thenHoldForDuration: 0.05)

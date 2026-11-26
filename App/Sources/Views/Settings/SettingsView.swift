@@ -71,6 +71,7 @@ struct SettingsView: View {
         Stepper(value: value, in: 15...600, step: 15) {
             LabeledContent(label, value: RestCountdown.format(TimeInterval(value.wrappedValue))).monospacedDigit()
         }
+        .frame(minHeight: Theme.Size.hit)   // 44 pt rows around the 32 pt system stepper (NIT 23)
     }
 
     private func plateSummary(_ p: PlateSet) -> String {
@@ -137,6 +138,7 @@ struct PlatesEditor: View {
                 Stepper(value: Binding(get: { set.bar }, set: { var s = set; s.bar = $0; settings.setPlates(s) }), in: 0...60, step: unit == .kg ? 2.5 : 5) {
                     LabeledContent("Bar", value: "\(UnitMath.format(set.bar)) \(unit.symbol)").monospacedDigit()
                 }
+                .frame(minHeight: Theme.Size.hit)
             }
             Section {
                 ForEach(known, id: \.self) { plate in

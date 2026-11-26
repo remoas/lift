@@ -131,7 +131,8 @@ final class Workout {
     }
 
     var isActive: Bool { endedAt == nil }
-    var allSets: [SetEntry] { sets ?? [] }
+    /// Never a deleted set (see LiftStore.delete).
+    var allSets: [SetEntry] { (sets ?? []).filter { !$0.isDeleted && $0.modelContext != nil } }
     var doneSets: [SetEntry] { allSets.filter(\.isDone) }
 
     /// Exercises in workout order, each with its sets in order.

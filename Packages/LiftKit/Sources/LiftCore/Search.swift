@@ -26,10 +26,14 @@ public struct SearchKey: Sendable {
     public let kind: Kind
     let words: [String]
     let phrase: String
+    /// Words joined, final "s" dropped (§10.3 step 5): "Pull-Ups" → "pullup".
     let compact: String
+    /// Words joined as they are, for the cheap pre-filter ("ups" must not be rejected).
+    let fullCompact: String
     /// Without phrase expansions (RDL stays "rdl"): decides the match-reason meta.
     let raw: [String]
     let rawCompact: String
+    let rawJoined: String
     let sortedWords: [String]
     /// Compact form from each word on ("wide grip pull up" → "widegrippullup", "grippullup"…).
     let suffixCompacts: [String]
@@ -40,9 +44,11 @@ public struct SearchKey: Sendable {
         let words = Search.tokens(text)
         self.words = words
         phrase = words.joined(separator: " ")
-        compact = words.joined()
+        fullCompact = words.joined()
+        compact = Search.stripS(fullCompact)
         raw = Search.tokens(text, phrases: false)
-        rawCompact = raw.joined()
+        rawJoined = raw.joined()
+        rawCompact = Search.stripS(rawJoined)
         sortedWords = words.sorted()
         suffixCompacts = words.indices.map { words[$0...].joined() }
     }
@@ -144,7 +150,43 @@ public enum Search {
             return sorted.map { SearchHit(entry: $0, tier: 0, matchedAlias: nil) }
         }
         let qraw = tokens(query, phrases: false)
-        let q = Query(words: qt, phrase: qt.joined(separator: " "), compact: qt.joined(), sorted: qt.sorted(),
+        var hits = rank(entries, qt: qt, qraw: qraw, passes: passes)
+        // Tier 6 (decision b): fewer than 3 results → correct each typo'd word to the
+        // closest indexed word, rank the corrected query normally, append ≤ 8 new rows.
+        if hits.count < 3, let fixed = correct(qt, entries: entries) {
+            let seen = Set(hits.map(\.id))
+            let more = rank(entries, qt: fixed, qraw: fixed, passes: passes).filter { !seen.contains($0.id) }.prefix(8)
+            hits += more.map { SearchHit(entry: $0.entry, tier: 6, matchedAlias: $0.matchedAlias) }
+        }
+        return hits
+    }
+
+    /// Typo correction: each 4+ letter word matching no indexed word (the last word may
+    /// match a word's start) becomes the closest indexed word. Ties: more exercises, then A–Z.
+    static func correct(_ qt: [String], entries: [SearchEntry]) -> [String]? {
+        var vocab: [String: Int] = [:]
+        for e in entries where !e.hiddenUnlessLogged {
+            var words = Set<String>()
+            for k in e.keys { words.formUnion(k.words) }
+            for w in words { vocab[w, default: 0] += 1 }
+        }
+        var out: [String] = [], changed = false
+        for (n, q) in qt.enumerated() {
+            let last = n == qt.count - 1
+            if vocab.keys.contains(where: { last ? $0.hasPrefix(q) : $0 == q }) { out.append(q); continue }
+            var best: (d: Int, c: Int, w: String)?
+            for (v, c) in vocab {
+                guard let d = fuzzyWord(q, v, last: last) else { continue }
+                if best == nil || (d, -c, v) < (best!.d, -best!.c, best!.w) { best = (d, c, v) }
+            }
+            if let b = best { out.append(b.w); changed = true } else { out.append(q) }
+        }
+        return changed ? out : nil
+    }
+
+    /// Tiers 1–5 for normalised query words.
+    static func rank(_ entries: [SearchEntry], qt: [String], qraw: [String], passes: (SearchEntry) -> Bool) -> [SearchHit] {
+        let q = Query(words: qt, phrase: qt.joined(separator: " "), compact: stripS(qt.joined()), sorted: qt.sorted(),
                       generic: qt.count == 1 && SearchRules.generic.contains(qt[0]))
 
         struct Row { var tier: Double; var sub: Int; let index: Int; let key: SearchKey }
@@ -169,47 +211,28 @@ public enum Search {
                 seen.insert(i)
             }
         }
-        // Tier 6: fuzzy, only when tiers 1–5 found fewer than 3; at most 8.
-        if rows.count < 3 {
-            var fz: [Row] = []
-            for (i, e) in entries.enumerated() where !seen.contains(i) && passes(e) {
-                var best: (Int, SearchKey)?
-                for k in e.keys { if let d = fuzzy(qt, k), best == nil || d < best!.0 { best = (d, k) } }
-                if let b = best { fz.append(Row(tier: 6, sub: b.0, index: i, key: b.1)) }
-            }
-            fz.sort { a, b in
-                let x = entries[a.index], y = entries[b.index]
-                if a.sub != b.sub { return a.sub < b.sub }
-                if x.recentCount != y.recentCount { return x.recentCount > y.recentCount }
-                if x.popularity != y.popularity { return x.popularity > y.popularity }
-                if (x.popularityRank ?? 1_000_000) != (y.popularityRank ?? 1_000_000) { return (x.popularityRank ?? 1_000_000) < (y.popularityRank ?? 1_000_000) }
-                if x.name.count != y.name.count { return x.name.count < y.name.count }
-                return a.index < b.index
-            }
-            rows += fz.prefix(8)
-        }
         // Your lifts float up: logged in the last 90 days and matching at 3–4 → right after exact.
         for r in rows.indices where entries[rows[r].index].recentCount > 0 && (3...4).contains(rows[r].tier) { rows[r].tier = 1.5 }
         rows.sort { a, b in
             if a.tier != b.tier { return a.tier < b.tier }
-            if a.tier == 6, a.sub != b.sub { return a.sub < b.sub }
             let x = entries[a.index], y = entries[b.index]
             if x.recentCount != y.recentCount { return x.recentCount > y.recentCount }
             if let ux = x.usage, let uy = y.usage, x.recentCount > 0, ux.last != uy.last { return ux.last > uy.last }
             if x.popularity != y.popularity { return x.popularity > y.popularity }
             let rx = x.popularityRank ?? 1_000_000, ry = y.popularityRank ?? 1_000_000
             if rx != ry { return rx < ry }
-            if a.tier != 6, a.sub != b.sub { return a.sub < b.sub }
+            if a.sub != b.sub { return a.sub < b.sub }
             if x.name.count != y.name.count { return x.name.count < y.name.count }
             if x.name != y.name { return x.name < y.name }
             return a.index < b.index
         }
-        let rc = qraw.joined()
+        let rc = stripS(qraw.joined()), typed = qraw.joined()
         return rows.map { r in
             let e = entries[r.index]
-            return SearchHit(entry: e, tier: r.tier == 1.5 ? 3 : Int(r.tier), matchedAlias: meta(e, used: r.key, qraw: qraw, rc: rc))
+            return SearchHit(entry: e, tier: r.tier == 1.5 ? 3 : Int(r.tier), matchedAlias: meta(e, used: r.key, qraw: qraw, rc: rc, typed: typed))
         }
     }
+
 
     /// Usage, then popularity, rank, shorter name, A–Z (chips with no query; Common).
     public static func popularityOrder(_ x: SearchEntry, _ y: SearchEntry) -> Bool {
@@ -228,7 +251,9 @@ public enum Search {
     /// 1, 2.9 (single-word starts with; ranks with 3, breaks ties after rank), 3, 4 or nil.
     static func tier(_ q: Query, _ k: SearchKey, attributes: [String]) -> Double? {
         // Cheap reject: every tier needs each query word inside the key (or an attribute).
-        for w in q.words where !k.compact.contains(w) && !attributes.contains(where: { $0.hasPrefix(w) }) { return nil }
+        if !k.fullCompact.contains(q.compact) {
+            for w in q.words where !k.fullCompact.contains(w) && !attributes.contains(where: { $0.hasPrefix(w) }) { return nil }
+        }
         if k.phrase == q.phrase || k.compact == q.compact || k.sortedWords == q.sorted { return 1 }
         if k.phrase.hasPrefix(q.phrase) || k.compact.hasPrefix(q.compact) { return (q.generic || q.words.count > 1) ? 3 : 2.9 }
         for s in k.suffixCompacts where s.hasPrefix(q.compact) { return 3 }
@@ -253,14 +278,15 @@ public enum Search {
         qs.allSatisfy { q in ks.contains { $0.hasPrefix(q) } }
     }
 
-    static func meta(_ e: SearchEntry, used k: SearchKey, qraw: [String], rc: String) -> String? {
+    static func meta(_ e: SearchEntry, used k: SearchKey, qraw: [String], rc: String, typed: String) -> String? {
         func hits(_ key: SearchKey) -> Bool { key.rawCompact.contains(rc) || allPrefix(qraw, key.raw) }
         if hits(e.keys[0]) { return nil }
-        let echo = e.keys.dropFirst().filter(hits).enumerated().sorted { a, b in
-            let x = (a.element.rawCompact != rc ? 1 : 0, a.element.rawCompact.hasPrefix(rc) ? 0 : 1, a.offset)
-            let y = (b.element.rawCompact != rc ? 1 : 0, b.element.rawCompact.hasPrefix(rc) ? 0 : 1, b.offset)
-            return x < y
+        // Equal, then spelled as typed, then starts with; otherwise the shortest alias (Nit 1); then file order.
+        func rankKey(_ a: SearchKey, _ n: Int) -> (Int, Int, Int, Int, Int) {
+            let sw = a.rawCompact == rc || a.rawCompact.hasPrefix(rc)
+            return (a.rawCompact != rc ? 1 : 0, a.rawJoined != typed ? 1 : 0, a.rawCompact.hasPrefix(rc) ? 0 : 1, sw ? 0 : a.text.count, n)
         }
+        let echo = e.keys.dropFirst().filter(hits).enumerated().sorted { rankKey($0.element, $0.offset) < rankKey($1.element, $1.offset) }
         if let first = echo.first { return first.element.text }
         return k.kind == .alias ? k.text : nil
     }
@@ -293,23 +319,6 @@ public enum Search {
         if last { for n in [qc.count, qc.count + 1] where n > 0 && n < kc.count { cands.append(Array(kc[0..<n])) } }
         let best = cands.map { damerau(qc, $0) }.min()!
         return best <= limit ? best : nil
-    }
-
-    static func fuzzy(_ qt: [String], _ k: SearchKey) -> Int? {
-        var total = 0
-        var used = Set<Int>()
-        for (n, q) in qt.enumerated() {
-            let isLast = n == qt.count - 1
-            var best: (Int, Int)?
-            for (i, w) in k.words.enumerated() where !used.contains(i) {
-                let d: Int? = (isLast ? w.hasPrefix(q) : w == q) ? 0 : fuzzyWord(q, w, last: isLast)
-                if let d, best == nil || d < best!.0 { best = (d, i) }
-            }
-            guard let b = best else { return nil }
-            used.insert(b.1)
-            total += b.0
-        }
-        return total > 0 ? total : nil
     }
 
     // MARK: Normalisation (§10.3)
@@ -357,6 +366,11 @@ public enum Search {
             }
         }
         return [w]
+    }
+
+    /// Compact form: drop a final "s" (not after "ss"; forms under 4 letters stay: "abs").
+    static func stripS(_ c: String) -> String {
+        c.count >= 4 && c.hasSuffix("s") && !c.hasSuffix("ss") ? String(c.dropLast()) : c
     }
 
     static func stem(_ t: String) -> String {

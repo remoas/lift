@@ -50,12 +50,28 @@ struct ActiveWorkoutView: View {
             RestNotifications.requestPermissionIfNeeded()
             #if DEBUG
             applyFixture()
+            // UI test hook (RemoveExerciseTests): run the real Remove path, toast included.
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-LiftTestRemove"), i + 1 < args.count, let session,
+               let ex = session.groups.first(where: { $0.exercise.name == args[i + 1] })?.exercise {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { session.remove(ex, toasts: toasts) }
+            }
             #endif
         }
-        .sheet(item: $editing) { set in
+        // Flow 3: the editor holds the banner's clock. A best logged from the editor
+        // morphs (or replaces in place) once the sheet is gone, so it's seen lifting
+        // from the set that earned it.
+        .onChange(of: editing) { _, set in if let set { session?.holdBanner(editing: set) } }
+        .sheet(item: $editing, onDismiss: {
+            session?.resumeBanner()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                guard let session, editing == nil, session.banner != shownBanner || session.bannerSetID != shownSetID else { return }
+                bannerChanged(session.banner, setID: session.bannerSetID)
+            }
+        }) { set in
             if let session {
-                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.previous(for: set).map { WeightText.pair($0.snapshot, in: set.unit, step: set.exercise?.step(for: set.unit) ?? set.unit.defaultStep) }) {
-                    if set.isDone { session.save(); session.refreshBests() } else { session.log(set) }
+                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.previous(for: set).map { WeightText.pair($0.snapshot, in: set.unit, step: set.exercise?.step(for: set.unit) ?? set.unit.defaultStep, bodyweight: set.exercise?.equipment == .bodyweight) }, noLastText: noLastText(set, session)) {
+                    if set.isDone { session.saveEdited(set) } else { session.log(set) }
                 }
             }
         }
@@ -165,7 +181,10 @@ struct ActiveWorkoutView: View {
             }
 
         }
-        .onChange(of: session.banner) { _, new in bannerChanged(new, setID: session.bannerSetID) }
+        .onChange(of: session.banner) { _, new in
+            guard editing == nil else { return }   // shown when the editor closes
+            bannerChanged(new, setID: session.bannerSetID)
+        }
         .onAppear {
             // A banner set before this view existed (fixtures): show it in place.
             if let b = session.banner, shownBanner == nil {
@@ -217,7 +236,7 @@ struct ActiveWorkoutView: View {
     private func header(_ ex: Exercise, sets: [SetEntry], session: WorkoutSession) -> some View {
         let rest = sets.first?.restSeconds ?? 120
         let beat = session.beatIt(for: ex)
-        let isCurrent = session.currentExercise === ex
+        let isCurrent = session.barExercise === ex
         let hit = session.targetHit(for: ex)
         return VStack(alignment: .leading, spacing: Theme.Spacing.s1) {
             HStack {
@@ -245,7 +264,7 @@ struct ActiveWorkoutView: View {
                 .accessibilityLabel("\(ex.name) options")
             }
             if !beat.last.isEmpty {
-                Text(lastLine(beat, unit: session.unit(for: ex)))
+                Text(lastLine(beat, unit: session.unit(for: ex), bodyweight: ex.equipment == .bodyweight))
                     .font(.subheadline).foregroundStyle(Theme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -264,12 +283,18 @@ struct ActiveWorkoutView: View {
     }
 
     /// "Last · Mon · 185×8, 185×7, 185×6"
-    private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit) -> String {
+    private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit, bodyweight: Bool = false) -> String {
         // Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
         let day = beat.lastDate.map { d in
             Date().timeIntervalSince(d) > 6 * 86_400 ? d.formatted(.dateTime.day().month(.abbreviated)) : d.formatted(.dateTime.weekday(.abbreviated))
         }
-        let sets = beat.last.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
+        // Bodyweight: "9, 8, 7 reps" or "BW+25×9", never "0×9" (qa-search Must 5).
+        let sets: String
+        if bodyweight, beat.last.allSatisfy({ $0.weight <= 0 }) {
+            sets = beat.last.map { "\($0.reps)" }.joined(separator: ", ") + " reps"
+        } else {
+            sets = beat.last.map { bodyweight ? ($0.weight <= 0 ? "\($0.reps) reps" : "BW+\(UnitMath.format($0.weight))×\($0.reps)") : "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
+        }
         return (["Last", day].compactMap { $0 } + [sets]).joined(separator: " · ")
     }
 
@@ -283,7 +308,8 @@ struct ActiveWorkoutView: View {
             layout {
                 Text(typeSize.isAccessibilitySize ? "Beat it" : "Beat it · ")
                 // One bar per screen: it fades out while the PR banner shows (QA 3).
-                if isCurrent && !hit { Text(number).theBar(visible: shownBanner == nil) } else { Text(number) }
+                // …and comes back on dismiss, after a target hit too (N1).
+                if isCurrent { Text(number).theBar(visible: shownBanner == nil) } else { Text(number) }
                 if hit {
                     Text("✓ Target hit").foregroundStyle(Theme.Colors.accent)
                         .padding(.leading, typeSize.isAccessibilitySize ? 0 : Theme.Spacing.s3)
@@ -344,6 +370,13 @@ struct ActiveWorkoutView: View {
         guard let ex = set.exercise, let sets = session.groups.first(where: { $0.exercise === ex })?.sets,
               let i = sets.firstIndex(where: { $0 === set }) else { return set.exercise?.name ?? "" }
         return "\(ex.name), set \(i + 1)"
+    }
+
+    /// N2: "First time" is exercise-level; a later set of a known lift says so plainly.
+    private func noLastText(_ set: SetEntry, _ session: WorkoutSession) -> String? {
+        guard let ex = set.exercise, !LiftStore.lastSessionSets(for: ex, excluding: session.workout).isEmpty else { return "First time" }
+        let n = (session.groups.first(where: { $0.exercise === ex })?.sets.firstIndex(where: { $0 === set }) ?? 0) + 1
+        return "No set \(n) last time"
     }
 
     /// Appear: start on the set's value, then grow into place with springBanner.

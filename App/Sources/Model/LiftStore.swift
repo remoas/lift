@@ -13,6 +13,17 @@ enum LiftStore {
         }
         // .automatic uses the CloudKit private database when the iCloud
         // entitlement is present (signed device builds) and stays local otherwise.
+        #if DEBUG
+        // UI tests: a named on-disk local store that survives relaunch (-LiftTestStore name [-LiftTestReset]).
+        let args = ProcessInfo.processInfo.arguments
+        if let i = args.firstIndex(of: "-LiftTestStore"), i + 1 < args.count {
+            let url = FileManager.default.temporaryDirectory.appendingPathComponent("\(args[i + 1]).store")
+            if args.contains("-LiftTestReset") {
+                for suffix in ["", "-shm", "-wal"] { try? FileManager.default.removeItem(at: URL(fileURLWithPath: url.path + suffix)) }
+            }
+            return try! ModelContainer(for: schema, configurations: ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none))
+        }
+        #endif
         let cloud = ModelConfiguration("Lift", schema: schema, cloudKitDatabase: .automatic)
         if let container = try? ModelContainer(for: schema, configurations: cloud) { return container }
         let local = ModelConfiguration("Lift", schema: schema, cloudKitDatabase: .none)
@@ -21,6 +32,18 @@ enum LiftStore {
         } catch {
             fatalError("Could not open the Lift store: \(error)")
         }
+    }
+
+    /// Deletes a set for good. SwiftData keeps a deleted child in its parents'
+    /// to-many arrays (Workout.sets, Exercise.sets) until they refault, so the
+    /// removed exercise's sets came back in `workout.groups` and, via the parent's
+    /// relationship on save, after relaunch (Ben, build 1.0 (2)). Unlink first.
+    static func delete(_ set: SetEntry, context: ModelContext) {
+        set.workout?.sets?.removeAll { $0 === set }
+        set.exercise?.sets?.removeAll { $0 === set }
+        set.workout = nil
+        set.exercise = nil
+        context.delete(set)
     }
 
     static func save(_ context: ModelContext) -> Bool {
@@ -224,12 +247,13 @@ enum LiftStore {
     static func swap(_ old: Exercise, for new: Exercise, in workout: Workout, globalUnit: WeightUnit, context: ModelContext) {
         guard let slotIndex = exerciseOrder(of: old, in: workout) else { return }
         let oldSets = workout.allSets.filter { $0.exercise === old }
-        let template = oldSets.first
+        let templateRest = oldSets.first?.restSeconds
         let unticked = oldSets.filter { !$0.isDone }
-        for set in unticked { context.delete(set) }
-        let keepsLogged = oldSets.count > unticked.count
+        let untickedCount = unticked.count
+        for set in unticked { delete(set, context: context) }
+        let keepsLogged = oldSets.count > untickedCount
         for set in workout.allSets where set.exerciseOrder > slotIndex { set.exerciseOrder += 1 }
-        insertPrefilledSets(for: new, sets: max(unticked.count, 1), rest: new.restSec ?? template?.restSeconds ?? 120, exerciseOrder: keepsLogged ? slotIndex + 1 : slotIndex, into: workout, globalUnit: globalUnit, context: context)
+        insertPrefilledSets(for: new, sets: max(untickedCount, 1), rest: new.restSec ?? templateRest ?? 120, exerciseOrder: keepsLogged ? slotIndex + 1 : slotIndex, into: workout, globalUnit: globalUnit, context: context)
         renumber(workout)
         _ = save(context)
     }
@@ -271,7 +295,7 @@ enum LiftStore {
     static func remove(_ exercise: Exercise, from workout: Workout, context: ModelContext) -> [RemovedSet] {
         let sets = workout.allSets.filter { $0.exercise === exercise }
         let removed = sets.map(RemovedSet.init)
-        for s in sets { context.delete(s) }
+        for s in sets { delete(s, context: context) }
         _ = save(context)
         return removed
     }
@@ -349,7 +373,7 @@ enum LiftStore {
 
     /// Drops un-ticked sets and stamps the end time.
     static func finish(_ workout: Workout, at date: Date = Date(), context: ModelContext) {
-        for set in workout.allSets where !set.isDone { context.delete(set) }
+        for set in workout.allSets where !set.isDone { delete(set, context: context) }
         workout.endedAt = workout.isBackLog ? max(workout.startedAt.addingTimeInterval(60), workout.doneSets.compactMap(\.doneAt).max() ?? workout.startedAt) : date
         _ = save(context)
     }
