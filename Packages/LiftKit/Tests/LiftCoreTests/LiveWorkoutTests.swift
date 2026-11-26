@@ -128,6 +128,8 @@ final class LiveWorkoutTests: XCTestCase {
         let line = BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7)], date: nil, calendar: cal)
         XCTAssertEqual(line, "Last · 185×8, 185×7")
         XCTAssertNil(BeatItText.last([], date: nil))
+        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)], date: nil, compact: true), "Last · 185×8, 7, 6")
+        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 190, reps: 5)], date: nil, compact: true), "Last · 185×8, 190×5")
         XCTAssertEqual(BeatItText.number(.init(weight: 0, reps: 12), bodyweight: true), "12 reps")
         XCTAssertEqual(BeatItText.number(.init(weight: 102.5, reps: 8), bodyweight: false), "102.5 × 8")
     }

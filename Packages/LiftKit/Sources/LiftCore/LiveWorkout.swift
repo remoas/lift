@@ -344,14 +344,19 @@ public enum RepCountable {
 public enum BeatItText {
     /// "Last · Mon · 185×8, 185×7"
     /// Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
-    public static func last(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current) -> String? {
+    /// `compact` (small watches): one weight shared by every set is written
+    /// once, "185×8, 7, 6", so the line fits without cutting a number.
+    public static func last(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current, compact: Bool = false) -> String? {
         guard !sets.isEmpty else { return nil }
         let day = date.map { d in
             now.timeIntervalSince(d) > 6 * 86_400
                 ? d.formatted(Date.FormatStyle(calendar: calendar).day().month(.abbreviated))
                 : d.formatted(Date.FormatStyle(calendar: calendar).weekday(.abbreviated))
         }
-        let list = sets.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
+        let sameWeight = sets.allSatisfy { abs($0.weight - sets[0].weight) < 0.0001 }
+        let list = compact && sameWeight && sets.count > 1
+            ? "\(UnitMath.format(sets[0].weight))×" + sets.map { "\($0.reps)" }.joined(separator: ", ")
+            : sets.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
         return (["Last", day].compactMap { $0 } + [list]).joined(separator: " · ")
     }
 

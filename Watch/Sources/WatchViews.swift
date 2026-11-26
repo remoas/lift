@@ -205,7 +205,7 @@ struct ExercisePage: View {
                 if let count = store.liveCount(for: exercise) {
                     countingBody(count)
                 } else {
-                    if let last = BeatItText.last(exercise.last, date: exercise.lastDate) {
+                    if let last = BeatItText.last(exercise.last, date: exercise.lastDate, compact: !WatchTheme.isLarge) {
                         // Wraps at set boundaries, never mid-number (§3.2).
                         Text(last.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}")).watchCaption()
                     }
@@ -452,7 +452,8 @@ struct RestUpView: View {
         VStack(spacing: 2) {
             ZStack {
                 Circle().stroke(WatchTheme.separator, lineWidth: 4)
-                Text("Rest’s up").font(.body.weight(.semibold)).foregroundStyle(WatchTheme.textPrimary)
+                Text("Rest’s up").font(WatchTheme.isLarge ? .body.weight(.semibold) : .footnote.weight(.semibold))
+                    .foregroundStyle(WatchTheme.textPrimary).lineLimit(1).minimumScaleFactor(0.8)
             }
             .frame(width: ring, height: ring)
             .onTapGesture { store.dismissRestUp() }
