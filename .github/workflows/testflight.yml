@@ -34,9 +34,11 @@ jobs:
       ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
     steps:
       - uses: actions/checkout@v4
-      - name: Select Xcode 16
+      - name: Select Xcode 26 (App Store Connect requires the iOS 26 SDK)
         run: |
-          XC=$(ls -d /Applications/Xcode_16*.app | sort -V | tail -1)
+          ls -d /Applications/Xcode*.app
+          XC=$(ls -d /Applications/Xcode_26*.app | grep -vi beta | sort -V | tail -1)
+          [ -n "$XC" ] || { echo "No Xcode 26 on this runner"; exit 1; }
           sudo xcode-select -s "$XC"
           xcodebuild -version
           mkdir -p tf-logs

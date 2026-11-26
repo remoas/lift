@@ -238,7 +238,7 @@ S['07-finish']=()=>`${SB}<div class="nav"><span></span></div><div class="pad"><d
 <div class="row" style="border:0"><div class="main"><div class="s ok">✓ Saved to Apple Health</div></div></div>
 </div><div class="foot"><div class="btn">Done</div><div class="btn2">Add a note</div></div>`;
 
-S['08-exercise']=()=>`${SB}<div class="nav"><span class="nb">‹ Today</span><span class="nb">Edit</span></div><div class="pad">
+S['08-exercise']=()=>`${SB}<div class="nav"><span class="nb">‹ Today</span><span></span></div><div class="pad">
 <div class="hero">Bench Press</div><div class="eyebrow">Barbell · lb</div>
 <p class="lede">Your estimated max is <b>239 lb</b>, up 21 since September.</p>
 <div style="margin-top:14px" class="seg"><span>1M</span><span class="on">3M</span><span>1Y</span><span>All</span></div>
@@ -286,7 +286,7 @@ S['15-restoring']=()=>`${SB}<div class="nav"></div><div class="pad" style="paddi
 <div class="sk" style="width:60%;margin-top:40px"></div><div class="sk" style="width:80%"></div><div class="sk" style="width:45%"></div></div>
 <div class="foot" style="bottom:83px;padding-bottom:12px"><div class="btn">Start Push</div></div>${tabs('Today')}`;
 
-S['16-exercise-empty']=()=>`${SB}<div class="nav"><span class="nb">‹ Today</span><span class="nb">Edit</span></div><div class="pad">
+S['16-exercise-empty']=()=>`${SB}<div class="nav"><span class="nb">‹ Today</span><span></span></div><div class="pad">
 <div class="hero">Cable Fly</div><div class="eyebrow">Cable · lb</div>
 <p class="lede">You’ve logged this once. Next time, you’ll have a number to beat.</p>${chart(true)}
 <div class="sec">Bests</div><p class="s" style="font-size:15px;color:var(--t2);line-height:20px">Bests appear after your second session, so day one never counts as a fake record.</p></div>`;
@@ -341,7 +341,7 @@ const exBody=()=>`<div class="pad"><div class="hero" style="margin-top:14px">Ben
 ${chart()}<div style="margin-top:6px" class="seg"><span>1M</span><span class="on">3M</span><span>1Y</span><span>All</span></div>
 <div class="sec">Bests</div>
 ${[['Heaviest','205 × 5','Today'],['Estimated max','239 lb','Today']].map(([a,b,c])=>`<div class="row" style="min-height:48px"><div class="main"><div class="n">${a}</div></div><span class="v" style="color:var(--t1)">${b}</span><span class="v" style="width:64px;text-align:right">${c}</span></div>`).join('')}</div>`;
-const exNav=`${SB}<div class="nav"><span class="nb">‹ Today</span><span class="nb">Edit</span></div>`;
+const exNav=`${SB}<div class="nav"><span class="nb">‹ Today</span><span></span></div>`;
 const playBtn=(g,label)=>`<span style="position:absolute;left:10px;bottom:10px;width:44px;height:44px;border-radius:22px;${glass};display:flex;align-items:center;justify-content:center;font-size:15px" aria-label="${label}">${g}</span>`;
 S['24a-media-video']=()=>`${exNav}${mediaBox(benchSVG('mid').replace('y="104"','y="84"'),playBtn('❚❚','Pause demonstration'))}${exBody()}`;
 S['24b-media-stills']=()=>`${exNav}${mediaBox(benchSVG('start'),`<span style="position:absolute;left:50%;transform:translateX(-50%);bottom:10px;height:44px;border-radius:22px;${glass};display:flex;align-items:center;padding:4px;font-size:15px;font-weight:600"><span style="height:36px;padding:0 16px;border-radius:18px;background:rgba(245,244,241,.92);color:#141413;display:flex;align-items:center">Start</span><span style="height:36px;padding:0 16px;display:flex;align-items:center;color:#F5F4F1">End</span></span>`)}${exBody()}`;
