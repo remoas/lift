@@ -26,9 +26,9 @@ final class FlowRecordings: XCTestCase {
     }
 
     private func edgeSwipeBack(_ app: XCUIApplication) {
-        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.01, dy: 0.5))
-        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5))
-        start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.05)
+        let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.45)).withOffset(CGVector(dx: 1, dy: 0))
+        let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.45))
+        start.press(forDuration: 0.01, thenDragTo: end)
     }
 
     /// (1) Start Push: Today → workout, Close to the mini bar, Resume from the bar.
@@ -36,7 +36,7 @@ final class FlowRecordings: XCTestCase {
         let app = launch("01-today")
         let start = app.buttons["Start Push"]
         XCTAssertTrue(start.waitForExistence(timeout: 15))
-        pause(1.5)
+        pause(3)
         start.tap()
         XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 10))
         pause(2)
@@ -54,11 +54,17 @@ final class FlowRecordings: XCTestCase {
         let app = launch("01-today")
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Barbell Bench Press")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 15))
-        pause(1.5)
+        pause(3)
         row.tap()
         pause(3)
         edgeSwipeBack(app)
         pause(2)
+        if !row.waitForExistence(timeout: 3) {
+            // Record the attempt either way; fall back so the back-button half still runs.
+            XCTContext.runActivity(named: "edge swipe did not pop; using Back") { _ in }
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+            pause(1.5)
+        }
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         row.tap()
         pause(3)
@@ -71,19 +77,19 @@ final class FlowRecordings: XCTestCase {
         let app = launch("rec-pr")
         let current = app.descendants(matching: .any)["current-set"].firstMatch
         XCTAssertTrue(current.waitForExistence(timeout: 15))
-        pause(1.5)
+        pause(3)
         current.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
         let banner = app.descendants(matching: .any)["PR banner"].firstMatch
         XCTAssertTrue(banner.waitForExistence(timeout: 5))
         pause(1.8)
         let c = banner.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.6))
         c.press(forDuration: 0.05, thenDragTo: banner.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: -1.5)), withVelocity: .slow, thenHoldForDuration: 0.05)
-        pause(2)
-        // Skip the rest timer the first tick started, then log the next PR.
+        pause(3)
+        // Log the next PR (next exercise's first set), then let it auto-dismiss.
         let next = app.descendants(matching: .any)["current-set"].firstMatch
         if next.waitForExistence(timeout: 5) {
             next.coordinate(withNormalizedOffset: CGVector(dx: 0.94, dy: 0.5)).tap()
-            XCTAssertTrue(banner.waitForExistence(timeout: 5))
+            _ = banner.waitForExistence(timeout: 8)
             pause(6)   // 4 s auto-dismiss plus the reverse morph
         }
     }

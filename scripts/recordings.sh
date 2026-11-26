@@ -22,15 +22,21 @@ rec() { # variant appearance slowFactor
   for i in 0 1 2; do
     xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
     FILE="$OUT/${NAMES[$i]}-$1.mp4"
-    xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$FILE" >/dev/null 2>&1 &
-    PID=$!
-    sleep 2
     echo "== ${NAMES[$i]} $1" >> "$LOG"
-    env TEST_RUNNER_LIFT_RECORD=1 ${3:+TEST_RUNNER_LIFT_SLOW=$3} \
+    ( env TEST_RUNNER_LIFT_RECORD=1 ${3:+TEST_RUNNER_LIFT_SLOW=$3} \
       xcodebuild test-without-building -project Lift.xcodeproj -scheme Lift -destination "id=$UDID" \
       -derivedDataPath build/dd -only-testing:"LiftUITests/FlowRecordings/${FLOWS[$i]}" >> "$LOG" 2>&1 \
-      && echo "   passed" >> "$LOG" || echo "   FAILED" >> "$LOG"
-    sleep 1
+      && echo "   passed" >> "$LOG" || echo "   FAILED" >> "$LOG" ) &
+    XB=$!
+    # Start recording only once Lift itself is running (skip test-runner start-up).
+    for _ in $(seq 1 240); do
+      xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "UIKitApplication:$BUNDLE" && break
+      kill -0 "$XB" 2>/dev/null || break
+      sleep 0.5
+    done
+    xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$FILE" >/dev/null 2>&1 &
+    PID=$!
+    wait "$XB"
     kill -INT "$PID" 2>/dev/null; wait "$PID" 2>/dev/null
     ls -la "$FILE" >> "$LOG" 2>&1
   done

@@ -25,7 +25,7 @@ shoot() { # frame appearance [size]
   xcrun simctl ui "$UDID" content_size "${3:-large}"
   xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
   xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture "$1" >/dev/null
-  sleep 3
+  sleep 2.5
   xcrun simctl io "$UDID" screenshot "$OUT/$1-$2${3:+-$3}.png" >/dev/null
 }
 for f in "${FRAMES[@]}"; do shoot "$f" light; shoot "$f" dark; done
