@@ -161,12 +161,24 @@ enum Fixtures {
 
         /// Today's open log with these exercises added the real way (prefilled
         /// from last time, the top set at the target), `doneSets` ticked.
-        func active(_ ids: [String], doneSets: Int, topSet: (Double, Int)? = nil) -> Workout {
+        /// `asLastTime`: ticked sets repeat last time's numbers (target not hit
+        /// yet, so the current exercise shows the bar); false keeps the prefill.
+        func active(_ ids: [String], doneSets: Int, topSet: (Double, Int)? = nil, asLastTime: Bool = true) -> Workout {
             let started = Date().addingTimeInterval(-18 * 60 - 42)
             let w = LiftStore.startBlank(at: started, context: context)
             for id in ids {
                 guard let ex = exercise(id) else { continue }
                 LiftStore.addExercise(ex, to: w, globalUnit: .lb, restDefault: 120, context: context)
+            }
+            if asLastTime {
+                var n = 0
+                for g in w.groups {
+                    let last = LiftStore.beatIt(for: g.exercise, excluding: w, unit: .lb).last
+                    for (j, s) in g.sets.enumerated() {
+                        if n < doneSets, j < last.count { s.weight = last[j].weight; s.reps = last[j].reps }
+                        n += 1
+                    }
+                }
             }
             let sets = w.groups.flatMap(\.sets)
             for (i, s) in sets.prefix(doneSets).enumerated() {
@@ -181,7 +193,7 @@ enum Fixtures {
         /// Today's push, all logged, top bench set beating its target; left open
         /// so the summary shows before Done, like the real flow.
         func finishedToday(topSet: (Double, Int)?) -> Workout {
-            let w = active(Self.push, doneSets: .max)
+            let w = active(Self.push, doneSets: .max, asLastTime: false)
             if let topSet, let first = w.groups.first?.sets.first { first.weight = topSet.0; first.reps = topSet.1 }
             return w
         }

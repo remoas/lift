@@ -268,13 +268,19 @@ struct ActiveWorkoutView: View {
     private func targetLine(_ beat: LiftStore.BeatIt, ex: Exercise, unit: WeightUnit, isCurrent: Bool, hit: Bool) -> some View {
         if let t = beat.target {
             let number = ex.equipment == .bodyweight && t.weight <= 0 ? "\(t.reps) reps" : "\(UnitMath.format(t.weight)) × \(t.reps)"
-            HStack(spacing: 0) {
-                Text("Beat it · ")
+            let layout = typeSize.isAccessibilitySize
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.Spacing.s1))
+                : AnyLayout(HStackLayout(spacing: 0))
+            layout {
+                Text(typeSize.isAccessibilitySize ? "Beat it" : "Beat it · ")
                 if isCurrent && !hit { Text(number).theBar() } else { Text(number) }
                 if hit {
-                    Text("✓ Target hit").foregroundStyle(Theme.Colors.accent).padding(.leading, Theme.Spacing.s3)
+                    Text("✓ Target hit").foregroundStyle(Theme.Colors.accent)
+                        .padding(.leading, typeSize.isAccessibilitySize ? 0 : Theme.Spacing.s3)
                 }
             }
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .foregroundStyle(Theme.Colors.textPrimary)
             .font(.body.monospacedDigit())
             .padding(.bottom, isCurrent ? Theme.Size.bar + 3 : 0)

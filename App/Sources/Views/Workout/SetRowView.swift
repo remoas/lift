@@ -82,6 +82,9 @@ struct SetRowView: View {
                 }
                 .foregroundStyle(model.state == .upcoming ? Theme.Colors.textSecondary : Theme.Colors.textPrimary)
                 .fontWeight(model.state == .upcoming ? .medium : .semibold)
+                // One line at AX sizes: shrink rather than split "180" across lines.
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
                 // Anchors for the PR banner morph (§8.5): the banner starts here.
                 .liftMatched(.prValue(model.id))
                 .background(Color.clear.liftMatched(.prBanner(model.id)))
