@@ -108,6 +108,11 @@ public struct SearchHit: Sendable, Identifiable {
     public let tier: Int
     /// The alias to lead the detail line with when the name doesn't explain the match ("RDL").
     public let matchedAlias: String?
+    public init(entry: SearchEntry, tier: Int, matchedAlias: String?) {
+        self.entry = entry
+        self.tier = tier
+        self.matchedAlias = matchedAlias
+    }
     public var id: UUID { entry.id }
     public var name: String { entry.name }
     /// An exact name or alias match: no Create row (AC 96).
