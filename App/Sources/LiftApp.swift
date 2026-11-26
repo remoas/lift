@@ -21,15 +21,21 @@ struct LiftApp: App {
         }
         #endif
         container = LiftStore.makeContainer()
-        _settings = State(initialValue: AppSettings())
+        let settings = AppSettings()
+        _settings = State(initialValue: settings)
         let context = container.mainContext
         LiftStore.mergeLibrary(context: context)
         LiftStore.dedupe(context)
+        PhoneSync.shared.start(container: container, settings: settings)
+        RestActivityController.shared.start(container: container)
     }
 
     var body: some Scene {
         WindowGroup {
             root
+                #if DEBUG
+                .task { if ProcessInfo.processInfo.arguments.contains("-LiftLiveActivityDemo") { RestActivityController.shared.demo() } }
+                #endif
                 .environment(settings)
                 .environment(toasts)
                 .environment(cloud)
@@ -39,12 +45,16 @@ struct LiftApp: App {
         .onChange(of: scenePhase) { _, phase in
             // Pending discards/deletes become final rather than lingering.
             if phase == .background { toasts.flush() }
+            if phase == .active { RestActivityController.shared.sweep() }
         }
     }
 
     @ViewBuilder private var root: some View {
         #if DEBUG
-        if let fixture = Fixtures.requested { FixtureRoot(frame: fixture) } else { RootView() }
+        if let fixture = Fixtures.requested {
+            if LiveActivityBehaviour.requested { LiveActivityBehaviour(container: container) }
+            else if fixture.hasPrefix("la-") { LiveActivityGallery(frame: fixture) } else { FixtureRoot(frame: fixture) }
+        } else { RootView() }
         #else
         RootView()
         #endif

@@ -110,7 +110,7 @@ public struct PRBannerContent: Equatable, Sendable {
 }
 
 /// Date-based rest countdown, correct after backgrounding.
-public struct RestCountdown: Equatable, Sendable {
+public struct RestCountdown: Codable, Equatable, Sendable {
     public var endsAt: Date
     public var total: TimeInterval
     public var setID: UUID?

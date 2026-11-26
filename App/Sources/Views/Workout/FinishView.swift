@@ -198,6 +198,8 @@ struct FinishView: View {
     // MARK: Logic
 
     private func prepare() {
+        // Gone before the Finish screen lands, never via Rest over (AC 108).
+        if !workout.isBackLog { RestActivityController.shared.end() }
         computeBeaten()
         switch settings.healthEnabled {
         case nil: health = HealthService.shared.isAvailable ? .ask : .unavailable
@@ -243,7 +245,7 @@ struct FinishView: View {
             return
         }
         if isPending { LiftStore.finish(workout, context: context) } else { _ = LiftStore.save(context) }
-        if settings.healthEnabled == true { HealthSync.save(workout, context: context, toasts: toasts) }
+        HealthSync.saveIfOwned(workout, healthEnabled: settings.healthEnabled, context: context, toasts: toasts)
         onDone()
     }
 
@@ -258,7 +260,15 @@ struct FinishView: View {
 /// a failure is reported in a toast and never affects the saved workout.
 @MainActor
 enum HealthSync {
-    static func save(_ workout: Workout, context: ModelContext, toasts: ToastCenter) {
+    /// Skips a workout the watch ran a session for: the watch saves that one
+    /// (with heart rate), so Health gets it exactly once.
+    static func saveIfOwned(_ workout: Workout, healthEnabled: Bool?, context: ModelContext, toasts: ToastCenter?) {
+        guard HealthOwnership.phoneShouldSave(healthEnabled: healthEnabled, watchRanSession: workout.device == "Watch",
+                                              watchSaveFailed: false, alreadySaved: workout.healthKitID != nil) else { return }
+        save(workout, context: context, toasts: toasts)
+    }
+
+    static func save(_ workout: Workout, context: ModelContext, toasts: ToastCenter?) {
         let start = workout.startedAt, end = workout.endedAt ?? Date(), name = workout.routineName, id = workout.id
         Task { @MainActor in
             switch await HealthService.shared.save(start: start, end: end, routineName: name, workoutID: id) {
@@ -266,9 +276,9 @@ enum HealthSync {
                 workout.healthKitID = hk.uuidString
                 _ = LiftStore.save(context)
             case .failed:
-                toasts.show("Couldn't save to Apple Health. Your workout is safe in Lift.")
+                toasts?.show("Couldn't save to Apple Health. Your workout is safe in Lift.")
             case .denied:
-                toasts.show("Apple Health is off for Lift. Turn it on in Settings.")
+                toasts?.show("Apple Health is off for Lift. Turn it on in Settings.")
             case .unavailable:
                 break
             }

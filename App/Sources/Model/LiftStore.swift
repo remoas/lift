@@ -373,6 +373,8 @@ enum LiftStore {
 
     /// Drops un-ticked sets and stamps the end time.
     static func finish(_ workout: Workout, at date: Date = Date(), context: ModelContext) {
+        // Finish and the 3 h auto-finish: the rest Activity goes now (AC 108).
+        if !workout.isBackLog { RestActivityController.shared.end() }
         for set in workout.allSets where !set.isDone { delete(set, context: context) }
         workout.endedAt = workout.isBackLog ? max(workout.startedAt.addingTimeInterval(60), workout.doneSets.compactMap(\.doneAt).max() ?? workout.startedAt) : date
         _ = save(context)
