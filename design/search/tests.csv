@@ -1,0 +1,106 @@
+query,history,expect_top1,expect_in_top3,expect_not_in_top5,expect_meta_top1,note
+bench,,bench-press,,,,"Ben 2:11pm: 'bench' → Bench Press first (alias Bench, exact tier)"
+Bench,,bench-press,,,,case-insensitive
+bench press,,bench-press,dumbbell-bench-press,,,plain bench before variants
+benc,,bench-press,,,,prefix while typing
+benhc,,bench-press,dumbbell-bench-press,,,typo: transposition (fuzzy tier)
+bp,,bench-press,,,Bench Press,abbreviation expansion
+flat bench,,bench-press,,,Flat Bench,
+db bench,,dumbbell-bench-press,,,,
+incline,,incline-dumbbell-press,incline-bench-press,,,most common incline lifts first
+db incline,,incline-dumbbell-press,,,,"DB = dumbbell, any word order"
+incline db,,incline-dumbbell-press,,,,
+db press incline,,incline-dumbbell-press,,,,"three words, any order, exact token set"
+close grip bench,,close-grip-bench-press,close-grip-barbell-bench-press,,,
+cgbp,,close-grip-bench-press,close-grip-barbell-bench-press,,CGBP,
+squat,,barbell-squat,,squat-jerk|squat-to-stand,,"'squat' → Barbell (Back) Squat first; family by popularity, not names that start with Squat"
+squats,,barbell-squat,,,,plural
+back squat,,barbell-squat,,,Back Squat,
+front squat,,front-squat,,,,
+goblet,,goblet-squat,,,,
+hack,,hack-squat,,,,
+bss,,bulgarian-split-squat,,,BSS,
+bulgarain,,bulgarian-split-squat,,,,typo dictionary
+dead,,deadlift,,,,'dead' → Deadlift first
+deadlift,,deadlift,romanian-deadlift|sumo-deadlift,deadlift-with-bands|deadlift-with-chains,,"CDO addendum: Deadlift first, then Romanian and Sumo above the Bands/Chains variants by popularity (starts-with and word-start share a tier)"
+deadlfit,,deadlift,,,,typo dictionary
+dl,,deadlift,,,,
+rdl,,romanian-deadlift,dumbbell-romanian-deadlift,stiff-legged-barbell-deadlift,RDL,RDL never returns SLDL in the top 5
+romanian,,romanian-deadlift,,,,
+db rdl,,dumbbell-romanian-deadlift,,,DB RDL,
+sldl,,stiff-legged-barbell-deadlift,,romanian-deadlift,SLDL,SLDL is not an RDL
+stiff leg,,stiff-legged-barbell-deadlift,,,,
+sumo,,sumo-deadlift,,,,sumo deadlift outranks sumo squat
+trap bar,,trap-bar-deadlift,,,,
+hex bar,,trap-bar-deadlift,,,Hex Bar Deadlift,UK/US variant
+hip thrust,,barbell-hip-thrust,,glute-bridge,,hip thrust and glute bridge stay distinct
+glute bridge,,glute-bridge,barbell-glute-bridge,barbell-hip-thrust,,
+good morning,,good-morning,,,,
+ohp,,barbell-shoulder-press,,,OHP,
+overhead press,,barbell-shoulder-press,,,Overhead Press,
+military,,barbell-shoulder-press,standing-military-press,,Military Press,
+shoulder press,,barbell-shoulder-press,dumbbell-shoulder-press,,,
+seated ohp,,seated-barbell-military-press,seated-dumbbell-press,,Seated OHP,
+db shoulder press,,dumbbell-shoulder-press,,,,
+arnold,,arnold-press,,,,
+pull up,,pullups,,,,'pull up' = 'pull-up' = 'pullup'
+pull-up,,pullups,,,,
+pullup,,pullups,,,,
+pullups,,pullups,,,,
+chin,,chin-up,,,,chin-ups never return plain pull-ups first
+chin up,,chin-up,,pullups,,
+weighted pull up,,weighted-pull-ups,,,,
+neutral grip pull up,,neutral-grip-pull-up,,,,
+lat,,wide-grip-lat-pulldown,,,,"'lat' → Lat Pulldown, not Lateral Raise"
+lat pulldown,,wide-grip-lat-pulldown,,,,
+pull down,,wide-grip-lat-pulldown,,,,'pull down' = 'pulldown'
+close grip pulldown,,close-grip-front-lat-pulldown,,,,
+row,,bent-over-row,seated-cable-row|dumbbell-row,rowing-machine,,ambiguous: the row family by popularity
+barbell row,,bent-over-row,,,Barbell Row,
+1 arm row,,dumbbell-row,,,Single-Arm Row,1/one/single arm are the same
+t bar,,t-bar-row,,,,
+seated row,,seated-cable-row,,,,
+press,,bench-press,barbell-shoulder-press,,,"ambiguous: the press family by popularity, no guess"
+curl,,barbell-curl,hammer-curls-2,,,ambiguous: the curl family by popularity
+curls,,barbell-curl,,,,plural
+hammer,,hammer-curls-2,,,,
+db curl,,dumbbell-bicep-curl,,,,
+ez curl,,ez-bar-curl,,,,
+preacher,,preacher-curl,,,,
+skull,,skull-crushers,,,,
+skull crushers,,skull-crushers,,,,
+lying tricep extension,,skull-crushers,,,Lying Triceps Extension,
+french press,,skull-crushers,standing-overhead-barbell-triceps-extension,,French Press,French press means both; the skull crusher reading is more common
+pushdown,,triceps-pushdown,triceps-pushdown-rope-attachment,tricep-pushdowns,,duplicate row hidden
+rope pushdown,,triceps-pushdown-rope-attachment,,,,
+tricep,,triceps-pushdown,,,,tricep = triceps
+dips,,dips,,,,
+push up,,pushups,,,,
+press up,,pushups,,,Press-Up,UK press-up = push-up
+press-ups,,pushups,,,Press-Ups,
+lateral raise,,side-lateral-raise,,,,
+lat raise,,side-lateral-raise,,,,
+face,,face-pull,,,,
+pec dec,,pec-deck,,,,
+machine fly,,pec-deck,,,Machine Fly,
+cable fly,,cable-crossover,,,Cable Fly,
+rear delt,,rear-delt-fly,reverse-pec-deck,,,
+calf,,calf-raises,,,,
+seated calf,,seated-calf-raise,,,,
+leg press,,leg-press,,,,
+45 degree,,leg-press,,,45 Degree Leg Press,number handling
+45°,,leg-press,,,45 Degree Leg Press,degree sign
+leg,,leg-press,leg-extension|leg-curl,,,
+hamstring curl,,leg-curl,,,Hamstring Curl,
+nordic,,nordic-hamstring-curl,,,,
+dumbel,,incline-dumbbell-press,,,,typo dictionary: dumbel → dumbbell
+dumbbell,,incline-dumbbell-press,dumbbell-bench-press,,,bare equipment word: dumbbell family by popularity
+kb swing,,kettlebell-swing,,,,
+farmers,,farmers-walk,,,,apostrophe-insensitive
+abs,,hanging-leg-raise,plank|cable-crunch,,,muscle word lists exercises that train it
+3/4,,3-4-sit-up,,,,fraction kept as one token
+press,seated-dumbbell-press,seated-dumbbell-press,,,,your own lifts rise: logged Seated Dumbbell Press leads the press family
+curl,cable-curl|preacher-curl,cable-curl,preacher-curl,,,usage beats curated popularity inside a tier
+bench,dumbbell-bench-press,bench-press,dumbbell-bench-press,,,"your lifts float up under a query, right after exact matches: Bench stays first, your DB bench is second"
+hammer curls,hammer-curls,hammer-curls,,,,a logged duplicate row stays findable
+zzqx,,,,,,no results: one line plus Create “zzqx”

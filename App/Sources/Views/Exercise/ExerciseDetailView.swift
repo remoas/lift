@@ -59,8 +59,8 @@ struct ExerciseDetailView: View {
             Section {
                 if let media {
                     ExerciseMediaHeader(media: media, onVisibilityChange: { headerShown = $0 })
-                        // insetGrouped already insets 20 pt, so the header is screen − 40 (QA 9).
-                        .listRowInsets(EdgeInsets(top: Theme.Spacing.s2, leading: 0, bottom: 0, trailing: 0))
+                        // insetGrouped insets 16 pt; 4 more each side = 20 pt (353 pt on a 393 pt screen).
+                        .listRowInsets(EdgeInsets(top: Theme.Spacing.s2, leading: 4, bottom: 0, trailing: 4))
                         .listRowSeparator(.hidden)
                 }
                 VStack(alignment: .leading, spacing: Theme.Spacing.s1) {
@@ -89,6 +89,8 @@ struct ExerciseDetailView: View {
                     bests
                 }
             } header: { Text("Bests").textCase(nil) }
+            // Plain rows with hairlines in light and dark (QA quick-log 14).
+            .listRowBackground(Theme.Colors.bgCanvas)
 
             Section {
                 TextField("A cue for next time", text: $exercise.note, axis: .vertical)
@@ -107,6 +109,7 @@ struct ExerciseDetailView: View {
         .background(Theme.Colors.bgCanvas)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .tabBar)
         .onDisappear { _ = LiftStore.save(context) }
     }
 

@@ -1,0 +1,396 @@
+exercise_id,canonical_name,aliases
+ab-crunch-machine,Ab Crunch Machine,Machine Abdominal Crunch|Machine Crunch
+ab-wheel-rollout,Ab Wheel Rollout,Ab Wheel|Ab Rollout|Ab Roller Rollout
+air-bike,Air Bike,Fan Bike
+alternating-dumbbell-curl,Alternating Dumbbell Curl,Alternating DB Curl|Alternate Dumbbell Curl
+archer-push-up,Archer Push-Up,Archer Press-Up
+arm-circles,Arm Circles,Small-Arm-Circles
+arnold-dumbbell-press,Arnold Dumbbell Press,Arnold Shoulder Press
+arnold-press,Arnold Press,Arnold|Arnolds|Arnold Shoulder Press|DB Arnold Press
+assisted-dip-machine,Assisted Dip,Assisted Dip Machine|Machine Assisted Dip
+assisted-pull-up,Assisted Pull-Up,Assisted Pull-Up Machine|Machine Assisted Pull-Up|Gravitron|Assisted Chin-Up
+back-extensions,Back Extension,Hyperextension|Hyperextensions|Back Extensions|45 Degree Back Extension|Hyper|Back Hyper
+backpack-biceps-curl,Backpack Biceps Curl,Backpack Curl|Bag Curl
+backpack-row,Backpack Row,One-Arm Backpack Row|Bag Row
+backward-sled-pull,Backward Sled Pull,Backward Sled Drag|Reverse Sled Pull
+band-ankle-dorsiflexion,Band Ankle Dorsiflexion,Band Tibialis Raise
+band-deadlift,Band Deadlift,Resistance Band Deadlift|Band RDL
+band-external-rotation,Band External Rotation,Band Shoulder External Rotation|Rotator Cuff Band External Rotation
+band-internal-rotation,Band Internal Rotation,Band Shoulder Internal Rotation|Rotator Cuff Band Internal Rotation
+band-lat-pulldown,Band Lat Pulldown,Resistance Band Lat Pulldown|Kneeling Band Pulldown
+band-leg-extension,Band Leg Extension,Seated Resistance Band Knee Extension
+band-lying-leg-curl,Band Lying Leg Curl,Band Hamstring Curl|Band Prone Leg Curl
+band-pallof-press,Band Pallof Press,Resistance Band Pallof Press|Band Anti-Rotation Press
+band-pull-apart,Band Pull Apart,Band-Pull-Aparts
+bench-press,Barbell Bench Press,Flat Bench Press|Bench Press|Bench|Flat Bench|Flat Barbell Bench Press|BB Bench Press|Barbell Bench|Barbell Flat Bench Press
+barbell-bench-press-medium-grip,Barbell Bench Press - Medium Grip,Medium Grip Bench Press
+barbell-curl,Barbell Curl,BB Curl|Standing Barbell Curl|Barbell Bicep Curl|Barbell Biceps Curl|Straight Bar Curl
+barbell-glute-bridge,Barbell Glute Bridge,Weighted Glute Bridge|BB Glute Bridge|Barbell Bridge
+barbell-hip-thrust,Barbell Hip Thrust,Hip Thrust|Hip Thrusts|BB Hip Thrust|Glute Thrust
+barbell-incline-bench-press-medium-grip,Barbell Incline Bench Press - Medium Grip,Incline Barbell Bench Press Medium Grip
+barbell-lunge,Barbell Lunge,BB Lunge|Barbell Lunges
+barbell-shoulder-press,Barbell Shoulder Press,Overhead Press|OHP|Military Press|Barbell Overhead Press|BB OHP|Barbell OHP|Strict Press|Standing Press|Barbell Military Press
+barbell-shrug,Barbell Shrug,BB Shrug|Barbell Shrugs
+barbell-split-squat,Barbell Split Squat,BB Split Squat
+barbell-squat,Barbell Squat,Barbell Back Squat|Back Squat|Squat|BB Squat|High Bar Squat|Low Bar Squat|Barbell Back Squats
+barbell-step-ups,Barbell Step Ups,BB Step Up
+barbell-step-up,Barbell Step-Up,Barbell Step Up Onto Box
+barbell-upright-row,Barbell Upright Row,BB Upright Row
+barbell-walking-lunge,Barbell Walking Lunge,BB Walking Lunge
+battle-rope-double-waves,Battle Rope Double Waves,Two-Arm Rope Waves|Double Rope Waves|Battle Rope Alternating Waves
+bear-plank,Bear Plank,Bear Hover|Quadruped Hover
+belt-squat,Belt Squat,Machine Belt Squat|Hip Belt Squat
+bench-dip,Bench Dip,Tricep Dip on Bench|Bench Tricep Dip|Bench Dips
+bench-press-powerlifting,Bench Press - Powerlifting,Powerlifting Bench Press|Competition Bench Press|Powerlifting Bench
+bent-over-barbell-row,Bent Over Barbell Row,Barbell Bent Over Row
+bent-over-two-dumbbell-row,Bent Over Two-Dumbbell Row,Bent Over Dumbbell Row|DB Bent Over Row
+bent-over-row,Bent-Over Row,Barbell Row|BB Row|Barbell Bent-Over Row|Bent Row|BB Bent-Over Row
+bodyweight-hip-thrust,Bodyweight Hip Thrust,Bench-Supported Hip Thrust|Unweighted Hip Thrust
+bodyweight-squat,Bodyweight Squat,Air Squat|Bodyweight-Squats
+bodyweight-walking-lunge,Bodyweight Walking Lunge,Walking Lunge|Walking Lunges
+box-squat,Box Squat,Squat to Bench|Barbell Box Squat
+bulgarian-split-squat,Bulgarian Split Squat,Rear-Foot-Elevated Split Squat|BSS|RFESS|Bulgarians|Bulgarian Squat|DB Bulgarian Split Squat
+butterfly,Butterfly,Butterfly Machine|Seated Machine Fly
+cable-chest-press,Cable Chest Press,Cable Press
+cable-crossover,Cable Crossover,Cable Fly|Cable Flye|Cable Crossovers|Standing Cable Fly|Cable Chest Fly
+cable-crunch,Cable Crunch,Kneeling Cable Crunch|Cable Crunches|Cable Ab Crunch
+cable-curl,Cable Curl,Cable Bicep Curl|Cable Biceps Curl|Straight Bar Cable Curl
+cable-external-rotation,Cable External Rotation,Cable Shoulder External Rotation|Rotator Cuff Cable External Rotation
+cable-fly-high-to-low,Cable Fly High To Low,High to Low Cable Fly|High Cable Fly|Downward Cable Fly
+cable-fly-low-to-high,Cable Fly Low To High,Low to High Cable Fly|Low Cable Fly|Upward Cable Fly
+cable-front-raise,Cable Front Raise,Cable Front Raises
+cable-kickback,Cable Glute Kickback,Cable Glute Kickbacks|Glute Kickback Cable
+cable-internal-rotation,Cable Internal Rotation,Cable Shoulder Internal Rotation|Rotator Cuff Cable Internal Rotation
+cable-lateral-raise,Cable Lateral Raise,Cable Lateral|Cable Side Raise|Single Arm Cable Lateral Raise
+cable-overhead-triceps-extension,Cable Overhead Triceps Extension,Cable Overhead Extension
+cable-rear-delt-fly,Cable Rear Delt Fly,Bent Over Low Pulley Rear Delt Fly|Cable Reverse Fly|Cable Rear Delt Flye
+cable-rope-overhead-triceps-extension,Cable Rope Overhead Triceps Extension,Rope Overhead Extension|Overhead Rope Extension|Overhead Cable Extension
+cable-shoulder-press,Cable Shoulder Press,Cable Overhead Press
+cable-triceps-kickback,Cable Triceps Kickback,Cable Kickback Triceps|Cable Tricep Kickback
+cable-woodchopper,Cable Woodchopper,Woodchop
+cable-y-raise,Cable Y-Raise,Low Pulley Y Raise
+calf-press,Calf Press,Calf Press Machine
+calf-raises,Calf Raises,Standing Calf Raise|Standing Machine Calf Raise|Calf Raise|Machine Calf Raise
+captains-chair-knee-raise,Captain's Chair Knee Raise,Vertical Knee Raise|Captains Chair|Roman Chair Knee Raise|VKR
+chest-dip,Chest Dip,Chest Dips|Forward Lean Dip
+chest-supported-dumbbell-row,Chest-Supported Dumbbell Row,Incline Dumbbell Row|Chest Supported DB Row|Chest-Supported Row
+chest-supported-t-bar-row,Chest-Supported T-Bar Row,Lever T-Bar Row|Chest-Supported Lever Row|Machine T Bar Row
+chest-to-bar-pull-up,Chest-to-Bar Pull-Up,CTB Pull-Up|C2B Pull-Up|Chest to Bar
+chin-up,Chin-Up,Chins|Chin-Ups|Underhand Pull-Up|Supinated Pull-Up|Reverse Grip Pull-Up
+clamshells,Clamshells,Clamshell|Clam
+clap-push-up,Clap Push-Up,Plyometric Push-Up
+clean-and-jerk,Clean and Jerk,C&J|Clean & Jerk
+close-grip-barbell-bench-press,Close-Grip Barbell Bench Press,Close Grip Barbell Bench|CGBP|Narrow Grip Barbell Bench Press
+close-grip-bench-press,Close-Grip Bench Press,CGBP|Close-Grip Bench|Narrow Grip Bench Press|CG Bench
+close-grip-chin-up,Close-Grip Chin-Up,Narrow Grip Chin-Up
+close-grip-dumbbell-press,Close-Grip Dumbbell Press,Close Grip DB Press|Dumbbell Close Grip Press
+close-grip-front-lat-pulldown,Close-Grip Front Lat Pulldown,Close Grip Lat Pulldown|Narrow Grip Lat Pulldown|Close Grip Pulldown
+close-grip-pull-up,Close-Grip Pull-Up,Narrow-Grip Pull-Up|Narrow Pull-Up
+cross-body-hammer-curl,Cross Body Hammer Curl,Cross-Body Curl|Pinwheel Curl
+dead-hang,Dead Hang,Bar Hang|Passive Hang|Hang from Bar
+deadlift,Deadlift,Conventional Deadlift|Conventional|BB Deadlift
+decline-barbell-bench-press,Decline Barbell Bench Press,Decline BB Bench
+decline-bench-press,Decline Bench Press,Decline Bench|Decline Barbell Press
+decline-dumbbell-bench-press,Decline Dumbbell Bench Press,Decline DB Press|Decline DB Bench
+decline-dumbbell-flyes,Decline Dumbbell Flyes,Decline DB Fly|Decline Fly
+decline-push-up,Decline Push-Up,Feet-Elevated Push-Up|Decline Press-Up
+deficit-deadlift,Deficit Deadlift,Deficit Pull|Deficit DL
+diamond-push-up,Diamond Push-Up,Diamond Press-Up|Triangle Push-Up
+dips,Dips,Triceps Dips|Dip|Bar Dips|Parallel Dips
+dips-triceps-version,Dips - Triceps Version,Triceps Dip|Upright Dip
+donkey-kicks,Donkey Kicks,Donkey Kick|Quadruped Hip Extension
+doorway-row,Doorway Row,Door Frame Row
+dumbbell-bench-press,Dumbbell Bench Press,Dumbbell Chest Press|DB Bench Press|DB Bench|Flat Dumbbell Press|Flat DB Press|Flat Dumbbell Bench Press|DB Chest Press
+dumbbell-bench-press-with-neutral-grip,Dumbbell Bench Press with Neutral Grip,Neutral Grip Dumbbell Bench Press|Neutral Grip DB Press
+dumbbell-bicep-curl,Dumbbell Bicep Curl,Dumbbell Curl|DB Curl|Dumbbell Biceps Curl|DB Bicep Curl|Standing Dumbbell Curl
+dumbbell-floor-press,Dumbbell Floor Press,DB Floor Press
+dumbbell-flyes,Dumbbell Flyes,Dumbbell Fly|Dumbbell Chest Fly|DB Fly|DB Flyes|Flat Dumbbell Fly|Dumbbell Flye
+dumbbell-front-rack-carry,Dumbbell Front Rack Carry,Double Dumbbell Rack Carry
+dumbbell-hip-thrust,Dumbbell Hip Thrust,DB Hip Thrust
+dumbbell-lateral-raise,Dumbbell Lateral Raise,DB Lateral Raise
+dumbbell-lunge,Dumbbell Lunge,Weighted Lunge|DB Lunge|Dumbbell Lunges|Dumbbell Forward Lunge
+dumbbell-one-arm-shoulder-press,Dumbbell One-Arm Shoulder Press,Single Arm Dumbbell Shoulder Press|One Arm DB Shoulder Press|Single Arm DB Shoulder Press
+dumbbell-preacher-curl,Dumbbell Preacher Curl,DB Preacher Curl
+dumbbell-pullover,Dumbbell Pullover,DB Pullover
+dumbbell-push-press,Dumbbell Push Press,DB Push Press
+dumbbell-reverse-lunge,Dumbbell Reverse Lunge,DB Reverse Lunge
+dumbbell-reverse-wrist-curl,Dumbbell Reverse Wrist Curl,DB Wrist Extension
+dumbbell-romanian-deadlift,Dumbbell Romanian Deadlift,DB RDL|Dumbbell RDL|DB Romanian Deadlift
+dumbbell-row,Dumbbell Row,Single-Arm Row|One-Arm Row|DB Row|Single Arm Dumbbell Row|One Arm DB Row
+dumbbell-scaption,Dumbbell Scaption,Scaption Raise|DB Scaption|Scaption
+dumbbell-shoulder-press,Dumbbell Shoulder Press,DB Shoulder Press|Dumbbell Overhead Press|DB Overhead Press|DB OHP|Dumbbell OHP
+dumbbell-shrug,Dumbbell Shrug,DB Shrug|Dumbbell Shrugs
+dumbbell-skull-crusher,Dumbbell Skull Crusher,DB Skull Crusher|Dumbbell Lying Triceps Extension
+dumbbell-squeeze-press,Dumbbell Squeeze Press,Hex Press|Crush Press|Squeeze Press
+dumbbell-step-up,Dumbbell Step Up,DB Step Up|Box Step Up|Step Ups
+dumbbell-thruster,Dumbbell Thruster,DB Squat to Press
+dumbbell-upright-row,Dumbbell Upright Row,DB Upright Row
+dumbbell-wrist-curl,Dumbbell Wrist Curl,Seated DB Wrist Curl
+elliptical-trainer,Elliptical Trainer,Elliptical|Cross Trainer|Elliptical Machine
+external-rotation-with-cable,External Rotation with Cable,Rotator Cuff External Rotation
+ez-bar-curl,EZ-Bar Curl,EZ Curl|EZ Bar Bicep Curl
+ez-bar-skullcrusher,EZ-Bar Skullcrusher,EZ Skull Crusher|EZ Bar Lying Triceps Extension
+face-pull,Face Pull,Face Pulls|Rope Face Pull|Cable Face Pull
+farmers-walk,Farmer's Walk,Farmer Carry|Farmers Carry|Farmer Walk
+fire-hydrants,Fire Hydrants,Fire Hydrant|Quadruped Hip Abduction
+flutter-kicks-2,Flutter Kick,Scissor Kicks
+frog-pumps,Frog Pumps,Frog Pump|Frog Glute Bridge
+front-barbell-squat,Front Barbell Squat,Front Squat Barbell
+front-raises,Front Raise,DB Front Raise|Dumbbell Front Raise|Front Raises
+front-squat,Front Squat,Barbell Front Squat|Front Squats
+glute-bridge,Glute Bridge,Glute-Bridges|Hip Bridge
+glute-bridge-march,Glute Bridge March,Marching Glute Bridge|Bridge March
+glute-ham-raise,Glute Ham Raise,GHR|Glute Ham Developer Raise|GHD Raise
+goblet-squat,Goblet Squat,Goblet|Goblet Squats|DB Goblet Squat|Dumbbell Goblet Squat
+good-morning,Good Morning,Good Mornings|Barbell Good Morning
+hack-squat,Hack Squat,Machine Hack Squat|Hack Squat Machine|Hack Squats
+hammer-curls-2,Hammer Curl,Hammer Curls|DB Hammer Curl|Dumbbell Hammer Curl|Neutral Grip Curl
+hammer-grip-incline-db-bench-press,Hammer Grip Incline DB Bench Press,Neutral Grip Incline Dumbbell Press
+hamstring-walkout,Hamstring Walkout,Bridge Walkout|Glute Bridge Heel Walkout
+handstand-push-up,Handstand Push-Up,Wall Handstand Push-Up|HSPU|Handstand Press-Up
+hanging-knee-raise,Hanging Knee Raise,Hanging Knee Raises|Hanging Knee Tuck
+hanging-leg-raise,Hanging Leg Raise,HLR|Hanging Leg Raises|Hanging Leg Lift
+high-knees,High Knees,Spot Jogging
+hindu-push-up,Hindu Push-Up,Dand
+hindu-squat,Hindu Squat,Baithak|Baithaks|Dand Baithak Squat
+hip-abduction-machine,Hip Abduction,Abductor Machine|Hip Abductor|Outer Thigh Machine|Abduction Machine
+hip-adduction-machine,Hip Adduction,Adductor Machine|Hip Adductor|Inner Thigh Machine|Adduction Machine
+hip-thrust-machine,Hip Thrust Machine,Glute Drive Machine|Machine Hip Thrust|Glute Drive
+hollow-body-hold,Hollow Body Hold,Hollow Hold
+hollow-body-rock,Hollow Body Rock,Hollow Rock|Hollow Hold Rock
+incline-bench-press,Incline Bench Press,Incline Bench|Incline Barbell Bench Press|Incline Barbell Press|Incline BB Press
+incline-cable-flye,Incline Cable Flye,Incline Cable Fly
+incline-dumbbell-curl,Incline Dumbbell Curl,Incline Curl|Incline DB Curl
+incline-dumbbell-fly,Incline Dumbbell Fly,Incline DB Fly|Incline Dumbbell Flye
+incline-dumbbell-flyes,Incline Dumbbell Flyes,Incline Fly
+incline-dumbbell-press,Incline Dumbbell Press,Incline DB Press|Incline Dumbbell Bench Press|Incline DB Bench|Incline Dumbbell Chest Press|Incline DB Bench Press
+incline-push-up,Incline Push-Up,Hands-Elevated Push-Up|Incline Press-Up
+inverted-row,Inverted Row,Australian Pull-Up|Bodyweight Row|Inverted Bodyweight Row|Body Row
+jump-rope,Jump Rope,Skipping|Skipping Rope|Jump Rope Basic Bounce
+jump-squat,Jump Squat,Squat Jump
+jumping-pull-up,Jumping Pull-Up,Jump Pull-Up
+kettlebell-clean,Kettlebell Clean,KB Clean
+kettlebell-deadlift,Kettlebell Deadlift,KB Deadlift
+kettlebell-goblet-squat,Kettlebell Goblet Squat,KB Goblet Squat
+kettlebell-press,Kettlebell Press,KB Press|Kettlebell Overhead Press|KB OHP|Kettlebell Shoulder Press|Single Arm Kettlebell Press
+kettlebell-row,Kettlebell Row,KB Row
+kettlebell-seated-press,Kettlebell Seated Press,Seated KB Press|Seated Kettlebell Press
+kettlebell-snatch,Kettlebell Snatch,KB Snatch
+kettlebell-swing,Kettlebell Swing,KB Swing|Russian Swing|Kettlebell Swings
+kettlebell-windmill,Kettlebell Windmill,KB Windmill|Windmill
+knee-plank,Knee Plank,Modified Forearm Plank|Kneeling Forearm Plank
+knee-push-up,Knee Push-Up,Kneeling Push-Up|Knee Press-Up|Kneeling Press-Up
+knee-side-plank,Knee Side Plank,Modified Side Plank|Bent-Knee Side Plank
+landmine-press,Landmine Press,Landmine Shoulder Press|Single Arm Landmine Press|Half-Kneeling Landmine Press
+landmine-romanian-deadlift,Landmine Romanian Deadlift,Landmine RDL
+landmine-rotation,Landmine Rotation,Landmine Twist|Landmine Rainbow
+lateral-lunge,Lateral Lunge,Side Lunge
+lateral-sled-drag,Lateral Sled Drag,Side Sled Drag
+lateral-step-up,Lateral Step-Up,Side Step-Up|Lateral Box Step Up
+leg-curl,Leg Curl,Lying Leg Curl|Hamstring Curl|Prone Leg Curl|Leg Curls|Lying Hamstring Curl
+leg-extension,Leg Extension,Leg Extensions|Quad Extension|Knee Extension|Leg Extension Machine
+leg-press,Leg Press,Leg Press Machine|45 Degree Leg Press|Sled Leg Press|Plate Loaded Leg Press|Incline Leg Press
+leg-press-calf-raise,Leg Press Calf Raise,Calf Press on Leg Press|Toe Press|45 Degree Leg Press Calf Raise|Leg Press Calf Press
+leg-raises,Leg Raise,Lying Leg Raise|Lying Floor Leg Raise
+leverage-chest-press,Leverage Chest Press,Plate Loaded Chest Press|Hammer Strength Chest Press
+leverage-shoulder-press,Leverage Shoulder Press,Plate Loaded Shoulder Press|Hammer Strength Shoulder Press
+low-cable-crossover,Low Cable Crossover,Low Pulley Crossover
+lying-dumbbell-tricep-extension,Lying Dumbbell Tricep Extension,Lying DB Triceps Extension
+lying-leg-curls,Lying Leg Curls,Lying Hamstring Curls
+lying-triceps-press,Lying Triceps Press,Lying Tricep Press
+machine-bench-press,Machine Bench Press,Machine Bench
+chest-press-machine,Machine Chest Press,Chest Press Machine|Seated Chest Press
+machine-glute-kickback,Machine Glute Kickback,Glute Machine Kickback|Standing Glute Machine
+machine-high-row,Machine High Row,Iso-Lateral High Row|Plate-Loaded High Row
+machine-lateral-raise,Machine Lateral Raise,Lateral Raise Machine|Machine Side Raise
+machine-preacher-curl,Machine Preacher Curl,Machine Biceps Curl|Bicep Curl Machine|Preacher Curl Machine
+machine-pullover,Machine Pullover,Pullover Machine|Overhead Pullover Machine
+machine-shoulder-military-press,Machine Shoulder (Military) Press,Machine Military Press
+shoulder-press-machine,Machine Shoulder Press,Shoulder Press Machine|Seated Shoulder Press Machine|Machine OHP|Machine Overhead Press
+machine-triceps-extension,Machine Triceps Extension,Triceps Extension Machine|Seated Tricep Extension Machine|Tricep Machine
+marching-in-place,March in Place,Standing-March
+meadows-row,Meadows Row,Meadows|Landmine Single Arm Row
+medicine-ball-chest-pass,Medicine Ball Chest Pass,Med Ball Chest Pass|Chest Pass
+medicine-ball-overhead-slam,Medicine Ball Overhead Slam,Overhead Med Ball Slam
+medicine-ball-rotational-throw,Medicine Ball Rotational Throw,Med Ball Rotational Throw|Side Medicine Ball Throw
+medicine-ball-russian-twist,Medicine Ball Russian Twist,Med Ball Russian Twist
+medicine-ball-slam,Medicine Ball Slam,Overhead Ball Slam|Slam Ball Slam|Med Ball Slam|Ball Slam
+medicine-ball-squat-to-press,Medicine Ball Squat to Press,Med Ball Thruster
+medicine-ball-wall-ball,Medicine Ball Wall Ball,Wall Ball|Wall Ball Shot
+medicine-ball-woodchop,Medicine Ball Woodchop,Med Ball Woodchop|Medicine Ball Chop
+mixed-grip-chin,Mixed-Grip Chin-Up,Mixed Grip Chin
+mixed-grip-pull-up,Mixed-Grip Pull-Up,Alternate Grip Pull-Up
+monster-walk,Monster Walk,Band Lateral Walk
+muscle-up,Muscle Up,Bar Muscle-Up
+negative-pull-up,Negative Pull-Up,Eccentric Pull-Up|Pull-Up Negatives
+neutral-grip-pull-up,Neutral Grip Pull Up,Parallel Grip Pull-Up|Hammer Grip Pull-Up|Neutral Pullup
+nordic-hamstring-curl,Nordic Hamstring Curl,Nordic Curl|Nordics|Nordic|Nordic Hamstring
+oblique-crunch,Oblique Crunch,Side Crunch|Twisted Crunch|Cross Crunch on Floor
+one-arm-chin-up,One Arm Chin-Up,Single Arm Chin-Up
+one-arm-dumbbell-bench-press,One Arm Dumbbell Bench Press,Single Arm Dumbbell Bench Press|Single Arm DB Press
+one-arm-lat-pulldown,One Arm Lat Pulldown,Single Arm Lat Pulldown|Single Arm Pulldown
+one-arm-dumbbell-row,One-Arm Dumbbell Row,Single Arm Dumbbell Row|One Arm DB Row
+overhead-carry,Overhead Carry,Single-Arm Overhead Carry|Waiter Walk|Overhead Walk
+overhead-triceps-extension,Overhead Triceps Extension,Overhead Tricep Extension|DB Overhead Extension|Dumbbell Overhead Triceps Extension|Seated Overhead Triceps Extension
+parallel-bar-dip,Parallel Bar Dip,Parallel Bar Dips|P-Bar Dip
+pec-deck,Pec Deck,Machine Fly|Pec Dec|Pec Fly|Machine Chest Fly|Pec Deck Machine|Pec Deck Fly
+pendlay-row,Pendlay Row,Pendlay
+pendulum-squat,Pendulum Squat,Pendulum Squat Machine
+pike-push-up,Pike Push-Up,Pike Press-Up|Pike Press
+pistol-squat,Pistol Squat,Single-Leg Squat
+plank,Plank,Forearm Plank|Front Plank|Planks
+plank-jack,Plank Jack,Plank Jumping Jack
+plate-front-raise,Plate Front Raise,Disc Front Raise|Weight Plate Raise
+plate-pinch,Plate Pinch,Plate Pinch Hold|Disc Pinch Hold
+plate-loaded-incline-chest-press,Plate-Loaded Incline Chest Press,Leverage Incline Press|Hammer Strength Incline Press|Incline Chest Press Machine
+power-clean,Power Clean,Barbell Power Clean
+preacher-curl,Preacher Curl,EZ Bar Preacher Curl|Barbell Preacher Curl|Scott Curl
+prone-t-raise,Prone T-Raise,Prone T|T Raise
+prone-w-raise,Prone W-Raise,Prone W|W Raise
+pullups,Pull-Up,Pull-Ups|Overhand Pull-Up|Pronated Pull-Up|Bodyweight Pull-Up
+push-press,Push Press,Barbell Push Press|BB Push Press
+push-up-wide,Push-Up Wide,Wide Grip Push-Up
+push-ups-close-triceps-position,Push-Ups - Close Triceps Position,Close-Grip Push-Up|Close Grip Press-Up|Triceps Push-Up|Narrow Push-Up
+push-ups-with-feet-elevated,Push-Ups With Feet Elevated,Feet-Elevated Push-Up
+pushups,Pushups,Press-Up|Push-Up|Press-Ups
+rack-pull,Rack Pull,Rack Pulls|Block Pull|Rack Deadlift
+rear-delt-fly,Rear Delt Fly,Reverse Fly|Rear Delt Flies|Bent-Over Reverse Fly|DB Rear Delt Fly|Rear Delt Flye|Reverse Flye
+band-row,Resistance Band Row,Band Row
+reverse-barbell-curl,Reverse Barbell Curl,Reverse Grip Barbell Curl
+reverse-curl,Reverse Curl,Reverse Grip Curl|Reverse EZ Curl
+reverse-grip-bent-over-rows,Reverse Grip Bent-Over Rows,Underhand Barbell Row|Yates Row|Reverse Grip Row
+reverse-grip-triceps-pushdown,Reverse Grip Triceps Pushdown,Underhand Pushdown|Reverse Grip Pushdown
+reverse-hyperextension-2,Reverse Hyperextension (Bench),Reverse Hyper|Bench Reverse Hyperextension|Prone Leg Raise
+reverse-lunge,Reverse Lunge,Bodyweight Reverse Lunge|Back Lunge|Step Back Lunge
+reverse-machine-flyes,Reverse Machine Flyes,Reverse Machine Fly
+reverse-nordic,Reverse Nordic,Reverse Nordic Curl|Kneeling Quad Lean-Back
+reverse-pec-deck,Reverse Pec Deck,Reverse Machine Fly|Reverse Pec Dec|Rear Delt Machine|Rear Delt Fly Machine|Reverse Fly Machine
+reverse-grip-lat-pulldown,Reverse-Grip Lat Pulldown,Underhand Lat Pulldown|Supinated Lat Pulldown|Reverse Grip Pulldown
+ring-pull-up,Ring Pull-Up,Gymnastic Ring Pull-Up|Rings Pull-Up
+romanian-deadlift,Romanian Deadlift,RDL|Romanian|BB RDL|Barbell RDL|Barbell Romanian Deadlift
+rope-hammer-curl,Rope Hammer Curl,Rope Curl|Cable Hammer Curl
+rope-straight-arm-pulldown,Rope Straight-Arm Pulldown,Rope Pullover|Cable Pullover|Rope Lat Pushdown
+rowing-machine,Rowing Machine,Rower|Indoor Rowing|Erg|Ergometer|Concept2
+running-treadmill,"Running, Treadmill",Treadmill Run|Treadmill Running|Treadmill Jog
+scapular-pull-up,Scapular Pull-Up,Scap Pull-Up|Scapular Pulls
+seal-row,Seal Row,Dumbbell Seal Row|Prone Bench Row
+seated-barbell-military-press,Seated Barbell Military Press,Seated Barbell Press|Seated Military Press|Seated Barbell Overhead Press|Seated OHP|Seated Barbell Shoulder Press
+seated-cable-row,Seated Cable Row,Cable Row|Seated Row|Neutral-Grip Seated Row|V-Bar Row|Low Row|Cable Low Row|Seated Cable Rows
+seated-calf-raise,Seated Calf Raise,Seated Calf|Seated Calf Raises
+seated-calf-raise-machine,Seated Calf Raise Machine,Machine Seated Calf Raise|Seated Calf Press
+seated-dumbbell-press,Seated Dumbbell Press,Seated DB Press|Seated Dumbbell Shoulder Press|Seated DB Shoulder Press|Seated Dumbbell Overhead Press|Seated DB OHP
+seated-knee-extension,Seated Knee Extension,Seated Bodyweight Knee Extension|Seated Leg Straightening
+seated-knee-tuck,Seated Knee Tuck,Bench Knee Tuck|Seated Leg Tuck
+seated-leg-curl,Seated Leg Curl,Seated Hamstring Curl|Seated Leg Curls
+leg-press-moving-plate,Seated Leg Press (Moving Plate),Horizontal Leg Press|Selectorized Leg Press
+seated-leg-press,Seated Leg Press (Sliding Seat),Seated Leg Press Machine
+machine-row,Seated Machine Row,Machine Row|Seated Row Machine
+seated-side-lateral-raise,Seated Side Lateral Raise,Seated Lateral Raise|Seated DB Lateral Raise
+see-saw-press-alternating-side-press,See-Saw Press (Alternating Side Press),Seesaw Press|Alternating Side Press
+shadow-boxing,Shadow Boxing,Boxing Jab|Jab|Shadow Box
+side-lateral-raise,Side Lateral Raise,Lateral Raise|Side Raise|Lat Raise|Lateral Raises|Side Laterals|Side Delt Raise|DB Lateral Raise
+side-plank-leg-raise,Side Plank Leg Raise,Side Plank Hip Abduction|Star Side Plank Leg Lift
+side-to-side-chins,Side-to-Side Chin-Up,Side To Side Chins
+single-arm-overhead-press,Single Arm Overhead Press,One Arm Overhead Press|Single Arm DB OHP|Single Arm Dumbbell Overhead Press|Unilateral Overhead Press
+single-arm-cable-row,Single-Arm Cable Row,One Arm Cable Row|Single Arm Seated Cable Row
+single-arm-push-up,Single-Arm Push-Up,One Arm Push-Up|One-Arm Press-Up
+single-leg-leg-extension,Single-Leg Leg Extension,Single Leg Extension|One Leg Extension
+single-leg-romanian-deadlift,Single-Leg Romanian Deadlift,Single Leg RDL|SL RDL|One Leg RDL|Single Leg Deadlift
+skater-jump,Skater Jump,Skaters
+ski-machine,Ski Machine,Ski Ergometer
+skull-crushers,Skull Crusher,Lying Triceps Extension|Lying Tricep Extension|Skull Crushers|French Press|Nose Breaker
+sled-pull,Sled Pull,Rope Sled Pull|Standing Sled Pull
+sliding-hamstring-curl,Sliding Hamstring Curl,Towel Leg Curl|Floor Slider Hamstring Curl
+smith-machine-bench-press,Smith Machine Bench Press,Smith Bench|Smith Bench Press|Smith Machine Flat Bench
+smith-machine-bent-over-row,Smith Machine Bent Over Row,Smith Barbell Row|Smith Row
+smith-machine-calf-raise,Smith Machine Calf Raise,Smith Calf Raise
+smith-machine-close-grip-bench-press,Smith Machine Close-Grip Bench Press,Smith Close Grip Bench
+smith-machine-hip-thrust,Smith Machine Hip Thrust,Smith Hip Thrust
+smith-machine-incline-bench-press,Smith Machine Incline Bench Press,Smith Incline Bench|Smith Incline Bench Press
+smith-machine-incline-press,Smith Machine Incline Press,Smith Incline Press
+smith-machine-overhead-press,Smith Machine Overhead Press,Smith OHP|Smith Shoulder Press|Smith Overhead Press|Smith Military Press
+smith-machine-overhead-shoulder-press,Smith Machine Overhead Shoulder Press,Smith Shoulder Press
+smith-machine-romanian-deadlift,Smith Machine Romanian Deadlift,Smith RDL
+smith-machine-shrug,Smith Machine Shrug,Smith Shrug
+smith-machine-squat,Smith Machine Squat,Smith Squat|Smith Machine Squats
+smith-machine-stiff-legged-deadlift,Smith Machine Stiff-Legged Deadlift,Smith SLDL
+snatch,Snatch,Barbell Snatch
+sphinx-push-up,Sphinx Push-Up,Forearm to Hand Push-Up
+split-jump,Split Jump,Jump Lunge
+split-squat-with-dumbbells,Split Squat with Dumbbells,Dumbbell Split Squat|DB Split Squat
+squat-thrust,Squat Thrust (Step-Back),Step Back Burpee|Low Impact Squat Thrust|Walk-Out Burpee
+stability-ball-crunch,Stability Ball Crunch,Swiss Ball Crunch|Gym Ball Crunch
+stability-ball-hamstring-curl,Stability Ball Hamstring Curl,Swiss Ball Leg Curl|Gym Ball Hamstring Curl
+stability-ball-knee-tuck,Stability Ball Knee Tuck,Swiss Ball Knee Tuck|Gym Ball Jackknife
+stability-ball-pike,Stability Ball Pike,Swiss Ball Pike
+stability-ball-rollout,Stability Ball Rollout,Swiss Ball Ab Rollout
+stability-ball-wall-squat,Stability Ball Wall Squat,Swiss Ball Wall Squat|Exercise Ball Wall Squat
+stair-climber,Stair Climber,Stair Stepper|Stair Machine
+standing-alternating-dumbbell-press,Standing Alternating Dumbbell Press,Alternating Dumbbell Shoulder Press|Alternating DB Press
+standing-barbell-press-behind-neck,Standing Barbell Press Behind Neck,Behind the Neck Press|BTN Press|Behind Neck Press|Behind-the-Neck Overhead Press
+standing-bradford-press,Standing Bradford Press,Bradford Press|Rocky Press
+standing-cable-chest-press,Standing Cable Chest Press,Standing Pulley Chest Press
+standing-calf-raise-machine,Standing Calf Raise Machine,Standing Calf Machine
+standing-dumbbell-calf-raise,Standing Dumbbell Calf Raise,DB Calf Raise|Dumbbell Calf Raises
+standing-dumbbell-press,Standing Dumbbell Press,Standing DB Press|Standing Dumbbell Shoulder Press|Standing Dumbbell Overhead Press|Standing DB OHP
+standing-hamstring-curl,Standing Hamstring Curl,Standing Bodyweight Leg Curl
+standing-hip-abduction,Standing Hip Abduction,Standing Side Leg Raise
+standing-knee-drive,Standing Knee Drive,Standing Knee to Elbow|Standing Cross Crunch|Standing Oblique Crunch
+standing-leg-curl,Standing Leg Curl,Standing Leg Curl Machine|Standing Hamstring Curl Machine|Single Leg Curl Machine
+standing-long-jump,Standing Long Jump,Broad Jump
+standing-military-press,Standing Military Press,Military Press|Standing Barbell Press|Standing Overhead Press|Standing OHP|Strict Press|Barbell Military Press
+standing-overhead-barbell-triceps-extension,Standing Overhead Barbell Triceps Extension,French Press|Barbell Overhead Triceps Extension|Overhead Barbell Extension
+standing-palm-in-one-arm-dumbbell-press,Standing Palm-In One-Arm Dumbbell Press,Single Arm Neutral Grip Shoulder Press
+standing-palms-in-dumbbell-press,Standing Palms-In Dumbbell Press,Neutral Grip Dumbbell Shoulder Press|Neutral Grip Overhead Press|Palms-In Shoulder Press
+standing-twister,Standing Twister,Twister|Twister Disc|Waist Twister|Rotating Disc Twist
+stationary-bike,Stationary Bike,Exercise Bike|Upright Bike|Indoor Cycling|Exercise Cycle
+step-jack,Step Jack,Low Impact Jumping Jack|Step Out Jack|No-Jump Jumping Jack
+step-down,Step-Down,Forward Step Down|Controlled Step Down
+gironda-sternum-chins,Sternum Chin-Up,Gironda Sternum Chins|Gironda Chin-Up|Sternum Chins
+stiff-legged-barbell-deadlift,Stiff-Legged Barbell Deadlift,SLDL|Stiff Leg Deadlift|Straight Leg Deadlift|Barbell SLDL
+stiff-legged-dumbbell-deadlift,Stiff-Legged Dumbbell Deadlift,DB SLDL|Dumbbell Stiff Leg Deadlift|Dumbbell SLDL
+straight-arm-pulldown,Straight-Arm Pulldown,Straight Arm Lat Pull Down|Lat Pushdown|Stiff Arm Pulldown
+suitcase-carry,Suitcase Carry,One-Arm Farmer Carry|Single-Arm Carry|Suitcase Walk
+sumo-deadlift,Sumo Deadlift,Sumo DL|Sumo Deadlifts
+sumo-squat,Sumo Squat,Plie Squat|Dumbbell Sumo Squat
+superman-pulldown,Superman Pulldown,Prone Pulldown|Superman Lat Pulldown
+suspension-biceps-curl,Suspension Biceps Curl,Suspension Arm Curl
+suspension-chest-press,Suspension Chest Press,Suspension Push-Up Press
+suspension-row,Suspension Row,Suspension Inverted Row
+t-bar-row,T-Bar Row,Landmine Row
+table-inverted-row,Table Inverted Row,Table Row|Under-Table Row
+tibialis-raise-machine,Tibialis Raise Machine,Tib Raise Machine|Seated Tibialis Raise|Tibia Trainer
+toes-to-bar,Toes-to-Bar,T2B|TTB
+towel-pull-up,Towel Pull-Up,Towel Grip Pull-Up
+towel-row,Towel Row,Towel Inverted Row|Door Towel Row
+towel-wring,Towel Wring,Towel Twist|Towel Wringing
+trap-bar-deadlift,Trap Bar Deadlift,Hex Bar Deadlift|Trap Bar DL|Hex Bar DL|Trap Bar Deadlifts
+trap-bar-farmer-carry,Trap Bar Farmer Carry,Hex Bar Carry|Trap Bar Carry
+trap-bar-jump,Trap Bar Jump,Hex Bar Jump|Trap Bar Jump Shrug
+trap-bar-shrug,Trap Bar Shrug,Hex Bar Shrug
+treadmill-incline-walk,Treadmill Incline Walk,Incline Walking|Incline Treadmill
+tricep-dumbbell-kickback,Tricep Dumbbell Kickback,Tricep Kickback|DB Kickback|Dumbbell Kickback
+tricep-pushdowns,Tricep Pushdown,Cable Pushdown
+dumbbell-kickback,Triceps Kickback,Dumbbell Kickback
+triceps-pushdown,Triceps Pushdown,Tricep Pushdown|Cable Pushdown|Triceps Pressdown|Tricep Pressdown|Straight Bar Pushdown|Cable Tricep Pushdown
+triceps-pushdown-rope-attachment,Triceps Pushdown - Rope Attachment,Rope Pushdown|Rope Tricep Pushdown|Rope Pressdown|Tricep Rope Pushdown
+triceps-pushdown-v-bar-attachment,Triceps Pushdown - V-Bar Attachment,V-Bar Pushdown
+turkish-get-up,Turkish Get-Up,TGU
+two-arm-kettlebell-military-press,Two-Arm Kettlebell Military Press,Double Kettlebell Press|Double KB Press|Double Kettlebell Overhead Press
+underhand-cable-pulldowns,Underhand Cable Pulldowns,Underhand Pulldown
+v-bar-pulldown,V-Bar Pulldown,V-Bar Lat Pulldown|Neutral Grip Pulldown|V-Handle Pulldown|Neutral Grip Lat Pulldown
+v-squat,V-Squat Machine,Power Squat Machine|V Squat|Leverage Squat Machine
+wall-tibialis-raise,Wall Tibialis Raise,Wall-Supported Toe Raise|Wall Shin Raise
+weighted-chin-up,Weighted Chin-Up,Weighted Chins
+weighted-pull-ups,Weighted Pull-Up,Weighted Pull Ups|Belt Pull-Up|Loaded Pull-Up
+weighted-tricep-dips,Weighted Tricep Dip,Weighted Dip|Weighted Dips
+wide-grip-bench-press,Wide Grip Bench Press,Wide Bench|Wide Grip Bench
+wide-grip-pull-up,Wide Grip Pull Up,Wide Pull-Up
+wide-push-up,Wide Push-Up,Wide Grip Push-Up|Wide Press-Up
+wide-grip-chin-up,Wide-Grip Chin-Up,Wide Chin-Up
+wide-grip-lat-pulldown,Wide-Grip Lat Pulldown,Lat Pulldown|Wide Grip Pulldown|Cable Lat Pulldown|Lat Machine
+wide-grip-rear-pull-up,Wide-Grip Rear Pull-Up,Behind the Neck Pull-Up|Behind Neck Pull-Up|BTN Pull-Up
+windshield-wipers,Windshield Wipers,Lying Windshield Wipers|Floor Wipers
+wrist-curl,Wrist Curl,Barbell Wrist Curl|Forearm Curl
+wrist-roller,Wrist Roller,Forearm Roller|Wrist Roller Curl
+zercher-squat,Zercher Squat,Zercher

@@ -5,9 +5,10 @@
 set -euo pipefail
 APP="$1"; OUT="${2:-screenshots-review}"
 BUNDLE=com.benspink.lift
-FRAMES=(01-log-empty 01b-log-active 03-workout 04-rest 05-set-editor 06-pr-banner 07-finish 08-exercise
+FRAMES=(01-log-empty 01b-log-active 01c-target-hit 01d-stale-saved-toast 03-workout 04-rest 05-set-editor 06-pr-banner 07-finish 08-exercise
   10-history 11-settings 12-history-empty 13-first-workout 14-health-error 15-restoring 16-exercise-empty
-  18-exercise-picker 19-reorder 24a-media-video 24b-media-stills 24c-media-reduce-motion 24d-media-loading
+  18a-picker-empty 18b-picker-bench 18c-picker-rdl 18d-picker-zzqx 18e-picker-press 18f-picker-squat
+  18g-picker-deadlift 18h-picker-pull-up 18i-picker-db-incline 18j-picker-benhc 19-reorder 24a-media-video 24b-media-stills 24c-media-reduce-motion 24d-media-loading
   24e-media-none 25-finish-sets-left 26-discard-toast)
 mkdir -p "$OUT"
 UDID=$(xcrun simctl create lift-shots "iPhone 16")
@@ -35,4 +36,7 @@ for f in "${FRAMES[@]}"; do shoot "$f" light; shoot "$f" dark; done
 shoot 01b-log-active light accessibility-extra-large
 shoot 01b-log-active dark accessibility-extra-large
 shoot 03-workout light accessibility-extra-large
+# §10.8: 18c at AX3.
+shoot 18c-picker-rdl light accessibility-extra-large
+shoot 18c-picker-rdl dark accessibility-extra-large
 ls "$OUT" | wc -l

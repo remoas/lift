@@ -42,6 +42,13 @@ public enum Target {
         topSet(lastSets).map { next(after: $0, repGoal: repGoal, step: step, bodyweight: bodyweight) }
     }
 
+    /// Prefill for an unlogged set (Ben, 2:16 pm: "Prefill the next set with
+    /// what I just did"): the set just logged this session if there is one;
+    /// otherwise (the first set) the target; first time ever, last time's set or nil.
+    public static func prefill(justLogged: SetTarget?, target: SetTarget?, lastTime: SetTarget? = nil) -> SetTarget? {
+        justLogged ?? target ?? lastTime
+    }
+
     /// Meeting or beating: at least the target weight and at least the target reps.
     public static func isHit(weight: Double, reps: Int, target: SetTarget) -> Bool {
         weight >= target.weight - 0.0001 && reps >= target.reps

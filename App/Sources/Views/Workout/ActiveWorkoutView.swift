@@ -27,6 +27,8 @@ struct ActiveWorkoutView: View {
     @State private var shownBanner: PRBannerContent?
     @State private var shownSetID: UUID?
     @State private var bannerLanded = false
+    /// "New best" + why line, faded in once the number has landed (AC 59 order).
+    @State private var bannerCopyIn = false
     /// Exercise whose inline rep-goal stepper is showing.
     @State private var repGoalFor: UUID?
 
@@ -117,12 +119,16 @@ struct ActiveWorkoutView: View {
                     .listRowBackground(Theme.Colors.bgCanvas)
                 } else if !workout.isBackLog, let started = session.startedClock {
                     Section {
-                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
-                            Text(RestCountdown.format(ctx.date.timeIntervalSince(started)))
+                        // "18 min", tucked under the title (QA quick-log 18).
+                        TimelineView(.periodic(from: .now, by: 15)) { ctx in
+                            let minutes = max(0, Int(ctx.date.timeIntervalSince(started) / 60))
+                            Text("\(minutes) min")
                                 .font(Theme.Fonts.caption.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary)
-                                .accessibilityLabel("Elapsed")
+                                .accessibilityLabel("Elapsed, \(minutes) minutes")
                         }
+                        .listRowInsets(EdgeInsets(top: 0, leading: Theme.Spacing.s5, bottom: 0, trailing: Theme.Spacing.s5))
                     }
+                    .listSectionSpacing(0)
                     .listRowSeparator(.hidden)
                     .listRowBackground(Theme.Colors.bgCanvas)
                 }
@@ -146,15 +152,14 @@ struct ActiveWorkoutView: View {
                     .frame(height: session.rest == nil && session.restDoneText == nil ? 0 : nil)
                     .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.rest == nil)
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                // Under the nav, pushing the list down so it never covers a header (QA 8).
+            .overlay(alignment: .top) {
+                // Floats under the nav; the rows never move (AC 59).
                 if let banner = shownBanner {
-                    PRBannerView(content: banner, setID: shownSetID, landed: bannerLanded, onTap: {
+                    PRBannerView(content: banner, setID: shownSetID, landed: bannerLanded, copyIn: bannerCopyIn, onTap: {
                         detail = session.bannerExercise
                         session.dismissBanner()
                     }, onDismiss: { session.dismissBanner() })
-                    .padding(.vertical, Theme.Spacing.s2)
-                    .background(Theme.Colors.bgCanvas)
+                    .padding(.top, Theme.Spacing.s2)
                     .transition(.opacity)
                 }
             }
@@ -167,6 +172,7 @@ struct ActiveWorkoutView: View {
                 shownBanner = b
                 shownSetID = session.bannerSetID
                 bannerLanded = true
+                bannerCopyIn = true
             }
         }
         .onChange(of: session.saveError) { _, err in
@@ -201,7 +207,7 @@ struct ActiveWorkoutView: View {
                 }
             }
             Button("Add set") { session.addSet(to: ex) }
-                .buttonStyle(TextActionStyle())
+                .buttonStyle(TextActionStyle(secondary: true))
                 .listRowSeparator(.hidden)
                 .listRowBackground(Theme.Colors.bgCanvas)
         }
@@ -259,7 +265,10 @@ struct ActiveWorkoutView: View {
 
     /// "Last · Mon · 185×8, 185×7, 185×6"
     private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit) -> String {
-        let day = beat.lastDate.map { $0.formatted(.dateTime.weekday(.abbreviated)) }
+        // Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
+        let day = beat.lastDate.map { d in
+            Date().timeIntervalSince(d) > 6 * 86_400 ? d.formatted(.dateTime.day().month(.abbreviated)) : d.formatted(.dateTime.weekday(.abbreviated))
+        }
         let sets = beat.last.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
         return (["Last", day].compactMap { $0 } + [sets]).joined(separator: " · ")
     }
@@ -273,7 +282,8 @@ struct ActiveWorkoutView: View {
                 : AnyLayout(HStackLayout(spacing: 0))
             layout {
                 Text(typeSize.isAccessibilitySize ? "Beat it" : "Beat it · ")
-                if isCurrent && !hit { Text(number).theBar() } else { Text(number) }
+                // One bar per screen: it fades out while the PR banner shows (QA 3).
+                if isCurrent && !hit { Text(number).theBar(visible: shownBanner == nil) } else { Text(number) }
                 if hit {
                     Text("✓ Target hit").foregroundStyle(Theme.Colors.accent)
                         .padding(.leading, typeSize.isAccessibilitySize ? 0 : Theme.Spacing.s3)
@@ -300,6 +310,8 @@ struct ActiveWorkoutView: View {
                 Button("Close", action: onClose)
             }
         }
+        // Nothing to reorder or discard on an empty log (QA quick-log 21).
+        if !(session?.groups.isEmpty ?? true) {
         ToolbarItem(placement: .primaryAction) {
             Menu {
                 Button("Reorder", systemImage: "arrow.up.arrow.down") { showEditToday = true }
@@ -313,6 +325,7 @@ struct ActiveWorkoutView: View {
             }
             .tint(Theme.Colors.textSecondary)
             .accessibilityLabel("Workout options")
+        }
         }
         ToolbarItem(placement: .confirmationAction) {
             if session?.groups.isEmpty == false {
@@ -335,18 +348,25 @@ struct ActiveWorkoutView: View {
 
     /// Appear: start on the set's value, then grow into place with springBanner.
     /// Replace: in place, no stack. Dismiss: reverse toward the set, then fade.
+    /// Appear: the container and number morph up from the set's value
+    /// (springBanner); once landed, "New best" and the why line fade in, then
+    /// the bar draws. Replace: in place. Dismiss: copy fades, then the
+    /// container goes back to the set row that earned it.
     private func bannerChanged(_ new: PRBannerContent?, setID: UUID?) {
+        let slow = Theme.Motion.slowFactor
         if let new {
             if shownBanner != nil {
                 withAnimation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springBanner) {
                     shownBanner = new
                     shownSetID = setID
                     bannerLanded = true
+                    bannerCopyIn = true
                 }
                 return
             }
             if reduceMotion {
                 bannerLanded = true
+                bannerCopyIn = true
                 shownSetID = setID
                 withAnimation(Theme.Motion.fadeReduced) { shownBanner = new }
                 return
@@ -355,11 +375,16 @@ struct ActiveWorkoutView: View {
             t.disablesAnimations = true
             withTransaction(t) {
                 bannerLanded = false
+                bannerCopyIn = false
                 shownSetID = setID
                 shownBanner = new
             }
             DispatchQueue.main.async {
                 withAnimation(Theme.Motion.springBanner) { bannerLanded = true }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.34 / slow) {
+                guard shownBanner == new else { return }
+                withAnimation(Theme.Motion.fadeReduced) { bannerCopyIn = true }
             }
         } else {
             guard shownBanner != nil else { return }
@@ -367,8 +392,12 @@ struct ActiveWorkoutView: View {
                 withAnimation(Theme.Motion.fadeReduced) { shownBanner = nil }
                 return
             }
-            withAnimation(Theme.Motion.springBanner) { bannerLanded = false }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.32 / Theme.Motion.slowFactor) {
+            withAnimation(Theme.Motion.fadeReduced) { bannerCopyIn = false }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12 / slow) {
+                guard session?.banner == nil else { return }
+                withAnimation(Theme.Motion.springBanner) { bannerLanded = false }
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.46 / slow) {
                 guard session?.banner == nil else { return }
                 withAnimation(Theme.Motion.fadeReduced) { shownBanner = nil }
             }

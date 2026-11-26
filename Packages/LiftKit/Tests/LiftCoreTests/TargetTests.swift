@@ -31,6 +31,23 @@ final class TargetTests: XCTestCase {
         XCTAssertNil(Target.next(lastSets: [], repGoal: 10, step: 5, bodyweight: false))
     }
 
+    func testFirstSetPrefillsAtTarget() {
+        let target = Target.next(lastSets: [t(180, 8), t(180, 7), t(180, 6)], repGoal: 10, step: 5, bodyweight: false)
+        XCTAssertEqual(Target.prefill(justLogged: nil, target: target, lastTime: t(180, 8)), t(180, 9))
+    }
+
+    func testLaterSetsPrefillWithWhatWasJustLogged() {
+        let target = t(180, 9)
+        // Missed: logged 180 × 8, so the next set reads 180 × 8 (target line stays 180 × 9).
+        XCTAssertEqual(Target.prefill(justLogged: t(180, 8), target: target), t(180, 8))
+        // Beat it: logged 185 × 9, next set reads 185 × 9.
+        XCTAssertEqual(Target.prefill(justLogged: t(185, 9), target: target), t(185, 9))
+    }
+
+    func testFirstTimeEverHasNoPrefill() {
+        XCTAssertNil(Target.prefill(justLogged: nil, target: nil, lastTime: nil))
+    }
+
     func testHit() {
         XCTAssertTrue(Target.isHit(weight: 185, reps: 9, target: t(185, 9)))
         XCTAssertTrue(Target.isHit(weight: 190, reps: 10, target: t(185, 9)))

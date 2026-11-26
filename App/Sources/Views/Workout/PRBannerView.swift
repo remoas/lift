@@ -10,6 +10,8 @@ struct PRBannerView: View {
     var setID: UUID?
     /// false = sitting on the set row's value; true = at the banner's own place.
     var landed: Bool = true
+    /// "New best" and the why line, faded in after the number lands.
+    var copyIn: Bool = true
     var onTap: () -> Void
     var onDismiss: () -> Void
 
@@ -18,6 +20,7 @@ struct PRBannerView: View {
 
     private var morphing: Bool { setID != nil && !reduceMotion }
     private var atRow: Bool { morphing && !landed }
+    private var copyHidden: Bool { atRow || (morphing && !copyIn) }
 
     var body: some View {
         Button(action: onTap) {
@@ -25,9 +28,9 @@ struct PRBannerView: View {
                 Text("New best")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.Colors.accent)
-                    .opacity(atRow ? 0 : 1)
+                    .opacity(copyHidden ? 0 : 1)
                 HStack(spacing: 0) {
-                    Text("\(content.exercise), ").opacity(atRow ? 0 : 1)
+                    Text("\(content.exercise), ").opacity(copyHidden ? 0 : 1)
                     headline
                 }
                 .font(Theme.Fonts.title.monospacedDigit())
@@ -37,7 +40,7 @@ struct PRBannerView: View {
                     .font(Theme.Fonts.secondary)
                     .foregroundStyle(Theme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
-                    .opacity(atRow ? 0 : 1)
+                    .opacity(copyHidden ? 0 : 1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Theme.Spacing.s4)
@@ -75,8 +78,8 @@ struct PRBannerView: View {
     @ViewBuilder private var headline: some View {
         let text = Text(content.headline).contentTransition(.numericText())
             .modifier(MatchIf(id: setID.map(LiftTransitionID.prValue), active: atRow, properties: .position))
-        // The bar draws only once the number has landed, never on the set row.
-        if landed || !morphing { text.theBar().id(content.headline) } else { text }
+        // The bar draws only after the copy is in, never on the set row.
+        if !morphing || (landed && copyIn) { text.theBar().id(content.headline) } else { text }
     }
 }
 

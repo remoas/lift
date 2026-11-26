@@ -215,7 +215,7 @@ final class LibraryTests: XCTestCase {
     }
 
     var entries: [SearchEntry] {
-        lib.exercises.map { SearchEntry(id: $0.rowID, name: $0.name, variant: $0.variant, aliases: $0.aliases, primary: $0.primaryMuscles, secondary: $0.secondaryMuscles, equipment: $0.equipment) }
+        lib.exercises.map { SearchEntry(library: $0) }
     }
 
     func testAliasAndFoldedSearch() {
@@ -236,10 +236,11 @@ final class LibraryTests: XCTestCase {
         XCTAssertFalse(lats.contains { $0.name == "Leg Press" })
         let cableLats = Search.run(entries, query: "", muscles: [.lats], equipment: [.cable])
         XCTAssertTrue(cableLats.contains { $0.name == "Wide-Grip Lat Pulldown" })
-        XCTAssertTrue(cableLats.allSatisfy { $0.equipment == .cable })
+        XCTAssertTrue(cableLats.allSatisfy { $0.entry.equipment == .cable })
         let sled = Search.run(entries, query: "", equipment: [.sled])
-        XCTAssertEqual(sled.count, 14)
-        XCTAssertEqual(Search.run(entries, query: "").count, 1250)
+        XCTAssertEqual(sled.count, lib.exercises.filter { $0.equipment == .sled && $0.duplicateOf == nil }.count)
+        // The 17 near-duplicates stay hidden until logged (§10.2).
+        XCTAssertEqual(Search.run(entries, query: "").count, 1250 - 17)
     }
 
     /// Picker budget at the real 1,250-row seed: index build plus per-keystroke
@@ -267,7 +268,7 @@ final class LibraryTests: XCTestCase {
             big.append(SearchEntry(id: UUID(), name: "Exercise \(i) Pull-up", variant: i % 2 == 0 ? "wide" : "neutral", aliases: ["alias\(i)"], primary: [.lats], secondary: [.biceps], equipment: .bodyweight))
         }
         let start = Date()
-        for _ in 0..<10 { _ = Search.run(big, query: "neutral", muscles: [.lats]) }
+        for _ in 0..<10 { _ = Search.run(big, query: "pull", muscles: [.lats]) }
         XCTAssertLessThan(Date().timeIntervalSince(start) / 10, 0.05)
     }
 

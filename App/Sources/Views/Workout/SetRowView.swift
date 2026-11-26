@@ -64,7 +64,11 @@ struct SetRowView: View {
         Button(action: onValue) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.s1) {
-                    if let w = model.weightText {
+                    if model.weightText == "0" {
+                        // Bodyweight/band at 0: "10 reps", never "0 lb × 10" (QA quick-log 25).
+                        // A 0 weight only reaches here when the equipment allows it.
+                        Text("\(model.reps) reps").font(Theme.Fonts.setValue)
+                    } else if let w = model.weightText {
                         Text(w).font(Theme.Fonts.setValue)
                         Text(model.unit.symbol).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
                         Text("× \(model.reps)").font(Theme.Fonts.setValue)

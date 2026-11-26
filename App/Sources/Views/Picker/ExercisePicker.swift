@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import LiftCore
+import os
 
 /// §3.12 exercise picker. Library entries become database rows only when picked.
 struct ExercisePicker: View {
@@ -39,6 +40,8 @@ struct ExercisePicker: View {
         let choice: Choice
         let name: String
         let detail: String
+        /// Match-reason meta ("RDL"): leads the detail line when the name doesn't explain the match.
+        var alias: String? = nil
         var mediaRef: String? = nil
         var primary: [MuscleGroup] = []
         var id: UUID { choice.id }
@@ -46,21 +49,21 @@ struct ExercisePicker: View {
 
     @State private var entries: [SearchEntry] = []
     @State private var choices: [UUID: Choice] = [:]
-    @State private var names: Set<String> = []
     /// Cached search results: computed once per query/filter change, not per body pass.
     @State private var results: [Item] = []
+    /// The top hit was an exact name or alias match: no Create row (AC 96).
+    @State private var hasExact = false
+    @State private var announce: Task<Void, Never>?
     @State private var filters: [String: Set<String>] = [:]
     @State private var openFilter: String?
     @Namespace private var chipSpace
 
     private var isMulti: Bool { if case .swap = mode { return false } else { return true } }
 
-    /// Variant only when it adds something the name doesn't already say ("· incline" hidden).
-    static func displayName(_ name: String, variant: String) -> String {
-        let v = variant.trimmingCharacters(in: .whitespaces)
-        if v.isEmpty || name.localizedCaseInsensitiveContains(v) { return name }
-        return "\(name) · \(v)"
-    }
+    /// The bundled library tokenised once per launch; each open only adds usage (§10.2 performance).
+    @MainActor static let libraryIndex: [SearchEntry] = ExerciseLibrary.bundled.exercises.map { SearchEntry(library: $0) }
+    @MainActor static let libraryByID: [String: LibraryExercise] = Dictionary(uniqueKeysWithValues: ExerciseLibrary.bundled.exercises.map { ($0.id, $0) })
+    private static let signposter = OSSignposter(subsystem: "com.benspink.lift", category: "LiftSearch")
 
     private var title: String {
         switch mode {
@@ -91,73 +94,120 @@ struct ExercisePicker: View {
 
     // MARK: Data
 
-    /// Builds the search index once per change: DB rows plus library entries
-    /// that haven't been used yet.
+    private var trimmed: String { query.trimmingCharacters(in: .whitespaces) }
+
+    /// Workouts in the last 90 days with a done set, and the last time (§10.2 usage).
+    private func usage(_ ex: Exercise, now: Date = Date()) -> SearchUsage? {
+        let done = (ex.sets ?? []).filter { $0.isDone && $0.workout?.endedAt != nil }
+        guard let last = done.compactMap(\.doneAt).max() else { return nil }
+        let cutoff = now.addingTimeInterval(-90 * 86_400)
+        let workouts = Set(done.filter { ($0.doneAt ?? .distantPast) >= cutoff }.compactMap { $0.workout?.id })
+        return SearchUsage(count: workouts.count, last: last)
+    }
+
+    /// Builds the search index once per change: DB rows (with usage) plus library
+    /// entries that haven't been materialised yet.
     private func rebuildIndex() {
         var map: [UUID: Choice] = [:]
         var list: [SearchEntry] = []
         for ex in exercises {
             map[ex.id] = .row(ex)
-            list.append(ex.searchEntry)
+            let u = usage(ex)
+            if let lid = ex.libraryID, let lib = Self.libraryByID[lid] {
+                list.append(SearchEntry(library: lib, id: ex.id, usage: u))
+            } else {
+                list.append(SearchEntry(id: ex.id, name: ex.name, aliases: ex.aliases, primary: ex.primaryMuscles,
+                                        secondary: ex.secondaryMuscles, equipment: ex.equipment, usage: u))
+            }
         }
-        for lib in ExerciseLibrary.bundled.exercises where map[lib.rowID] == nil {
-            map[lib.rowID] = .library(lib)
-            list.append(SearchEntry(id: lib.rowID, name: lib.name, variant: lib.variant, aliases: lib.aliases, primary: lib.primaryMuscles, secondary: lib.secondaryMuscles, equipment: lib.equipment))
-        }
+        for entry in Self.libraryIndex where map[entry.id] == nil { list.append(entry) }
+        for lib in ExerciseLibrary.bundled.exercises where map[lib.rowID] == nil { map[lib.rowID] = .library(lib) }
         if case .swap(let old) = mode { list.removeAll { $0.id == old.id } }
         entries = list
         choices = map
-        names = Set(list.map(\.sortKey))
         refresh()
+        #if DEBUG
+        if let q = Fixtures.pickerQuery, query.isEmpty {
+            query = q
+            refresh()
+            // 18c: the alias search with two picked (QA quick-log 16).
+            if Fixtures.requested == "18c-picker-rdl" { selected = Array(results.prefix(2).map(\.choice)) }
+        }
+        #endif
     }
 
     private func refresh() {
-        results = Search.run(entries, query: query, muscles: muscleFilter, equipment: equipmentFilter).compactMap(item)
+        let state = Self.signposter.beginInterval("LiftSearch")
+        let hits = Search.run(entries, query: query, muscles: muscleFilter, equipment: equipmentFilter)
+        results = hits.compactMap(item)
+        hasExact = hits.first?.isExact == true
+        Self.signposter.endInterval("LiftSearch", state)
+        // VoiceOver: the count once typing pauses for 0.5 s (AC 98).
+        announce?.cancel()
+        guard !trimmed.isEmpty else { return }
+        let n = results.count
+        announce = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+            AccessibilityNotification.Announcement(n == 0 ? "No results" : "\(n) result\(n == 1 ? "" : "s")").post()
+        }
     }
 
     private var muscleFilter: Set<MuscleGroup> { Set((filters["muscle"] ?? []).compactMap(MuscleGroup.init(rawValue:))) }
     private var equipmentFilter: Set<Equipment> { Set((filters["equipment"] ?? []).compactMap(Equipment.init(rawValue:))) }
-    private var isFiltering: Bool { !query.isEmpty || !muscleFilter.isEmpty || !equipmentFilter.isEmpty }
+    private var hasChips: Bool { !muscleFilter.isEmpty || !equipmentFilter.isEmpty }
+    private var isTyping: Bool { !trimmed.isEmpty }
 
-    private func item(_ e: SearchEntry) -> Item? {
+    private func item(_ hit: SearchHit) -> Item? {
+        let e = hit.entry
         guard let c = choices[e.id] else { return nil }
         let detail: String
-        switch c {
-        case .row(let ex): detail = lastText(ex) ?? subtitleTags(e)
-        case .library: detail = subtitleTags(e)
-        }
         let media: String?
         switch c {
-        case .row(let ex): media = ex.mediaRef
-        case .library(let l): media = l.mediaRef
+        case .row(let ex):
+            detail = lastText(ex) ?? subtitleTags(e)
+            media = ex.mediaRef
+        case .library(let l):
+            detail = subtitleTags(e)
+            media = l.mediaRef
         }
-        return Item(choice: c, name: displayName(c), detail: detail, mediaRef: media, primary: e.primary)
-    }
-
-    private func displayName(_ c: Choice) -> String {
-        switch c {
-        case .row(let ex): return Self.displayName(ex.name, variant: ex.variant)
-        case .library(let l): return Self.displayName(l.name, variant: l.variant)
-        }
+        return Item(choice: c, name: e.name, detail: detail, alias: hit.matchedAlias, mediaRef: media, primary: e.primary)
     }
 
     private func subtitleTags(_ e: SearchEntry) -> String {
         "Not logged yet · " + ([e.equipment.label] + e.primary.prefix(2).map(\.label)).joined(separator: ", ")
     }
 
-    private var filtered: [Item] { results }
-
+    /// Last 8 logged, most recent first: "Last 185 × 8 · Mon" (§10.6).
     private var recent: [Item] {
-        guard !isFiltering else { return [] }
+        guard !isTyping, !hasChips else { return [] }
         let logged = exercises.compactMap { ex -> (Exercise, Date)? in
+            if case .swap(let old) = mode, old.id == ex.id { return nil }
             guard let d = (ex.sets ?? []).filter({ $0.isDone && $0.workout?.endedAt != nil }).compactMap(\.doneAt).max() else { return nil }
             return (ex, d)
         }
-        return logged.sorted { $0.1 > $1.1 }.prefix(12).map { ex, date in
-            Item(choice: .row(ex), name: displayName(.row(ex)),
-                 detail: ([Self.ago(date)] + [lastPair(ex)].compactMap { $0 }).joined(separator: " · "),
+        return logged.sorted { $0.1 > $1.1 }.prefix(8).map { ex, date in
+            Item(choice: .row(ex), name: ex.name,
+                 detail: ([lastText(ex)].compactMap { $0 } + [Self.ago(date)]).joined(separator: " · "),
                  mediaRef: ex.mediaRef, primary: ex.primaryMuscles)
         }
+    }
+
+    /// The 22 Common lifts in popularityRank order, minus Recents.
+    private var common: [Item] {
+        guard !isTyping, !hasChips else { return [] }
+        let lib = ExerciseLibrary.bundled
+        var ids: [String] = []
+        for day in lib.common.keys.sorted() { for id in lib.common[day] ?? [] where !ids.contains(id) { ids.append(id) } }
+        let inRecents = Set(recent.map(\.id))
+        let entriesByID = Dictionary(entries.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return ids.compactMap { Self.libraryByID[$0] }
+            .sorted { ($0.popularityRank ?? 1_000_000) < ($1.popularityRank ?? 1_000_000) }
+            .compactMap { l in
+                let rowID = choices.keys.contains(l.rowID) ? l.rowID : nil
+                guard let rowID, !inRecents.contains(rowID), let e = entriesByID[rowID] else { return nil }
+                return item(SearchHit(entry: e, tier: 0, matchedAlias: nil))
+            }
     }
 
     /// "Today", "Yesterday", "3 days ago", then a date.
@@ -171,10 +221,6 @@ struct ExercisePicker: View {
         }
     }
 
-    private var exactMatch: Bool {
-        names.contains(Search.fold(query.trimmingCharacters(in: .whitespaces)))
-    }
-
     private func lastPair(_ ex: Exercise) -> String? {
         let last = LiftStore.lastSessionSets(for: ex).filter { $0.kind.countsForRecords }
         guard let top = last.max(by: { $0.snapshot.weightKg < $1.snapshot.weightKg }) else { return nil }
@@ -184,7 +230,38 @@ struct ExercisePicker: View {
 
     private func lastText(_ ex: Exercise) -> String? { lastPair(ex).map { "Last \($0)" } }
 
+    /// Return key (AC 97).
+    private func submit() {
+        guard let top = results.first else {
+            if isTyping { creating = true }
+            return
+        }
+        switch mode {
+        case .swap:
+            commit([top.choice])
+        case .add where selected.isEmpty:
+            commit([top.choice])
+        case .add:
+            if !selected.contains(top.choice) { toggle(top.choice) }
+            query = ""
+            searchFocused = true
+        }
+    }
+
     // MARK: Body
+
+    private var createRow: some View {
+        Button { creating = true } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Create “\(trimmed)”").foregroundStyle(Theme.Colors.accent)
+                Text("A custom exercise, yours to name and set up").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, minHeight: Theme.Size.setRow, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .listRowBackground(Theme.Colors.bgRaised)
+    }
 
     var body: some View {
         NavigationStack {
@@ -194,30 +271,30 @@ struct ExercisePicker: View {
                 .screenMargins()
             ChipMorphBar(groups: Self.filterGroups, selection: $filters, open: $openFilter, namespace: chipSpace)
                 .padding(.vertical, Theme.Spacing.s2)
+            ScrollViewReader { proxy in
             List {
-                if !recent.isEmpty {
-                    Section("Recents") { ForEach(recent) { row($0) } }
-                }
-                if !filtered.isEmpty {
-                    Section(isFiltering ? "\(filtered.count) matches" : "All exercises") { ForEach(filtered) { row($0) } }
-                }
-                if !query.trimmingCharacters(in: .whitespaces).isEmpty, !exactMatch {
-                    Section {
-                        if filtered.isEmpty {
-                            Text("No match in your library").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-                        }
-                        Button { creating = true } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Create “\(query.trimmingCharacters(in: .whitespaces))”").foregroundStyle(Theme.Colors.accent)
-                                Text("A custom exercise, yours to name and set up").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-                            }
-                            .frame(minHeight: Theme.Size.setRow, alignment: .leading)
-                        }
+                Color.clear.frame(height: 0).listRowSeparator(.hidden).listRowBackground(Color.clear).id("top")
+                if isTyping {
+                    // Results replace the sections: no header, no Recents (logged matches float up).
+                    if results.isEmpty {
+                        Text("No exercise called “\(trimmed)”.").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+                            .listRowBackground(Theme.Colors.bgRaised)
                     }
+                    ForEach(results) { row($0) }
+                    if !hasExact { createRow }
+                } else if hasChips {
+                    Section("\(results.count) exercises") { ForEach(results) { row($0) } }
+                } else {
+                    if !recent.isEmpty { Section("Recents") { ForEach(recent) { row($0) } } }
+                    if !common.isEmpty { Section("Common") { ForEach(common) { row($0) } } }
+                    Section("All exercises") { ForEach(results) { row($0) } }
                 }
             }
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
+            .transaction { $0.animation = nil }   // no reorder animation while typing (§10.6)
+            .onChange(of: query) { proxy.scrollTo("top", anchor: .top) }
+            }
             }
             .background(Theme.Colors.bgRaised)
             .overlay(alignment: .top) {
@@ -226,6 +303,7 @@ struct ExercisePicker: View {
                 }
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search")
+            .onSubmit(of: .search) { submit() }
             .modifier(SearchFocus(focused: $searchFocused))
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -243,7 +321,7 @@ struct ExercisePicker: View {
                 }
             }
             .sheet(isPresented: $creating) {
-                CreateExerciseForm(initialName: query.trimmingCharacters(in: .whitespaces)) { ex in
+                CreateExerciseForm(initialName: trimmed) { ex in
                     creating = false
                     commit([.row(ex)])
                 }
@@ -273,8 +351,12 @@ struct ExercisePicker: View {
             HStack(spacing: Theme.Spacing.s3) {
                 ExerciseThumb(mediaRef: item.mediaRef, primary: item.primary)
                 VStack(alignment: .leading, spacing: 2) {
+                    // Title is the name only (§10.5); the alias leads the detail line.
                     Text(item.name).font(.body).foregroundStyle(Theme.Colors.textPrimary)
-                    Text(item.detail).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(([item.alias].compactMap { $0 } + [item.detail]).joined(separator: " · "))
+                        .font(Theme.Fonts.secondary.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 if isMulti {
@@ -286,6 +368,8 @@ struct ExercisePicker: View {
         }
         .buttonStyle(.plain)
         .listRowBackground(Theme.Colors.bgRaised)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel([item.name, item.alias.map { "matches \($0)" }, item.detail].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 

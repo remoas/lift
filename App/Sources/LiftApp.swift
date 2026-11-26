@@ -10,6 +10,8 @@ struct LiftApp: App {
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
+        // Unselected tab labels in textSecondary, not system grey (QA quick-log 22).
+        UITabBar.appearance().unselectedItemTintColor = UIColor(Theme.Colors.textSecondary)
         #if DEBUG
         if let fixture = Fixtures.requested {
             let (container, settings) = Fixtures.make(fixture)

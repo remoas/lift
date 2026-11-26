@@ -113,9 +113,17 @@ public struct LibraryExercise: Codable, Hashable, Sendable, Identifiable {
     public var mediaRef: String?
     /// Where the text came from (free-exercise-db, open-exercise-illustrations, workout-free-videos, lift).
     public var source: String?
+    /// Search ranking (v3, §10.2): 1–5, and the hand-ordered rank (1 = most common) or nil.
+    public var popularity: Int
+    public var popularityRank: Int?
+    /// Position words ("seated", "incline"…): search attributes only, never matched alone.
+    public var position: String
+    /// Near-duplicate of another id: hidden from search unless logged.
+    public var duplicateOf: String?
 
     enum CodingKeys: String, CodingKey {
         case id, name, primaryMuscles, secondaryMuscles, equipment, variant, aliases, repMin, repMax, restSeconds, mediaRef, source
+        case popularity, popularityRank, position, duplicateOf
     }
 
     /// Lenient on optional fields (null variant, missing reps), strict on enums:
@@ -134,11 +142,15 @@ public struct LibraryExercise: Codable, Hashable, Sendable, Identifiable {
         restSeconds = try c.decodeIfPresent(Int.self, forKey: .restSeconds)
         mediaRef = try c.decodeIfPresent(String.self, forKey: .mediaRef)
         source = try c.decodeIfPresent(String.self, forKey: .source)
+        popularity = try c.decodeIfPresent(Int.self, forKey: .popularity) ?? 3
+        popularityRank = try c.decodeIfPresent(Int.self, forKey: .popularityRank)
+        position = try c.decodeIfPresent(String.self, forKey: .position) ?? ""
+        duplicateOf = try c.decodeIfPresent(String.self, forKey: .duplicateOf)
     }
 
     public var media: ExerciseMedia? { mediaRef.flatMap(ExerciseMedia.init(key:)) }
 
-    public init(id: String, name: String, primaryMuscles: [MuscleGroup], secondaryMuscles: [MuscleGroup] = [], equipment: Equipment, variant: String = "", aliases: [String] = [], repMin: Int = 8, repMax: Int = 12, restSeconds: Int? = nil, mediaRef: String? = nil, source: String? = nil) {
+    public init(id: String, name: String, primaryMuscles: [MuscleGroup], secondaryMuscles: [MuscleGroup] = [], equipment: Equipment, variant: String = "", aliases: [String] = [], repMin: Int = 8, repMax: Int = 12, restSeconds: Int? = nil, mediaRef: String? = nil, source: String? = nil, popularity: Int = 3, popularityRank: Int? = nil, position: String = "", duplicateOf: String? = nil) {
         self.id = id
         self.name = name
         self.primaryMuscles = primaryMuscles
@@ -151,6 +163,10 @@ public struct LibraryExercise: Codable, Hashable, Sendable, Identifiable {
         self.restSeconds = restSeconds
         self.mediaRef = mediaRef
         self.source = source
+        self.popularity = popularity
+        self.popularityRank = popularityRank
+        self.position = position
+        self.duplicateOf = duplicateOf
     }
 
     public var repRange: ClosedRange<Int> { min(repMin, repMax)...max(repMin, repMax) }
@@ -267,54 +283,6 @@ public enum StableID {
         bytes[8] = (bytes[8] & 0x3f) | 0x80   // RFC 4122 variant
         return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
                            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
-    }
-}
-
-/// Searchable entry for the picker: library entries and custom exercises alike.
-public struct SearchEntry: Sendable, Identifiable {
-    public let id: UUID
-    public let name: String
-    public let primary: [MuscleGroup]
-    public let secondary: [MuscleGroup]
-    public let equipment: Equipment
-    let keys: [String]
-    public let sortKey: String
-
-    public init(id: UUID, name: String, variant: String, aliases: [String], primary: [MuscleGroup], secondary: [MuscleGroup], equipment: Equipment) {
-        self.id = id
-        self.name = name
-        self.primary = primary
-        self.secondary = secondary
-        self.equipment = equipment
-        keys = ([name, variant] + aliases).filter { !$0.isEmpty }.map(Search.fold)
-        sortKey = Search.fold(name)
-    }
-}
-
-public enum Search {
-    /// Case- and diacritic-folded, so matching is a cheap substring check.
-    public static func fold(_ s: String) -> String {
-        s.folding(options: [.caseInsensitive, .diacriticInsensitive], locale: nil)
-    }
-
-    /// Matches name, variant and aliases, filtered by muscle (primary or
-    /// secondary) and equipment. Ranking: key prefix, then word prefix
-    /// ("press" → "Bench Press"), then anywhere; A–Z within each tier.
-    /// Keys are folded once at index time, so a query is a linear scan of
-    /// cheap substring checks (≈1 ms for the 1,250-row seed).
-    public static func run(_ entries: [SearchEntry], query: String, muscles: Set<MuscleGroup> = [], equipment: Set<Equipment> = []) -> [SearchEntry] {
-        let q = fold(query.trimmingCharacters(in: .whitespaces))
-        let spaced = " " + q, hyphened = "-" + q, slashed = "/" + q
-        var tiers: [[SearchEntry]] = [[], [], []]
-        for e in entries {
-            if !equipment.isEmpty, !equipment.contains(e.equipment) { continue }
-            if !muscles.isEmpty, muscles.isDisjoint(with: e.primary), muscles.isDisjoint(with: e.secondary) { continue }
-            if q.isEmpty { tiers[2].append(e); continue }
-            if e.keys.contains(where: { $0.hasPrefix(q) }) { tiers[0].append(e) }
-            else if e.keys.contains(where: { $0.contains(spaced) || $0.contains(hyphened) || $0.contains(slashed) }) { tiers[1].append(e) }
-            else if e.keys.contains(where: { $0.contains(q) }) { tiers[2].append(e) }
-        }
-        return tiers.flatMap { $0.sorted { $0.sortKey < $1.sortKey } }
     }
 }
 
