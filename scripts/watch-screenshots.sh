@@ -24,7 +24,7 @@ shoot_on() { # "name|udid" suffix
   for f in "${FRAMES[@]}"; do
     xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
     xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture "$f" >/dev/null
-    if [ "$f" = w09-add ]; then sleep 8; else sleep 3; fi
+    if [ "$f" = w09-add ]; then sleep 15; else sleep 3; fi
     xcrun simctl io "$UDID" screenshot "$OUT/$f-$2.png" >/dev/null
   done
   xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
@@ -32,4 +32,5 @@ shoot_on() { # "name|udid" suffix
 echo "small: $SMALL · large: $LARGE"
 [ -n "$SMALL" ] && shoot_on "$SMALL" "$(echo "$SMALL" | grep -oE '[0-9]+mm')"
 [ -n "$LARGE" ] && shoot_on "$LARGE" "$(echo "$LARGE" | grep -oE '[0-9]+mm')"
+mkdir -p "$OUT/../watch-logs"; cp ~/Library/Logs/DiagnosticReports/LiftWatch* "$OUT/../watch-logs/" 2>/dev/null || true
 ls "$OUT"
