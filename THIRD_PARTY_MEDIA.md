@@ -798,3 +798,10 @@ CC0 waives copyright; it does not clear publicity rights of people shown in the 
 | `stills/zercher-squat-end.webp` | `zercher-squat` | open-exercise-illustrations | https://raw.githubusercontent.com/hitmanrepo/open-exercise-illustrations/main/images/zercher-squat/end.webp | CC0 1.0 | 29094 | `5808c7b001fee395` |
 | `stills/zottman-curl-start.webp` | `zottman-curl` | open-exercise-illustrations | https://raw.githubusercontent.com/hitmanrepo/open-exercise-illustrations/main/images/zottman-curl/start.webp | CC0 1.0 | 24002 | `d7b8045808b53c31` |
 | `stills/zottman-curl-end.webp` | `zottman-curl` | open-exercise-illustrations | https://raw.githubusercontent.com/hitmanrepo/open-exercise-illustrations/main/images/zottman-curl/end.webp | CC0 1.0 | 23114 | `35938fdbd559009c` |
+
+## Derived posters
+
+`App/Resources/ExerciseMedia/posters/{name}-thumb.jpg` (frame at 1 s, 240×240) and
+`{name}-end.jpg` (last frame, 1200 px wide) are stills extracted with ffmpeg from the
+CC0 videos listed above, under the same CC0 terms. They are used for list thumbnails and
+the Reduce Motion End still.

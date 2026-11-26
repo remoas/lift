@@ -56,6 +56,13 @@ struct ExercisePicker: View {
 
     private var isMulti: Bool { if case .swap = mode { return false } else { return true } }
 
+    /// Variant only when it adds something the name doesn't already say ("· incline" hidden).
+    static func displayName(_ name: String, variant: String) -> String {
+        let v = variant.trimmingCharacters(in: .whitespaces)
+        if v.isEmpty || name.localizedCaseInsensitiveContains(v) { return name }
+        return "\(name) · \(v)"
+    }
+
     private var title: String {
         switch mode {
         case .add: return "Add exercise"
@@ -131,8 +138,8 @@ struct ExercisePicker: View {
 
     private func displayName(_ c: Choice) -> String {
         switch c {
-        case .row(let ex): return ex.variant.isEmpty ? ex.name : "\(ex.name) · \(ex.variant)"
-        case .library(let l): return l.variant.isEmpty ? l.name : "\(l.name) · \(l.variant)"
+        case .row(let ex): return Self.displayName(ex.name, variant: ex.variant)
+        case .library(let l): return Self.displayName(l.name, variant: l.variant)
         }
     }
 

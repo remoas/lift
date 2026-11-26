@@ -46,6 +46,7 @@ struct RoutinesView: View {
             .listStyle(.plain)
             .scrollContentBackground(.hidden)
             .background(Theme.Colors.bgCanvas)
+            .toolbar { ToolbarItem(placement: .topBarTrailing) { EditButton() } }
             .sheet(item: $editing) { r in
                 NavigationStack {
                     BuildDayView(routine: r, context: .sheet, onDone: { editing = nil })

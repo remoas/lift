@@ -13,6 +13,7 @@ struct SetEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @ScaledMetric(relativeTo: .largeTitle) private var heroSize: CGFloat = 56
     @FocusState private var focus: Field?
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var weightText = ""
     @State private var repsText = ""
 
@@ -129,7 +130,8 @@ struct SetEditorSheet: View {
         .padding(.top, Theme.Spacing.s6)
         .padding(.bottom, Theme.Spacing.s4)
         .background(Theme.Colors.bgRaised)
-        .presentationDetents([.medium, .large])
+        // Tall enough for title, units, both steppers, rest and Log set (QA 05).
+        .presentationDetents(typeSize.isAccessibilitySize ? [.large] : [.height(680), .large])
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.Colors.bgRaised)
         .onAppear {

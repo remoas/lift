@@ -15,11 +15,16 @@ struct ActiveWorkoutView: View {
     @Environment(AppSettings.self) private var settings
     @Environment(ToastCenter.self) private var toasts
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.dynamicTypeSize) private var typeSize
     @State private var session: WorkoutSession?
     @State private var editing: SetEntry?
     @State private var picker: ExercisePicker.Mode?
     @State private var showEditToday = false
     @State private var detail: Exercise?
+    // PR banner morph state (§8.5): shown copy, its set, and whether it has landed.
+    @State private var shownBanner: PRBannerContent?
+    @State private var shownSetID: UUID?
+    @State private var bannerLanded = false
 
     var body: some View {
         NavigationStack {
@@ -29,7 +34,7 @@ struct ActiveWorkoutView: View {
             .background(Theme.Colors.bgCanvas)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
-            .navigationDestination(item: $detail) { ExerciseDetailView(exercise: $0) }
+            .navigationDestination(item: $detail) { ExerciseDetailView(exercise: $0).liftZoomDestination(.exercise($0.id)) }
         }
         .onAppear {
             if session == nil { session = WorkoutSession(workout: workout, context: context, settings: settings) }
@@ -110,18 +115,29 @@ struct ActiveWorkoutView: View {
                     .frame(height: session.rest == nil && session.restDoneText == nil ? 0 : nil)
                     .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.rest == nil)
             }
+            .safeAreaInset(edge: .top, spacing: 0) {
+                // Under the nav, pushing the list down so it never covers a header (QA 8).
+                if let banner = shownBanner {
+                    PRBannerView(content: banner, setID: shownSetID, landed: bannerLanded, onTap: {
+                        detail = session.bannerExercise
+                        session.dismissBanner()
+                    }, onDismiss: { session.dismissBanner() })
+                    .padding(.vertical, Theme.Spacing.s2)
+                    .background(Theme.Colors.bgCanvas)
+                    .transition(.opacity)
+                }
+            }
 
-            if let banner = session.banner {
-                PRBannerView(content: banner, onTap: {
-                    detail = session.bannerExercise
-                    session.dismissBanner()
-                }, onDismiss: { withAnimation(Theme.Motion.springBanner) { session.dismissBanner() } })
-                .padding(.top, Theme.Spacing.s2)
-                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
-                .zIndex(1)
+        }
+        .onChange(of: session.banner) { _, new in bannerChanged(new, setID: session.bannerSetID) }
+        .onAppear {
+            // A banner set before this view existed (fixtures): show it in place.
+            if let b = session.banner, shownBanner == nil {
+                shownBanner = b
+                shownSetID = session.bannerSetID
+                bannerLanded = true
             }
         }
-        .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.banner)
         .onChange(of: session.saveError) { _, err in
             if let err { toasts.show(err); session.saveError = nil }
         }
@@ -168,6 +184,7 @@ struct ActiveWorkoutView: View {
             HStack {
                 Button { detail = ex } label: {
                     Text(ex.name).font(Theme.Fonts.exercise).foregroundStyle(Theme.Colors.textPrimary)
+                        .liftZoomSource(.exercise(ex.id))
                 }
                 .buttonStyle(.plain)
                 .onLongPressGesture { showEditToday = true }
@@ -196,11 +213,22 @@ struct ActiveWorkoutView: View {
             } else if !ex.note.isEmpty {
                 Text(ex.note).font(Theme.Fonts.secondary.italic()).foregroundStyle(Theme.Colors.textSecondary)
             }
-            HStack {
-                Text("Last time").padding(.leading, 36)
-                Spacer().frame(width: 60)
-                Text("Today")
-                Spacer()
+            Group {
+                if typeSize.isAccessibilitySize {
+                    // Values stack (today, then last time beneath), so the heads do too.
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("Today")
+                        Text("Last time")
+                    }
+                    .padding(.leading, 36)
+                } else {
+                    HStack {
+                        Text("Last time").padding(.leading, 36)
+                        Spacer().frame(width: 60)
+                        Text("Today")
+                        Spacer()
+                    }
+                }
             }
             .font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
             .padding(.top, Theme.Spacing.s2)
@@ -238,8 +266,12 @@ struct ActiveWorkoutView: View {
                 Divider()
                 Button("Discard workout", systemImage: "trash", role: .destructive) { discard() }
             } label: {
-                Image(systemName: "ellipsis.circle").frame(width: Theme.Size.hit, height: Theme.Size.hit)
+                Image(systemName: "ellipsis")
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.Colors.textSecondary)
+                    .frame(width: Theme.Size.hit, height: Theme.Size.hit)
             }
+            .tint(Theme.Colors.textSecondary)
             .accessibilityLabel("Workout options")
         }
         ToolbarItem(placement: .confirmationAction) {
@@ -261,6 +293,48 @@ struct ActiveWorkoutView: View {
         guard let ex = set.exercise, let sets = session.groups.first(where: { $0.exercise === ex })?.sets,
               let i = sets.firstIndex(where: { $0 === set }) else { return set.exercise?.name ?? "" }
         return "\(ex.name), set \(i + 1)"
+    }
+
+    /// Appear: start on the set's value, then grow into place with springBanner.
+    /// Replace: in place, no stack. Dismiss: reverse toward the set, then fade.
+    private func bannerChanged(_ new: PRBannerContent?, setID: UUID?) {
+        if let new {
+            if shownBanner != nil {
+                withAnimation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springBanner) {
+                    shownBanner = new
+                    shownSetID = setID
+                    bannerLanded = true
+                }
+                return
+            }
+            if reduceMotion {
+                bannerLanded = true
+                shownSetID = setID
+                withAnimation(Theme.Motion.fadeReduced) { shownBanner = new }
+                return
+            }
+            var t = Transaction()
+            t.disablesAnimations = true
+            withTransaction(t) {
+                bannerLanded = false
+                shownSetID = setID
+                shownBanner = new
+            }
+            DispatchQueue.main.async {
+                withAnimation(Theme.Motion.springBanner) { bannerLanded = true }
+            }
+        } else {
+            guard shownBanner != nil else { return }
+            if reduceMotion {
+                withAnimation(Theme.Motion.fadeReduced) { shownBanner = nil }
+                return
+            }
+            withAnimation(Theme.Motion.springBanner) { bannerLanded = false }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.32 / Theme.Motion.slowFactor) {
+                guard session?.banner == nil else { return }
+                withAnimation(Theme.Motion.fadeReduced) { shownBanner = nil }
+            }
+        }
     }
 
     /// Straight to the summary, no alert. Sets aren't touched until Done.
@@ -341,7 +415,10 @@ struct EditTodayView: View {
                 ToolbarItem(placement: .principal) {
                     VStack(spacing: 0) {
                         Text("Edit today").font(.headline)
-                        Text(session.workout.routineName).font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
+                        TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                            Text("\(session.workout.routineName) · \(RestCountdown.format(ctx.date.timeIntervalSince(session.workout.startedAt)))")
+                                .font(Theme.Fonts.caption.monospacedDigit()).foregroundStyle(Theme.Colors.textSecondary)
+                        }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() }.fontWeight(.semibold) }

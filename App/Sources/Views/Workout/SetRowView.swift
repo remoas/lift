@@ -44,6 +44,7 @@ struct SetRowView: View {
         .accessibilityLabel(model.accessibilityLabel)
         .accessibilityAction(named: model.isDone ? "Undo" : "Log set", onTick)
         .accessibilityAction(named: "Edit", onValue)
+        .accessibilityIdentifier(model.state == .current ? "current-set" : "set-row")
     }
 
     private var number: some View {
@@ -68,7 +69,8 @@ struct SetRowView: View {
                         Text(model.unit.symbol).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
                         Text("× \(model.reps)").font(Theme.Fonts.setValue)
                     } else {
-                        Text("Add weight").font(.body.weight(.semibold)).foregroundStyle(Theme.Colors.accent)
+                        Text("Add weight").font(.body.weight(.semibold))
+                            .foregroundStyle(model.state == .current ? Theme.Colors.accent : Theme.Colors.textSecondary)
                         Text("× \(model.reps)").font(Theme.Fonts.setValue)
                     }
                     if model.state == .best {
@@ -80,6 +82,9 @@ struct SetRowView: View {
                 }
                 .foregroundStyle(model.state == .upcoming ? Theme.Colors.textSecondary : Theme.Colors.textPrimary)
                 .fontWeight(model.state == .upcoming ? .medium : .semibold)
+                // Anchors for the PR banner morph (§8.5): the banner starts here.
+                .liftMatched(.prValue(model.id))
+                .background(Color.clear.liftMatched(.prBanner(model.id)))
                 if let secondary = model.secondary {
                     Text(secondary).font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
                 }

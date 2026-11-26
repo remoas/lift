@@ -18,6 +18,12 @@ struct RootView: View {
     /// A discarded workout stays in memory (and the store) until its Undo
     /// window ends, hidden from Today, then it is deleted.
     @State private var pendingDiscard: Workout?
+    /// Which source the workout cover zooms from (iOS 18): Today's block or the mini bar.
+    @State private var zoomSource: LiftTransitionID?
+    /// The mini bar appears once the cover has finished dismissing, never before (AC 57).
+    @State private var miniVisible = false
+    @Namespace private var liftNS
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var activeWorkout: Workout? { activeWorkouts.first { $0 !== pendingDiscard } }
 
@@ -34,20 +40,21 @@ struct RootView: View {
             }
         }
         .overlay { ToastOverlay() }
+        .environment(\.liftNamespace, liftNS)
     }
 
     private var tabs: some View {
         TabView(selection: $tab) {
-            TodayView(onOpenWorkout: open)
-                .safeAreaInset(edge: .bottom) { minimisedBar }
+            TodayView(onOpenWorkout: { open($0, from: .workout($0.id)) })
+                .safeAreaInset(edge: .bottom) { minimisedBar(tagged: true) }
                 .tabItem { Label("Today", systemImage: "sun.max") }
                 .tag(Tab.today)
-            HistoryView(onGoToToday: { tab = .today }, onOpenWorkout: open)
-                .safeAreaInset(edge: .bottom) { minimisedBar }
+            HistoryView(onGoToToday: { tab = .today }, onOpenWorkout: { open($0, from: nil) })
+                .safeAreaInset(edge: .bottom) { minimisedBar(tagged: false) }
                 .tabItem { Label("History", systemImage: "clock.arrow.circlepath") }
                 .tag(Tab.history)
             RoutinesView()
-                .safeAreaInset(edge: .bottom) { minimisedBar }
+                .safeAreaInset(edge: .bottom) { minimisedBar(tagged: false) }
                 .tabItem { Label("Routines", systemImage: "list.bullet") }
                 .tag(Tab.routines)
         }
@@ -60,6 +67,8 @@ struct RootView: View {
                               },
                               onDiscard: discard)
                 .overlay { ToastOverlay() }
+                .environment(\.liftNamespace, liftNS)
+                .modifier(CoverZoom(source: zoomSource))
         }
         .fullScreenCover(item: $finishing) { workout in
             FinishView(workout: workout,
@@ -69,12 +78,24 @@ struct RootView: View {
                        },
                        onBack: {
                            finishing = nil
-                           presented = workout
+                           open(workout, from: nil)
                        },
                        onDiscard: discard)
             .overlay { ToastOverlay() }
+            .environment(\.liftNamespace, liftNS)
+        }
+        .onChange(of: presented == nil && finishing == nil) { _, closed in
+            if closed {
+                DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.15 : 0.45) / Theme.Motion.slowFactor) {
+                    guard presented == nil, finishing == nil else { return }
+                    withAnimation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springZoom) { miniVisible = true }
+                }
+            } else {
+                miniVisible = false
+            }
         }
         .onAppear {
+            if presented == nil, finishing == nil { miniVisible = true }
             // Reopen a workout that was in progress when the app was closed.
             guard !didRestore else { return }
             didRestore = true
@@ -82,7 +103,10 @@ struct RootView: View {
         }
     }
 
-    private func open(_ workout: Workout) { presented = workout }
+    private func open(_ workout: Workout, from source: LiftTransitionID?) {
+        zoomSource = source
+        presented = workout
+    }
 
     /// Discard: no alert. Back to Today with a 5 s Undo; deleted when it ends.
     private func discard(_ workout: Workout) {
@@ -102,9 +126,10 @@ struct RootView: View {
     }
 
     /// "Push · 18:42 · Resume" while a workout is minimised.
-    @ViewBuilder private var minimisedBar: some View {
-        if presented == nil, finishing == nil, let w = activeWorkout {
-            Button { presented = w } label: {
+    /// `tagged`: only Today's copy is the zoom / matched source, so IDs stay unique.
+    @ViewBuilder private func minimisedBar(tagged: Bool) -> some View {
+        if miniVisible, presented == nil, finishing == nil, let w = activeWorkout {
+            Button { open(w, from: .workoutMini(w.id)) } label: {
                 HStack(spacing: Theme.Spacing.s2) {
                     Text(w.routineName.isEmpty ? "Workout" : w.routineName).font(Theme.Fonts.label)
                     Text("·").foregroundStyle(Theme.Colors.textTertiary)
@@ -120,9 +145,31 @@ struct RootView: View {
                 .overlay(RoundedRectangle.smooth(Theme.Radius.button).stroke(Theme.Colors.separator, lineWidth: 0.5))
             }
             .buttonStyle(.plain)
+            .modifier(MiniBarSource(id: w.id, tagged: tagged))
             .screenMargins()
             .padding(.bottom, Theme.Spacing.s2)
+            .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
             .accessibilityLabel("\(w.routineName) in progress. Resume")
+        }
+    }
+}
+
+/// The workout cover zooms from its source on iOS 18; standard cover on 17.
+private struct CoverZoom: ViewModifier {
+    let source: LiftTransitionID?
+    func body(content: Content) -> some View {
+        if let source { content.liftZoomDestination(source) } else { content }
+    }
+}
+
+private struct MiniBarSource: ViewModifier {
+    let id: UUID
+    let tagged: Bool
+    func body(content: Content) -> some View {
+        if tagged {
+            content.liftZoomSource(.workoutMini(id)).liftMatched(.workoutMini(id))
+        } else {
+            content
         }
     }
 }

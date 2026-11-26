@@ -18,6 +18,8 @@ final class WorkoutSession {
     private(set) var restDoneText: String?
     private(set) var banner: PRBannerContent?
     private(set) var bannerExercise: Exercise?
+    /// SetEntry.id behind the banner (prValue / prBanner shared IDs).
+    private(set) var bannerSetID: UUID?
     private(set) var bestIDs: Set<UUID> = []
     var saveError: String?
 
@@ -100,7 +102,7 @@ final class WorkoutSession {
         if let ex = set.exercise, !kinds.isEmpty {
             let history = LiftStore.history(for: ex, including: workout).filter { $0 !== set }.map(\.snapshot)
             if let content = PRBannerContent.make(kinds: kinds, exercise: ex.name, set: set.snapshot, history: history, unit: set.unit) {
-                showBanner(content, exercise: ex)
+                showBanner(content, exercise: ex, setID: set.id)
             }
         }
         carryForward(from: set)
@@ -183,14 +185,17 @@ final class WorkoutSession {
 
     // MARK: Banner
 
-    private func showBanner(_ content: PRBannerContent, exercise: Exercise) {
+    private func showBanner(_ content: PRBannerContent, exercise: Exercise, setID: UUID) {
+        // Success haptic as the banner starts to appear, never on dismiss.
         if settings.celebrateHaptic { Haptics.newBest() }
         guard settings.celebrateBanner else { return }
         banner = content
         bannerExercise = exercise
+        bannerSetID = setID
         bannerTask?.cancel()
         bannerTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(4))
+            // 4.0 s on screen once the number has landed (~0.4 s morph).
+            try? await Task.sleep(for: .seconds(4.4))
             guard !Task.isCancelled else { return }
             self?.dismissBanner()
         }
@@ -205,12 +210,15 @@ final class WorkoutSession {
         guard let content = PRBannerContent.make(kinds: kinds, exercise: ex.name, set: set.snapshot, history: history, unit: set.unit) else { return }
         banner = content
         bannerExercise = ex
+        bannerSetID = set.id
     }
     #endif
 
     func dismissBanner() {
+        bannerTask?.cancel()
         banner = nil
         bannerExercise = nil
+        bannerSetID = nil
     }
 
     // MARK: Edits (this workout only)

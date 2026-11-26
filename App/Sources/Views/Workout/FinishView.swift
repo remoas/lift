@@ -109,44 +109,6 @@ struct FinishView: View {
 
                 healthLine.padding(.top, Theme.Spacing.s2)
 
-                if !isBlank, !changes.isEmpty, routine != nil {
-                    Toggle(isOn: $updateRoutine) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Update \(workout.routineName) routine with today's changes").font(.body).foregroundStyle(Theme.Colors.textPrimary)
-                            Text(RoutineDiff.summary(changes)).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-                                .lineLimit(2)
-                        }
-                    }
-                    .tint(Theme.Colors.success)
-                    .frame(minHeight: Theme.Size.groupedRow)
-                    .padding(.top, Theme.Spacing.s3)
-                }
-
-                if isBlank, !workout.allSets.isEmpty {
-                    Toggle("Save as routine", isOn: $saveAsRoutine)
-                        .tint(Theme.Colors.success)
-                        .frame(minHeight: Theme.Size.groupedRow)
-                        .padding(.top, Theme.Spacing.s3)
-                        .onChange(of: saveAsRoutine) { _, on in
-                            if on {
-                                if routineName.isEmpty { routineName = defaultRoutineName }
-                                focus = .routineName
-                            } else if focus == .routineName {
-                                focus = nil
-                            }
-                        }
-                    if saveAsRoutine {
-                        TextField("Routine name", text: $routineName, prompt: Text(defaultRoutineName))
-                            .focused($focus, equals: .routineName)
-                            .submitLabel(.done)
-                            .onSubmit { focus = nil }
-                            .frame(minHeight: Theme.Size.hit)
-                            .padding(.horizontal, Theme.Spacing.s3)
-                            .background(Theme.Colors.bgSunken, in: .continuous(Theme.Radius.control))
-                            .accessibilityLabel("Routine name")
-                    }
-                }
-
                 if noting {
                     TextField("Note for this workout", text: Binding(get: { workout.note }, set: { workout.note = $0 }), axis: .vertical)
                         .focused($focus, equals: .note)
@@ -158,24 +120,26 @@ struct FinishView: View {
             }
             .screenMargins()
             .padding(.top, Theme.Spacing.s7)
-            .padding(.bottom, 160)
+            .padding(.bottom, Theme.Spacing.s6)
         }
         .background(Theme.Colors.bgCanvas)
-        .safeAreaInset(edge: .bottom) {
-            VStack(spacing: 0) {
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                routineSwitches
                 Button("Done", action: done).buttonStyle(PrimaryButtonStyle())
+                    .padding(.top, Theme.Spacing.s4)
                 if !noting {
                     Button("Add a note") { noting = true; focus = .note }.buttonStyle(TextActionStyle())
                 }
             }
             .screenMargins()
-            .padding(.vertical, Theme.Spacing.s2)
-            .background(Theme.Colors.bgCanvas)
-        }
-        .onChange(of: focus) { _, f in
-            // Prefilled name arrives fully selected, so typing replaces it.
-            if f == .routineName, routineName == defaultRoutineName {
-                DispatchQueue.main.async { UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil) }
+            .padding(.top, Theme.Spacing.s3)
+            .padding(.bottom, Theme.Spacing.s2)
+            .background(alignment: .top) {
+                // Pinned bar sits clear of the scrolling summary (QA: "3 of 6" clipped).
+                Theme.Colors.bgCanvas
+                    .overlay(alignment: .top) { Divider().overlay(Theme.Colors.separator) }
+                    .ignoresSafeArea(edges: .bottom)
             }
         }
         .onAppear {
@@ -185,6 +149,52 @@ struct FinishView: View {
     }
 
     // MARK: Pieces
+
+    /// "Update {Routine}" (AC 30) or "Save as routine" (AC 47), pinned above Done.
+    @ViewBuilder private var routineSwitches: some View {
+                if !isBlank, !changes.isEmpty, routine != nil {
+                    Toggle(isOn: $updateRoutine) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Update \(workout.routineName) routine with today's changes").font(.body).foregroundStyle(Theme.Colors.textPrimary)
+                            Text(RoutineDiff.summary(changes)).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+                                .lineLimit(2)
+                        }
+                    }
+                    .tint(Theme.Colors.success)
+                    .frame(minHeight: Theme.Size.groupedRow)
+                }
+
+                if isBlank, !workout.allSets.isEmpty {
+                    Toggle("Save as routine", isOn: $saveAsRoutine)
+                        .tint(Theme.Colors.success)
+                        .frame(minHeight: Theme.Size.groupedRow)
+                        .onChange(of: saveAsRoutine) { _, on in
+                            if on {
+                                if routineName.isEmpty { routineName = defaultRoutineName }
+                                focus = .routineName
+                            } else if focus == .routineName {
+                                focus = nil
+                            }
+                        }
+                    if saveAsRoutine {
+                        VStack(alignment: .leading, spacing: Theme.Spacing.s1) {
+                            Text("Routine name").font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
+                            TextField("Routine name", text: $routineName, prompt: Text(defaultRoutineName))
+                                .focused($focus, equals: .routineName)
+                                .submitLabel(.done)
+                                .onSubmit { focus = nil }
+                                .frame(minHeight: Theme.Size.hit)
+                                .padding(.horizontal, Theme.Spacing.s3)
+                                .background(Theme.Colors.bgSunken, in: .continuous(Theme.Radius.control))
+                                .accessibilityLabel("Routine name")
+                            Text("Leave it empty to keep “\(defaultRoutineName)”.")
+                                .font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
+                        }
+                        .padding(.bottom, Theme.Spacing.s2)   // never touches Done
+                    }
+                }
+
+    }
 
     private var eyebrow: String {
         let minutes = max(1, Int(((workout.endedAt ?? Date()).timeIntervalSince(workout.startedAt) / 60).rounded()))

@@ -161,8 +161,9 @@ enum LiftStore {
 
     /// Starts a workout as a day-of copy of a routine. Editing it never touches the routine.
     @discardableResult
-    static func start(_ routine: Routine?, globalUnit: WeightUnit, at date: Date = Date(), backLog: Bool = false, context: ModelContext) -> Workout {
+    static func start(_ routine: Routine?, globalUnit: WeightUnit, at date: Date = Date(), backLog: Bool = false, id: UUID? = nil, context: ModelContext) -> Workout {
         let workout = Workout(routineID: routine?.id, routineName: routine?.name ?? "Workout", startedAt: date)
+        if let id { workout.id = id }   // reserved before presenting (shared zoom ID)
         workout.isBackLog = backLog
         context.insert(workout)
         for (i, item) in (routine?.sortedItems ?? []).enumerated() {

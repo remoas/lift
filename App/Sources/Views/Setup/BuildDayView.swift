@@ -66,7 +66,6 @@ struct BuildDayView: View {
                     }
                     Button("Add exercise") { picking = true }
                         .buttonStyle(TextActionStyle())
-                    restRow
                 }
             }
         }
@@ -82,6 +81,9 @@ struct BuildDayView: View {
                         Button("Skip \(routine.name) for now") { onSkip?() }.buttonStyle(TextActionStyle())
                     }
                 } else {
+                    // AC 48: always visible, directly above the primary.
+                    restRow
+                        .overlay(alignment: .top) { Divider().overlay(Theme.Colors.separator) }
                     Button(primaryTitle) { commit(); onDone() }.buttonStyle(PrimaryButtonStyle())
                 }
             }
