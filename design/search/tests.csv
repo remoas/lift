@@ -111,3 +111,8 @@ hammer curls,hammer-curls,hammer-curls,,,,a logged duplicate row stays findable
 benhc,dumbbell-bench-press,bench-press,dumbbell-bench-press,,,"decision (b), 4pm: the typo is corrected to 'bench' first, then normal ranking: exact Bench beats the logged DB bench"
 zzqx,,,,,,no results: one line plus Create “zzqx”
 bench db incline,,incline-dumbbell-press,,,Incline DB Bench,"Nit 1 (qa-search): no alias equals or starts with the query, so the shortest matching alias is the hint"
+pendulum,,pendulum-row,,,,"Ben 5:00pm: plate-loaded pendulum row machine"
+pendulum row,,pendulum-row,,,,"Ben 5:00pm: name, exact tier"
+bent over pendulum row,,pendulum-row,,,Bent Over Pendulum Row,"Ben 5:00pm: his wording, as an alias"
+lever row,,pendulum-row,leverage-iso-row,,Lever Row,"Ben 5:00pm: lever row finds the pendulum row"
+t-bar row,,t-bar-row,,,,"T-Bar Row exact stays first after Pendulum Row's T-Bar Lever Row alias"

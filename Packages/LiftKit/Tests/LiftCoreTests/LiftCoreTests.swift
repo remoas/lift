@@ -172,7 +172,7 @@ final class LibraryTests: XCTestCase {
 
     func testBundledSeedLoadsWithStableUniqueIDs() {
         XCTAssertGreaterThanOrEqual(lib.version, 2)
-        XCTAssertEqual(lib.exercises.count, 1250)
+        XCTAssertEqual(lib.exercises.count, 1251)   // + Pendulum Row (Ben 5:00pm)
         let ids = lib.exercises.map(\.id)
         XCTAssertEqual(Set(ids).count, ids.count)
         XCTAssertEqual(Set(lib.exercises.map(\.rowID)).count, ids.count)
@@ -240,7 +240,7 @@ final class LibraryTests: XCTestCase {
         let sled = Search.run(entries, query: "", equipment: [.sled])
         XCTAssertEqual(sled.count, lib.exercises.filter { $0.equipment == .sled && $0.duplicateOf == nil }.count)
         // The 17 near-duplicates stay hidden until logged (§10.2).
-        XCTAssertEqual(Search.run(entries, query: "").count, 1250 - 17)
+        XCTAssertEqual(Search.run(entries, query: "").count, 1251 - 17)
     }
 
     /// Picker budget at the real 1,250-row seed: index build plus per-keystroke
