@@ -353,11 +353,10 @@ public enum BeatItText {
                 ? d.formatted(Date.FormatStyle(calendar: calendar).day().month(.abbreviated))
                 : d.formatted(Date.FormatStyle(calendar: calendar).weekday(.abbreviated))
         }
-        let sameWeight = sets.allSatisfy { abs($0.weight - sets[0].weight) < 0.0001 }
-        let list = compact && sameWeight && sets.count > 1
-            ? "\(UnitMath.format(sets[0].weight))×" + sets.map { "\($0.reps)" }.joined(separator: ", ")
-            : sets.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
-        return (["Last", day].compactMap { $0 } + [list]).joined(separator: " · ")
+        // Every set keeps its weight (CDO watch QA 2, N); compact drops the day
+        // so a 40 mm line still fits one row.
+        let list = sets.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
+        return (["Last", compact ? nil : day].compactMap { $0 } + [list]).joined(separator: " · ")
     }
 
     /// "185 × 9", or "12 reps" for bodyweight with no load.

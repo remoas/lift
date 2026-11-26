@@ -50,9 +50,17 @@ final class PhoneSync: NSObject {
     private var watchReachable: Bool { session?.isReachable ?? false }
 
     /// The watch, not the phone, buzzes at the end of rest.
-    var watchAlerts: Bool {
-        RestAlertPolicy.plan(rest: rest, now: Date(), watchSessionActive: watchSessionActive, watchReachable: watchReachable).watchAlertAt != nil
+    /// The watch session running makes the watch the winner (AC 106), also at
+    /// rest-end itself, when there's no future alert left to plan.
+    var watchAlerts: Bool { watchSessionActive }
+
+    #if DEBUG
+    /// The Live Activity behaviour harness plays the watch-winner case.
+    func debugSetWatchSession(_ active: Bool) {
+        watchSessionActive = active
+        scheduleAlert()
     }
+    #endif
 
     // MARK: Rest
 

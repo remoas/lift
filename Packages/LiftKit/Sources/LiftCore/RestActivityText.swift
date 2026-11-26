@@ -26,6 +26,22 @@ public enum RestActivityText {
         return out
     }
 
+    /// §8 / AC 111, widest first: the full name, then word-boundary tails
+    /// ("Single-Arm Dumbbell Incline…"), never a cut mid-word.
+    public static func nameCandidates(_ name: String) -> [String] {
+        let words = name.split(separator: " ", omittingEmptySubsequences: true).map(String.init)
+        guard words.count > 1 else { return [name] }
+        var out = [name]
+        for k in stride(from: words.count - 1, through: 1, by: -1) {
+            var head = words.prefix(k).joined(separator: " ")
+            // No dangling punctuation before the ellipsis ("Press (Neutral…" is fine; "Press -…" isn't).
+            while let last = head.last, ",-·(/".contains(last) { head.removeLast() }
+            head = head.trimmingCharacters(in: .whitespaces)
+            if !head.isEmpty, out.last != head + "…" { out.append(head + "…") }
+        }
+        return out
+    }
+
     /// "Rest over · Set 3".
     public static func restOver(setNumber: Int?) -> String {
         setNumber.map { "Rest over · Set \($0)" } ?? "Rest over"

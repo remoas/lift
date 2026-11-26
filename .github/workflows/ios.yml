@@ -84,6 +84,10 @@ jobs:
         if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         continue-on-error: true
         run: scripts/liveactivity-screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review/liveactivity
+      - name: Live Activity behaviour (recording + log)
+        if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
+        continue-on-error: true
+        run: scripts/liveactivity-behaviour.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review/liveactivity/behaviour
       - name: Screenshots
         if: ${{ !cancelled() && inputs.screenshots && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         run: scripts/screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review

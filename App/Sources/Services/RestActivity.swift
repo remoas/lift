@@ -98,6 +98,38 @@ final class RestActivityController {
         enqueue { await a.end(content, dismissalPolicy: .after(Date().addingTimeInterval(RestActivityPolicy.skipDismissAfter))) }
     }
 
+    /// Lift woke up (foreground): an Activity whose rest ended while Lift was
+    /// suspended gets its Rest over end and +5 min dismissal now; past that, it goes.
+    func sweep(now: Date = Date()) {
+        for a in activities where a.activityState == .active || a.activityState == .stale {
+            var state = a.content.state
+            guard state.end <= now else { continue }
+            if now >= RestActivityPolicy.dismissAt(end: state.end) {
+                enqueue { await a.end(nil, dismissalPolicy: .immediate) }
+            } else {
+                state.over = true
+                state.highlight = false
+                let content = ActivityContent(state: state, staleDate: RestActivityPolicy.staleDate(end: state.end))
+                enqueue { await a.end(content, dismissalPolicy: .after(RestActivityPolicy.dismissAt(end: state.end))) }
+            }
+        }
+    }
+
+    #if DEBUG
+    /// For the behaviour log: what the system holds right now.
+    var debugSnapshot: String {
+        let all = activities
+        let rows = all.map { a in
+            let s = a.content.state
+            return "[\(a.id.prefix(6)) \(a.activityState) end=\(Self.clock(s.end)) stale=\(a.content.staleDate.map(Self.clock) ?? "nil") over=\(s.over) hl=\(s.highlight) next=\"\(s.ladder.first ?? "")\"]"
+        }
+        return "activities=\(all.count) " + rows.joined(separator: " ")
+    }
+    static func clock(_ d: Date) -> String {
+        let f = DateFormatter(); f.dateFormat = "HH:mm:ss"; return f.string(from: d)
+    }
+    #endif
+
     /// Rest Off on the next lift, Finish, Discard, auto-finish: gone now.
     func end() {
         pending?.cancel()

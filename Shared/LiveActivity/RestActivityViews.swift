@@ -40,6 +40,11 @@ struct RestActivityModel {
     var interval: ClosedRange<Date> { state.start...max(state.end, state.start.addingTimeInterval(1)) }
 }
 
+enum RestRender {
+    /// True inside the widget extension, where ActivityKit draws ProgressView(timerInterval:).
+    static let inWidget = Bundle.main.bundleURL.pathExtension == "appex"
+}
+
 /// Signature 2: a 3 pt Ember line that drains left-to-right, left-anchored.
 struct DrainingLine: View {
     let model: RestActivityModel
@@ -72,14 +77,42 @@ struct MiniRing: View {
         ZStack {
             Circle().stroke(RestTokens.islandTrack.opacity(0.5), lineWidth: line)
             if !model.over {
-                ProgressView(timerInterval: model.interval, countsDown: true) { EmptyView() } currentValueLabel: { EmptyView() }
-                    .progressViewStyle(.circular)
-                    .tint(RestTokens.emberDark)
-                    .labelsHidden()
+                if RestRender.inWidget {
+                    // The system draws this as a smooth stroke and drains it without updates.
+                    ProgressView(timerInterval: model.interval, countsDown: true) { EmptyView() } currentValueLabel: { EmptyView() }
+                        .progressViewStyle(.circular)
+                        .tint(RestTokens.emberDark)
+                        .labelsHidden()
+                } else {
+                    // In-app review renders: the same stroke, drawn (UIKit's circular
+                    // ProgressView is a ticked spinner outside a widget; QA Should 2).
+                    TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                        let total = model.interval.upperBound.timeIntervalSince(model.interval.lowerBound)
+                        let left = max(0, model.interval.upperBound.timeIntervalSince(ctx.date))
+                        Circle()
+                            .trim(from: 0, to: total > 0 ? left / total : 0)
+                            .stroke(RestTokens.emberDark, style: StrokeStyle(lineWidth: line, lineCap: .butt))
+                            .rotationEffect(.degrees(-90))
+                    }
+                }
             }
         }
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+/// One line; a long name ends at a word with "…", never mid-word (AC 111).
+struct ExerciseName: View {
+    let name: String
+    var body: some View {
+        let c = RestActivityText.nameCandidates(name)
+        ViewThatFits(in: .horizontal) {
+            ForEach(c, id: \.self) { Text($0).lineLimit(1).fixedSize() }
+            // Even the first word is too wide: scale it rather than cut it.
+            Text(c.last ?? name).lineLimit(1).minimumScaleFactor(0.6)
+        }
+        .accessibilityLabel(name)
     }
 }
 
@@ -157,9 +190,8 @@ struct RestLockScreenView: View {
                             .font(.subheadline.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
                             .lineLimit(1)
                     }
-                    Text(model.state.exercise)
+                    ExerciseName(name: model.state.exercise)
                         .font(.body.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
-                        .lineLimit(1).minimumScaleFactor(0.85).truncationMode(.tail)
                     Group {
                         if model.over { Text(model.state.load).monospacedDigit().lineLimit(1) } else { NextLine(model: model) }
                     }
@@ -196,9 +228,8 @@ struct RestExpandedLeading: View {
                 Text(RestActivityText.restOver(setNumber: model.state.setNumber))
                     .font(.footnote.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary).lineLimit(1)
             }
-            Text(model.state.exercise)
+            ExerciseName(name: model.state.exercise)
                 .font(.body.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary)
-                .lineLimit(1).minimumScaleFactor(0.85)
             Group {
                 if model.over { Text(model.state.load).monospacedDigit().lineLimit(1) } else { NextLine(model: model) }
             }

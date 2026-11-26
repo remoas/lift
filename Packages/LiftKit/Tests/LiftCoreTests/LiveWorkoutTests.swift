@@ -128,8 +128,10 @@ final class LiveWorkoutTests: XCTestCase {
         let line = BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7)], date: nil, calendar: cal)
         XCTAssertEqual(line, "Last · 185×8, 185×7")
         XCTAssertNil(BeatItText.last([], date: nil))
-        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)], date: nil, compact: true), "Last · 185×8, 7, 6")
+        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)], date: nil, compact: true), "Last · 185×8, 185×7, 185×6")
         XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 190, reps: 5)], date: nil, compact: true), "Last · 185×8, 190×5")
+        let now = Date()
+        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8)], date: now.addingTimeInterval(-86_400), now: now, compact: true), "Last · 185×8")
         XCTAssertEqual(BeatItText.number(.init(weight: 0, reps: 12), bodyweight: true), "12 reps")
         XCTAssertEqual(BeatItText.number(.init(weight: 102.5, reps: 8), bodyweight: false), "102.5 × 8")
     }
@@ -172,11 +174,24 @@ final class RestTimerTests: XCTestCase {
         XCTAssertEqual(p.watchAlertAt, t0.addingTimeInterval(90))
     }
 
-    func testUnreachableWatchFallsBackToThePhone() {
-        let r = RestState(seconds: 90, from: t0, origin: .watch)
-        let p = RestAlertPolicy.plan(rest: r, now: t0, watchSessionActive: true, watchReachable: false)
-        XCTAssertEqual(p.phoneNotificationAt, r.endsAt)
-        XCTAssertNil(p.watchAlertAt)
+    /// CDO (qa-live-activity.md, the deviation): watch-winner rest with Lift
+    /// suspended must not leave a phone notification behind, reachable or not.
+    func testWatchWinnerSchedulesNoPhoneFallbackEvenWhenUnreachable() {
+        for origin in [LiftDevice.watch, .phone] {
+            let r = RestState(seconds: 90, from: t0, origin: origin)
+            let p = RestAlertPolicy.plan(rest: r, now: t0, watchSessionActive: true, watchReachable: false)
+            XCTAssertNil(p.phoneNotificationAt, "\(origin): the watch is the one buzz")
+            XCTAssertEqual(p.watchAlertAt, r.endsAt)
+            XCTAssertFalse(RestAlertPolicy.phoneSchedulesFallback(rest: r, now: t0, watchSessionActive: true))
+        }
+    }
+
+    func testPhoneWinnerSchedulesTheFallback() {
+        let r = RestState(seconds: 90, from: t0, origin: .phone)
+        XCTAssertTrue(RestAlertPolicy.phoneSchedulesFallback(rest: r, now: t0, watchSessionActive: false))
+        XCTAssertFalse(RestAlertPolicy.phoneSchedulesFallback(rest: nil, now: t0, watchSessionActive: false))
+        // The watch session starting mid-rest removes it.
+        XCTAssertFalse(RestAlertPolicy.phoneSchedulesFallback(rest: r, now: t0.addingTimeInterval(10), watchSessionActive: true))
     }
 
     func testSkipOrAlmostOverSchedulesNothing() {

@@ -54,10 +54,20 @@ public enum RestAlertPolicy {
     /// Notifications under a second away aren't worth scheduling.
     public static let minimumLead: TimeInterval = 1
 
+    /// The device winner (AC 106, CDO's Live Activity amendment): while this
+    /// workout's watch session runs, the watch is the one buzz and the phone
+    /// schedules no notification at all, reachable or not. A suspended Lift
+    /// can't cancel one at rest-end, so scheduling it would double-alert.
+    /// `watchReachable` is kept for callers; it no longer decides the winner.
     public static func plan(rest: RestState?, now: Date, watchSessionActive: Bool, watchReachable: Bool) -> Plan {
         guard let rest, rest.endsAt.timeIntervalSince(now) > minimumLead else { return Plan() }
-        if watchSessionActive && watchReachable { return Plan(phoneNotificationAt: nil, watchAlertAt: rest.endsAt) }
+        if watchSessionActive { return Plan(phoneNotificationAt: nil, watchAlertAt: rest.endsAt) }
         return Plan(phoneNotificationAt: rest.endsAt, watchAlertAt: nil)
+    }
+
+    /// Whether the phone should hold a local notification as the rest-end fallback.
+    public static func phoneSchedulesFallback(rest: RestState?, now: Date, watchSessionActive: Bool) -> Bool {
+        plan(rest: rest, now: now, watchSessionActive: watchSessionActive, watchReachable: false).phoneNotificationAt != nil
     }
 }
 

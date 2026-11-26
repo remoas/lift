@@ -12,10 +12,13 @@ enum WatchTheme {
     static let separator = Color(red: 0x2C / 255, green: 0x2C / 255, blue: 0x30 / 255)
 
     static let inset: CGFloat = 10
-    /// Clear of the system page dots on the trailing edge (CDO QA 1, item 4).
-    static let trailingInset: CGFloat = 16
+    /// The page dots moved to the bottom (QA 2, item 4): nothing on the trailing edge.
+    static let trailingInset: CGFloat = 10
     /// Above the rounded bottom so a primary keeps its corners (QA 1, item 3).
     static var bottomGap: CGFloat { isLarge ? 14 : 10 }
+    /// Pager pages: the primary sits above the bottom page dots (watch mock .dots).
+    static var pagerGap: CGFloat { isLarge ? 22 : 15 }
+    static var dotsBottom: CGFloat { isLarge ? 8 : 5 }
     /// 44 pt everywhere (AC 72, 75; QA 1, item 13).
     static let primaryHeight: CGFloat = 44
     static let buttonRadius: CGFloat = 14
@@ -109,13 +112,16 @@ extension Text {
 }
 
 extension View {
-    /// A pinned control at the bottom: 44 pt, edge to edge, clear of the rounded corners.
-    func pinnedBottom<B: View>(@ViewBuilder _ bottom: () -> B) -> some View {
-        frame(maxWidth: .infinity, maxHeight: .infinity)
-            .safeAreaInset(edge: .bottom, spacing: 6) {
+    /// A pinned control at the bottom: 44 pt, edge to edge, clear of the rounded
+    /// corners. The content (usually a ScrollView) ends above it and clips there,
+    /// so nothing runs under the button (QA 2, items 2 and 3).
+    func pinnedBottom<B: View>(pager: Bool = false, @ViewBuilder _ bottom: () -> B) -> some View {
+        VStack(spacing: 6) {
+            frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .clipped()
             bottom()
                 .padding(.horizontal, WatchTheme.inset)
-                .padding(.bottom, WatchTheme.bottomGap)
+                .padding(.bottom, pager ? WatchTheme.pagerGap : WatchTheme.bottomGap)
         }
         // Measured from the glass, not the system's bottom bar area.
         .ignoresSafeArea(.container, edges: .bottom)

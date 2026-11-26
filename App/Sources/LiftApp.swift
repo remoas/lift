@@ -45,13 +45,15 @@ struct LiftApp: App {
         .onChange(of: scenePhase) { _, phase in
             // Pending discards/deletes become final rather than lingering.
             if phase == .background { toasts.flush() }
+            if phase == .active { RestActivityController.shared.sweep() }
         }
     }
 
     @ViewBuilder private var root: some View {
         #if DEBUG
         if let fixture = Fixtures.requested {
-            if fixture.hasPrefix("la-") { LiveActivityGallery(frame: fixture) } else { FixtureRoot(frame: fixture) }
+            if LiveActivityBehaviour.requested { LiveActivityBehaviour(container: container) }
+            else if fixture.hasPrefix("la-") { LiveActivityGallery(frame: fixture) } else { FixtureRoot(frame: fixture) }
         } else { RootView() }
         #else
         RootView()

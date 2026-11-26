@@ -2,6 +2,14 @@ import XCTest
 @testable import LiftCore
 
 final class RestActivityTests: XCTestCase {
+    func testLongNamesTruncateAtAWordBoundary() {
+        let c = RestActivityText.nameCandidates("Single-Arm Dumbbell Incline Bench Press")
+        XCTAssertEqual(c, ["Single-Arm Dumbbell Incline Bench Press", "Single-Arm Dumbbell Incline Bench…",
+                           "Single-Arm Dumbbell Incline…", "Single-Arm Dumbbell…", "Single-Arm…"])
+        XCTAssertFalse(c.contains { $0.hasSuffix("Ben…") })
+        XCTAssertEqual(RestActivityText.nameCandidates("Squat"), ["Squat"])
+    }
+
     func testLoadFollowsTheExerciseUnit() {
         XCTAssertEqual(RestActivityText.load(weight: 185, unit: .lb, reps: 9, bodyweight: false), "185 lb × 9")
         XCTAssertEqual(RestActivityText.load(weight: 80, unit: .kg, reps: 8, bodyweight: false), "80 kg × 8")

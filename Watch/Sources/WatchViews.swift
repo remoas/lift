@@ -1,5 +1,6 @@
 import SwiftUI
 import WatchKit
+import UIKit
 import LiftCore
 
 // Watch screens to CDO's watch.md (§3) and AC 69–82, with CDO's watch QA 1
@@ -31,6 +32,15 @@ struct WatchRoot: View {
                         AddPage(onAdd: { adding = true }).tag(exercises.count)
                     }
                     .tabViewStyle(.verticalPage)
+                    // Our own short dots at the bottom replace the trailing system indicator (QA 2, item 4).
+                    .scrollIndicators(.hidden)
+                    .overlay(alignment: .bottom) {
+                        if store.toast == nil {
+                            PageDots(count: exercises.count + 1, current: page)
+                                .padding(.bottom, WatchTheme.dotsBottom)
+                                .ignoresSafeArea(edges: .bottom)
+                        }
+                    }
                 }
             }
             .navigationDestination(isPresented: $adding) {
@@ -65,6 +75,33 @@ extension EnvironmentValues {
     var watchDimmed: Bool {
         get { self[DimmedKey.self] }
         set { self[DimmedKey.self] = newValue }
+    }
+}
+
+/// watch.md §1: a short row at the bottom; current textPrimary, the rest textTertiary.
+struct PageDots: View {
+    let count: Int
+    let current: Int
+    @Environment(\.isLuminanceReduced) private var aod
+    @Environment(\.watchDimmed) private var previewDimmed
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<count, id: \.self) { i in
+                Circle()
+                    .fill(i == current ? WatchTheme.textPrimary : WatchTheme.textTertiary.opacity(0.55))
+                    .frame(width: WatchTheme.isLarge ? 5 : 4, height: WatchTheme.isLarge ? 5 : 4)
+            }
+        }
+        .opacity(aod || previewDimmed ? 0.45 : 1)
+        .accessibilityElement()
+        .accessibilityLabel("Page \(current + 1) of \(count)")
+    }
+}
+
+/// "✓ Target hit" with the check close to the words.
+struct TightLabel: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 2) { configuration.icon; configuration.title }
     }
 }
 
@@ -201,23 +238,26 @@ struct ExercisePage: View {
     private var logView: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: WatchTheme.isLarge ? 3 : 1) {
-                Text(exercise.name).watchTitle()
+                if store.liveCount(for: exercise) != nil && !WatchTheme.isLarge {
+                    // 40 mm counting: one line so the count and its caption fit.
+                    Text(exercise.name).watchTitle().lineLimit(1).minimumScaleFactor(0.8)
+                } else {
+                    Text(exercise.name).watchTitle()
+                }
                 if let count = store.liveCount(for: exercise) {
                     countingBody(count)
                 } else {
-                    if let last = BeatItText.last(exercise.last, date: exercise.lastDate, compact: !WatchTheme.isLarge) {
+                    if let last = lastLine {
                         // Wraps at set boundaries, never mid-number (§3.2).
-                        // 40/41 mm: one line, so the prefill stays above Log set.
-                        Text(last.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}")).watchCaption()
-                            .lineLimit(WatchTheme.isLarge ? nil : 1)
-                            .minimumScaleFactor(WatchTheme.isLarge ? 1 : 0.7)
+                        Text(last.text.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}")).watchCaption()
+                            .lineLimit(last.oneLine ? 1 : nil)
+                            .minimumScaleFactor(last.oneLine ? 0.8 : 1)
                     }
                     if !exercise.countable || !store.motionAvailable {
                         Text("Counting off.").watchCaption()
                     }
                     targetBlock
                 }
-                statusLine
                 if WatchTheme.isLarge && store.liveCount(for: exercise) == nil {
                     Text("Double tap to log.").watchCaption(WatchTheme.textTertiary)
                 }
@@ -226,8 +266,10 @@ struct ExercisePage: View {
             .padding(.trailing, WatchTheme.trailingInset)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .pinnedBottom {
-            VStack(spacing: 6) {
+        .pinnedBottom(pager: true) {
+            VStack(alignment: .leading, spacing: 6) {
+                // Above Log set, never in its inset (QA 2, item 3 and P).
+                statusLine
                 if store.toast != nil { ToastBar() }
                 // 40/41 mm: the toast takes Log set's place while it's up.
                 if store.toast == nil || WatchTheme.isLarge { logButton }
@@ -235,22 +277,37 @@ struct ExercisePage: View {
         }
     }
 
+    /// 49 mm writes Last in full and wraps. 40 mm keeps every weight (QA 2, N) on
+    /// one line when it fits at ≥ 80 %, dropping the day first; else it wraps.
+    private var lastLine: (text: String, oneLine: Bool)? {
+        guard let full = BeatItText.last(exercise.last, date: exercise.lastDate) else { return nil }
+        guard !WatchTheme.isLarge else { return (full, false) }
+        let width = WKInterfaceDeviceWidth.value - WatchTheme.inset - WatchTheme.trailingInset
+        let font = UIFont.preferredFont(forTextStyle: .caption2)
+        func fits(_ s: String) -> Bool { (s as NSString).size(withAttributes: [.font: font]).width * 0.8 <= width }
+        if fits(full) { return (full, true) }
+        if let short = BeatItText.last(exercise.last, date: exercise.lastDate, compact: true), fits(short) { return (short, true) }
+        return (full, false)
+    }
+
     @ViewBuilder private var targetBlock: some View {
         if let target = exercise.target {
-            if exercise.targetHit {
-                // AC 74: quieter than New best, no bar.
-                Label("Target hit", systemImage: "checkmark")
-                    .font(.caption2.weight(.semibold)).foregroundStyle(WatchTheme.textPrimary)
-            } else {
-                // The target keeps the bar until a set beats it (Ben 2:16pm).
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
+            // The target keeps the bar until a set beats it, after a miss too
+            // (Ben 2:16pm; QA 2, item 7). Target hit is a quiet Ember "✓ Target hit"
+            // on the same line, the bar still under the number (§3.11, QA 2 O).
+            HStack(alignment: .firstTextBaseline, spacing: 5) {
+                if exercise.targetHit {
+                    Label("Target hit", systemImage: "checkmark")
+                        .font(.caption2.weight(.semibold)).foregroundStyle(WatchTheme.ember)
+                        .labelStyle(TightLabel())
+                } else {
                     Text("Beat it").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
-                    Text(BeatItText.number(target, bodyweight: exercise.bodyweight))
-                        .font(.footnote.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary)
-                        .theBar(isCurrent, dimmed: dimmed)
                 }
-                .accessibilityElement(children: .combine)
+                Text(BeatItText.number(target, bodyweight: exercise.bodyweight))
+                    .font(.footnote.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary)
+                    .theBar(dimmed: dimmed)
             }
+            .accessibilityElement(children: .combine)
             valueRow
                 .padding(.top, WatchTheme.isLarge ? 2 : 0)
         } else {
@@ -301,8 +358,11 @@ struct ExercisePage: View {
         let target = exercise.target?.reps ?? Int(reps)
         return VStack(alignment: .leading, spacing: 0) {
             Text("\(UnitMath.format(weight)) \(exercise.unit.symbol) · Beat \(target)").watchCaption()
+            // numeralHero 56 / 64 pt; the frame trims the line box to the digits so
+            // "of 9 · Crown to correct" stays above Log set on 40 mm (QA 2, item 3).
             Text("\(count)")
-                .font(WatchTheme.hero(56))
+                .font(.system(size: WatchTheme.isLarge ? 64 : 56, weight: .semibold, design: .rounded).monospacedDigit())
+                .frame(height: WatchTheme.isLarge ? 54 : 46)
                 .foregroundStyle(WatchTheme.textPrimary)
                 .contentTransition(.numericText())
                 .focusable(true)
@@ -423,15 +483,20 @@ struct RestView: View {
                 .frame(width: ring, height: ring)
                 .onLongPressGesture(perform: onEdit)
                 if let next = rest.next {
-                    Text("Next").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
-                    Text(next).font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary)
-                        .theBar(dimmed: dimmed)
+                    // 40 mm: "Next 185 × 9" on one line so the bar clears the chips.
+                    let layout = WatchTheme.isLarge ? AnyLayout(VStackLayout(spacing: 2)) : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 5))
+                    layout {
+                        Text("Next").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+                        Text(next).font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary)
+                            .theBar(dimmed: dimmed)
+                    }
+                    .padding(.top, WatchTheme.isLarge ? 0 : 2)
                 }
             }
             // Clear of the ••• / Finish row (QA 1, item 1).
             .padding(.top, 14)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .pinnedBottom {
+            .pinnedBottom(pager: true) {
                 if !dimmed {
                     HStack(spacing: 6) {
                         Button("+30s") { store.addRest(30) }.buttonStyle(WatchChipStyle())
@@ -466,7 +531,7 @@ struct RestUpView: View {
         }
         .padding(.top, 14)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .pinnedBottom { Button("Log set", action: onLog).buttonStyle(WatchPrimaryStyle()).modifier(DoubleTapLogs()) }
+        .pinnedBottom(pager: true) { Button("Log set", action: onLog).buttonStyle(WatchPrimaryStyle()).modifier(DoubleTapLogs()) }
     }
 }
 
@@ -539,7 +604,7 @@ struct AddPage: View {
             .padding(.trailing, WatchTheme.trailingInset)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .pinnedBottom { Button("Add exercise", action: onAdd).buttonStyle(WatchPrimaryStyle()) }
+        .pinnedBottom(pager: true) { Button("Add exercise", action: onAdd).buttonStyle(WatchPrimaryStyle()) }
     }
 }
 
@@ -632,6 +697,7 @@ struct FinishView: View {
         let w = store.live
         let t = w.targetsBeaten
         let beaten = w.beaten
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
                 if t.of == 0 {
@@ -658,10 +724,15 @@ struct FinishView: View {
                         .buttonStyle(.plain)
                         .font(.footnote.weight(.semibold)).foregroundStyle(WatchTheme.textPrimary)
                         .frame(minHeight: 44)
+                        .id("back")
                 }
             }
             .padding(.horizontal, WatchTheme.inset)
+            .padding(.bottom, 4)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // The w18 still shows the end of the list: sets-left copy and Back to workout (QA 2, item 2).
+        .onAppear { if store.isFixture && w.unloggedCount > 0 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo("back", anchor: .bottom) } } }
         }
         .pinnedBottom {
             Button("Done") {
