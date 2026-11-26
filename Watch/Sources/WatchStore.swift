@@ -38,11 +38,16 @@ final class WatchStore: NSObject {
     var motionAvailable: Bool { fixture || motion.isAvailable }
     /// Screenshot frames only: a live count to show.
     @ObservationIgnored var fixtureCount: Int?
+    /// Screenshot frames: hold the Crown focus on the weight (no 3 s idle).
+    @ObservationIgnored var fixtureFocusWeight = false
+    var isFixture: Bool { fixture }
 
     #if DEBUG
     /// Screenshot frames: put the store in a state that needs time or motion.
     func applyFixture(_ f: WatchFixtures.Frame) {
         fixtureCount = f.countedReps
+        fixtureFocusWeight = f.focusWeight
+        if f.healthOff { healthOff = true }
         if f.restUp { restUpFor = live.exercises.first?.id }
         if let b = f.newBest, let id = live.exercises.first?.id { newBest = (id, b) }
         if f.skipToast { toast = WatchToast(text: "Rest skipped", undo: {}) }

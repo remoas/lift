@@ -11,10 +11,13 @@ enum WatchTheme {
     static let textTertiary = Color(red: 0x8E / 255, green: 0x8B / 255, blue: 0x86 / 255)
     static let separator = Color(red: 0x2C / 255, green: 0x2C / 255, blue: 0x30 / 255)
 
-    /// Room under the ••• / Finish row so the exercise name never sits behind it.
-    static var toolbarClearance: CGFloat { isLarge ? 28 : 18 }
     static let inset: CGFloat = 10
-    static var primaryHeight: CGFloat { isLarge ? 44 : 40 }
+    /// Clear of the system page dots on the trailing edge (CDO QA 1, item 4).
+    static let trailingInset: CGFloat = 16
+    /// Above the rounded bottom so a primary keeps its corners (QA 1, item 3).
+    static let bottomGap: CGFloat = 10
+    /// 44 pt everywhere (AC 72, 75; QA 1, item 13).
+    static let primaryHeight: CGFloat = 44
     static let buttonRadius: CGFloat = 14
 
     /// 45 / 49 mm get the larger step (watch.md §3).
@@ -62,15 +65,56 @@ struct WatchPrimaryStyle: ButtonStyle {
     }
 }
 
-/// 44 pt chip: sunken fill; `accent` = Ember text (Skip).
+/// 44 pt chip: raised fill, primary text (+30s and Skip alike; QA 1, item 12).
 struct WatchChipStyle: ButtonStyle {
-    var accent = false
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.body.weight(.medium).monospacedDigit())
-            .foregroundStyle(accent ? WatchTheme.ember : WatchTheme.textPrimary)
+            .foregroundStyle(WatchTheme.textPrimary)
             .frame(maxWidth: .infinity, minHeight: WatchTheme.primaryHeight)
             .background(WatchTheme.raised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .opacity(configuration.isPressed ? 0.7 : 1)
+    }
+}
+
+/// The agreed Crown focus: an Ember ring on the number the Crown is changing
+/// (the system green ring is turned off).
+struct CrownFocusRing: ViewModifier {
+    var on: Bool
+    func body(content: Content) -> some View {
+        content
+            .padding(.horizontal, 3)
+            .overlay {
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .stroke(WatchTheme.ember, lineWidth: 2)
+                    .opacity(on ? 1 : 0)
+            }
+    }
+}
+
+/// Titles: two lines, then scale to 90 %, and only then truncate (CDO).
+extension Text {
+    func watchTitle() -> some View {
+        self.font(.system(size: WatchTheme.isLarge ? 19 : 17, weight: .semibold))
+            .foregroundStyle(WatchTheme.textPrimary)
+            .lineLimit(2).minimumScaleFactor(0.9)
+            .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// Secondary copy that wraps instead of ellipsizing (QA 1, item 5).
+    func watchCaption(_ color: Color = WatchTheme.textSecondary) -> some View {
+        self.font(.caption2).foregroundStyle(color).monospacedDigit()
+            .fixedSize(horizontal: false, vertical: true)
+    }
+}
+
+extension View {
+    /// A pinned control at the bottom: 44 pt, edge to edge, clear of the rounded corners.
+    func pinnedBottom<B: View>(@ViewBuilder _ bottom: () -> B) -> some View {
+        safeAreaInset(edge: .bottom, spacing: 6) {
+            bottom()
+                .padding(.horizontal, WatchTheme.inset)
+                .padding(.bottom, WatchTheme.bottomGap)
+        }
     }
 }

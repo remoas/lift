@@ -16,12 +16,17 @@ enum WatchFixtures {
         var skipToast = false
         var dimmed = false
         var unreachable = false
+        var healthOff = false
+        var focusWeight = false
     }
 
     /// CDO's frames (design/watch/w01–w14).
     static let names = ["w01-empty", "w02-exercise", "w03-counting", "w04-counting-off", "w05-first-time", "w06-rest",
                         "w07-rest-up", "w08-target-hit", "w09-add", "w10-finish", "w11-always-on", "w12-unreachable",
-                        "w13-skip-toast", "w14-rest-picker"]
+                        "w13-skip-toast", "w14-rest-picker",
+                        // CDO QA 1, item 17: states that had no frame.
+                        "w15-target-hit-quiet", "w16-health-off", "w17-rest-off", "w18-finish-sets-left",
+                        "w19-crown-focus", "w20-after-miss"]
 
     #if DEBUG
     static let requested: Frame? = {
@@ -95,6 +100,27 @@ enum WatchFixtures {
             return Frame(live: live, skipToast: true)
         case "w14-rest-picker":
             return Frame(live: live, restPicker: true)
+        case "w15-target-hit-quiet":
+            bench.sets = [hit]
+            live.exercises[0] = bench
+            return Frame(live: live)
+        case "w16-health-off":
+            return Frame(live: live, healthOff: true)
+        case "w17-rest-off":
+            bench.restSeconds = 0
+            live.exercises[0] = bench
+            return Frame(live: live, restPicker: true)
+        case "w18-finish-sets-left":
+            bench.sets = [hit, LiveSet(weight: 185, unit: .lb, reps: 9, isDone: false, doneAt: nil, source: "phone")]
+            live.exercises[0] = bench
+            return Frame(live: live, finishing: true)
+        case "w19-crown-focus":
+            return Frame(live: live, focusWeight: true)
+        case "w20-after-miss":
+            // Ben 2:16pm: set 2 prefills with the 185 × 7 just logged; Beat it stays 185 × 9.
+            bench.sets = [LiveSet(weight: 185, unit: .lb, reps: 7, isDone: true, doneAt: now.addingTimeInterval(-150), source: "watch")]
+            live.exercises[0] = bench
+            return Frame(live: live)
         default:
             return Frame(live: live)
         }

@@ -6,7 +6,8 @@ set -euo pipefail
 APP="$1"; OUT="${2:-screenshots-review/watch}"
 BUNDLE=com.benspink.lift.watchkitapp
 FRAMES=(w01-empty w02-exercise w03-counting w04-counting-off w05-first-time w06-rest w07-rest-up
-  w08-target-hit w09-add w10-finish w11-always-on w12-unreachable w13-skip-toast w14-rest-picker)
+  w08-target-hit w09-add w10-finish w11-always-on w12-unreachable w13-skip-toast w14-rest-picker
+  w15-target-hit-quiet w16-health-off w17-rest-off w18-finish-sets-left w19-crown-focus w20-after-miss)
 mkdir -p "$OUT"
 # Only simulators whose runtime is installed (creating from a device type can
 # pick one with no runtime).
