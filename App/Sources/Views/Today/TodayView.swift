@@ -16,6 +16,9 @@ struct TodayView: View {
     @State private var showSettings = false
     @State private var showChooser = false
     @State private var buildingDay: Routine?
+    /// Workout.id reserved before presenting so the zoom source and cover share one UUID.
+    @State private var reservedID = UUID()
+    @State private var reservedBlankID = UUID()
 
     private var next: Routine? { LiftStore.nextRoutine(routines: routines, finished: finished) }
     private var doneThisWeek: Int { Week.count(finished.map(\.startedAt), inWeekOf: Date()) }
@@ -35,6 +38,7 @@ struct TodayView: View {
                         .padding(.top, Theme.Spacing.s2)
                     lifts.padding(.top, Theme.Spacing.section - Theme.Spacing.s3)
                 }
+                .liftZoomSource(.workout(active.first?.id ?? reservedID))
                 .screenMargins()
                 .padding(.bottom, 140)
             }
@@ -48,7 +52,7 @@ struct TodayView: View {
                 }
             }
             .safeAreaInset(edge: .bottom) { actions }
-            .navigationDestination(for: Exercise.self) { ExerciseDetailView(exercise: $0) }
+            .navigationDestination(for: Exercise.self) { ExerciseDetailView(exercise: $0).liftZoomDestination(.exercise($0.id)) }
             .sheet(isPresented: $showSettings) { SettingsView() }
             .sheet(isPresented: $showChooser) {
                 ChooseWorkoutSheet(routines: routines, finished: finished, next: next) { routine in
@@ -159,6 +163,7 @@ struct TodayView: View {
                             }
                             .frame(maxWidth: .infinity, minHeight: Theme.Size.setRow, alignment: .leading)
                             .contentShape(Rectangle())
+                            .liftZoomSource(.exercise(ex.id))
                         }
                         .buttonStyle(.plain)
                         Divider().overlay(Theme.Colors.separator)
@@ -189,6 +194,7 @@ struct TodayView: View {
                 HStack(spacing: Theme.Spacing.s6) {
                     Button("Other routine") { showChooser = true }.buttonStyle(TextActionStyle())
                     Button("Blank workout") { start(nil) }.buttonStyle(TextActionStyle())
+                        .liftZoomSource(.workout(reservedBlankID))
                 }
             }
         }
@@ -198,8 +204,12 @@ struct TodayView: View {
     }
 
     private func start(_ routine: Routine?) {
-        let workout = LiftStore.start(routine, globalUnit: settings.unit, context: context)
+        let id = routine == nil ? reservedBlankID : reservedID
+        let workout = LiftStore.start(routine, globalUnit: settings.unit, id: id, context: context)
         onOpenWorkout(workout)
+        // Fresh reservations for the next workout; the block now tags the active id.
+        reservedID = UUID()
+        reservedBlankID = UUID()
     }
 }
 

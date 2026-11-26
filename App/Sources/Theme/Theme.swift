@@ -97,6 +97,10 @@ enum Theme {
         static let springBanner = Animation.spring(response: 0.42, dampingFraction: 0.82)
         static let barDraw = Animation.easeOut(duration: 0.28).delay(0.12)
         static let crossfade = Animation.easeInOut(duration: 0.2)
+        /// Large surfaces (Today → workout, row → detail): critically damped, no bounce.
+        static let springZoom = Animation.spring(response: 0.48, dampingFraction: 1.0)
+        /// Reduce Motion fallback for every shared transition: crossfade only.
+        static let fadeReduced = Animation.easeInOut(duration: 0.15)
     }
 }
 

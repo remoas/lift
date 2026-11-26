@@ -20,6 +20,10 @@ struct ActiveWorkoutView: View {
     @State private var picker: ExercisePicker.Mode?
     @State private var showEditToday = false
     @State private var detail: Exercise?
+    // PR banner morph state (§8.5): shown copy, its set, and whether it has landed.
+    @State private var shownBanner: PRBannerContent?
+    @State private var shownSetID: UUID?
+    @State private var bannerLanded = false
 
     var body: some View {
         NavigationStack {
@@ -29,7 +33,7 @@ struct ActiveWorkoutView: View {
             .background(Theme.Colors.bgCanvas)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
-            .navigationDestination(item: $detail) { ExerciseDetailView(exercise: $0) }
+            .navigationDestination(item: $detail) { ExerciseDetailView(exercise: $0).liftZoomDestination(.exercise($0.id)) }
         }
         .onAppear {
             if session == nil { session = WorkoutSession(workout: workout, context: context, settings: settings) }
@@ -111,17 +115,25 @@ struct ActiveWorkoutView: View {
                     .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.rest == nil)
             }
 
-            if let banner = session.banner {
-                PRBannerView(content: banner, onTap: {
+            if let banner = shownBanner {
+                PRBannerView(content: banner, setID: shownSetID, landed: bannerLanded, onTap: {
                     detail = session.bannerExercise
                     session.dismissBanner()
-                }, onDismiss: { withAnimation(Theme.Motion.springBanner) { session.dismissBanner() } })
+                }, onDismiss: { session.dismissBanner() })
                 .padding(.top, Theme.Spacing.s2)
-                .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
+                .transition(.opacity)
                 .zIndex(1)
             }
         }
-        .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.banner)
+        .onChange(of: session.banner) { _, new in bannerChanged(new, setID: session.bannerSetID) }
+        .onAppear {
+            // A banner set before this view existed (fixtures): show it in place.
+            if let b = session.banner, shownBanner == nil {
+                shownBanner = b
+                shownSetID = session.bannerSetID
+                bannerLanded = true
+            }
+        }
         .onChange(of: session.saveError) { _, err in
             if let err { toasts.show(err); session.saveError = nil }
         }
@@ -168,6 +180,7 @@ struct ActiveWorkoutView: View {
             HStack {
                 Button { detail = ex } label: {
                     Text(ex.name).font(Theme.Fonts.exercise).foregroundStyle(Theme.Colors.textPrimary)
+                        .liftZoomSource(.exercise(ex.id))
                 }
                 .buttonStyle(.plain)
                 .onLongPressGesture { showEditToday = true }
@@ -261,6 +274,48 @@ struct ActiveWorkoutView: View {
         guard let ex = set.exercise, let sets = session.groups.first(where: { $0.exercise === ex })?.sets,
               let i = sets.firstIndex(where: { $0 === set }) else { return set.exercise?.name ?? "" }
         return "\(ex.name), set \(i + 1)"
+    }
+
+    /// Appear: start on the set's value, then grow into place with springBanner.
+    /// Replace: in place, no stack. Dismiss: reverse toward the set, then fade.
+    private func bannerChanged(_ new: PRBannerContent?, setID: UUID?) {
+        if let new {
+            if shownBanner != nil {
+                withAnimation(reduceMotion ? Theme.Motion.fadeReduced : Theme.Motion.springBanner) {
+                    shownBanner = new
+                    shownSetID = setID
+                    bannerLanded = true
+                }
+                return
+            }
+            if reduceMotion {
+                bannerLanded = true
+                shownSetID = setID
+                withAnimation(Theme.Motion.fadeReduced) { shownBanner = new }
+                return
+            }
+            var t = Transaction()
+            t.disablesAnimations = true
+            withTransaction(t) {
+                bannerLanded = false
+                shownSetID = setID
+                shownBanner = new
+            }
+            DispatchQueue.main.async {
+                withAnimation(Theme.Motion.springBanner) { bannerLanded = true }
+            }
+        } else {
+            guard shownBanner != nil else { return }
+            if reduceMotion {
+                withAnimation(Theme.Motion.fadeReduced) { shownBanner = nil }
+                return
+            }
+            withAnimation(Theme.Motion.springBanner) { bannerLanded = false }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.32) {
+                guard session?.banner == nil else { return }
+                withAnimation(Theme.Motion.fadeReduced) { shownBanner = nil }
+            }
+        }
     }
 
     /// Straight to the summary, no alert. Sets aren't touched until Done.

@@ -138,7 +138,12 @@ struct ExerciseMediaHeader: View {
         timeout.cancel()
         guard phase == .loading else { return }
         withAnimation(reduceMotion ? nil : Theme.Motion.crossfade) { phase = ok ? .ready : .collapsed }
-        if ok, case .video = media, !reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled { play() }
+        if ok, case .video = media, !reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled {
+            // Wait for the row → detail zoom to settle (springZoom ≈ 0.5 s) before autoplay.
+            try? await Task.sleep(for: .milliseconds(550))
+            guard !Task.isCancelled, phase == .ready else { return }
+            play()
+        }
     }
 
     private func decode(_ file: String) async -> UIImage? {

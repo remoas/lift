@@ -17,6 +17,9 @@ enum Fixtures {
         "25-finish-sets-left", "26-discard-toast", "27-finish-save-routine",
     ]
 
+    /// Screen-recording starts (AC 61), not design frames.
+    static let recordings = ["rec-pr"]
+
     enum MediaMode { case normal, hidden, reduceMotion, loading }
 
     /// 08 matches the no-media layout; 24c/24d force their states.
@@ -31,7 +34,7 @@ enum Fixtures {
 
     static let requested: String? = {
         let args = ProcessInfo.processInfo.arguments
-        guard let i = args.firstIndex(of: "-LiftFixture"), i + 1 < args.count, frames.contains(args[i + 1]) else { return nil }
+        guard let i = args.firstIndex(of: "-LiftFixture"), i + 1 < args.count, frames.contains(args[i + 1]) || recordings.contains(args[i + 1]) else { return nil }
         return args[i + 1]
     }()
 
@@ -87,6 +90,15 @@ enum Fixtures {
                 workout = b.finishedToday("Push", topSet: nil, swap: ("incline-dumbbell-press", "cable-crossover"))
             case "21-finish-blank", "27-finish-save-routine":
                 workout = b.finishedToday(nil, topSet: nil)
+            case "rec-pr":
+                // Two PRs in a row: the current bench set, then the next exercise's first set.
+                let w = b.active("Push", doneSets: 2)
+                let open = w.groups.flatMap(\.sets).filter { !$0.isDone }
+                if open.count > 1 {
+                    open[0].weight = 215; open[0].reps = 5
+                    open[1].weight = max(open[1].weight, 95) + 40; open[1].reps = 6
+                }
+                workout = w
             case "25-finish-sets-left":
                 workout = b.active("Push", doneSets: 11)
             case "26-discard-toast":
@@ -229,9 +241,11 @@ struct FixtureRoot: View {
     @Query(sort: \Routine.order) private var routines: [Routine]
     @Query(filter: #Predicate<Workout> { $0.endedAt != nil }, sort: \Workout.startedAt, order: .reverse)
     private var finished: [Workout]
+    @Namespace private var liftNS
 
     var body: some View {
         content
+            .environment(\.liftNamespace, liftNS)
             .overlay { ToastOverlay() }
             .onAppear {
                 if frame == "15-restoring" { cloud.debugSimulateFirstRestore() }
@@ -249,7 +263,7 @@ struct FixtureRoot: View {
         case "02a-welcome": SetupFlow(onFinish: {})
         case "02b-days": SetupFlow(onFinish: {}, startAt: [.days])
         case "02c-build-empty", "02d-setup-picker", "02e-build-filled": SetupFlow(onFinish: {}, startAt: [.days, .build(0)])
-        case "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "13-first-workout", "19-reorder":
+        case "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "13-first-workout", "19-reorder", "rec-pr":
             if let w = Fixtures.workout { ActiveWorkoutView(workout: w, onClose: {}, onFinished: { _ in }) }
         case "07-finish", "20-finish-changed", "21-finish-blank", "25-finish-sets-left":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }

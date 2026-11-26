@@ -8,6 +8,10 @@ on:
         description: "Capture the 35 design frames (light, dark) and the AX3 set row"
         type: boolean
         default: true
+      recordings:
+        description: "Record the three shared-transition flows (AC 61)"
+        type: boolean
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -50,6 +54,9 @@ jobs:
       - name: Screenshots
         if: ${{ !cancelled() && inputs.screenshots && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         run: scripts/screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review
+      - name: Screen recordings
+        if: ${{ !cancelled() && inputs.recordings && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
+        run: scripts/recordings.sh screenshots-review/recordings review-logs/recordings.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:
