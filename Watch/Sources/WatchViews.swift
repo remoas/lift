@@ -100,6 +100,7 @@ struct ExercisePage: View {
     @State private var weight = 0.0
     @State private var reps = 0.0
     @FocusState private var focus: Field?
+    @State private var showingOptions = false
 
     private var dimmed: Bool { aod || previewDimmed }
     private var resting: RestState? {
@@ -128,11 +129,8 @@ struct ExercisePage: View {
         .opacity(dimmed ? 0.6 : 1)
         .toolbar {
             ToolbarItem(placement: .topBarLeading) {
-                Menu {
-                    Button("Rest · \(RestChoices.label(exercise.restSeconds))", action: onRest)
-                    Button("Discard workout", role: .destructive) { store.discard() }
-                } label: { Image(systemName: "ellipsis") }
-                .accessibilityLabel("\(exercise.name) options")
+                Button { showingOptions = true } label: { Image(systemName: "ellipsis") }
+                    .accessibilityLabel("\(exercise.name) options")
             }
             if !store.live.doneSets.isEmpty {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -140,6 +138,13 @@ struct ExercisePage: View {
                         .foregroundStyle(WatchTheme.textPrimary)
                         .frame(minWidth: 44, minHeight: 44)
                 }
+            }
+        }
+        .sheet(isPresented: $showingOptions) {
+            List {
+                Button("Rest · \(RestChoices.label(exercise.restSeconds))") { showingOptions = false; onRest() }
+                    .monospacedDigit()
+                Button("Discard workout", role: .destructive) { showingOptions = false; store.discard() }
             }
         }
         .onAppear(perform: load)
@@ -164,7 +169,7 @@ struct ExercisePage: View {
             }
             statusLine
             Spacer(minLength: 2)
-            if WatchTheme.isLarge, #available(watchOS 11, *) {
+            if WatchTheme.isLarge {
                 Text("Double tap to log.").font(.caption2).foregroundStyle(WatchTheme.textTertiary)
             }
             logButton
