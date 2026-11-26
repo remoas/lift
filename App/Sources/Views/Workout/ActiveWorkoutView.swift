@@ -50,6 +50,12 @@ struct ActiveWorkoutView: View {
             RestNotifications.requestPermissionIfNeeded()
             #if DEBUG
             applyFixture()
+            // UI test hook (RemoveExerciseTests): run the real Remove path, toast included.
+            let args = ProcessInfo.processInfo.arguments
+            if let i = args.firstIndex(of: "-LiftTestRemove"), i + 1 < args.count, let session,
+               let ex = session.groups.first(where: { $0.exercise.name == args[i + 1] })?.exercise {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) { session.remove(ex, toasts: toasts) }
+            }
             #endif
         }
         // Flow 3: the editor holds the banner's clock. A best logged from the editor
