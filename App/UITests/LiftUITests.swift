@@ -81,10 +81,16 @@ final class RemoveExerciseTests: XCTestCase {
 
         let options = app.buttons["Barbell Bench Press options"]
         XCTAssertTrue(options.waitForExistence(timeout: 5))
-        // Menus can refuse AX hit-testing (an overlay may claim it); tap the point.
-        options.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        // The row header can sit under the collapsed nav bar after logging; pull the
+        // list back to the top, then tap the menu's point (menus can refuse AX hits).
         let remove = app.buttons["Remove"]
-        XCTAssertTrue(remove.waitForExistence(timeout: 5))
+        for _ in 0..<3 where !remove.exists {
+            app.swipeDown()
+            sleep(1)
+            if options.isHittable { options.tap() } else { options.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap() }
+            _ = remove.waitForExistence(timeout: 3)
+        }
+        XCTAssertTrue(remove.exists, "Remove in the exercise menu")
         remove.tap()
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: options)
         wait(for: [gone], timeout: 5)
