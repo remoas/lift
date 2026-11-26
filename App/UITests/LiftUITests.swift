@@ -80,7 +80,9 @@ final class RemoveExerciseTests: XCTestCase {
         sleep(1)
 
         let options = app.buttons["Barbell Bench Press options"]
-        options.tap()
+        XCTAssertTrue(options.waitForExistence(timeout: 5))
+        // Menus can refuse AX hit-testing (an overlay may claim it); tap the point.
+        options.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         let remove = app.buttons["Remove"]
         XCTAssertTrue(remove.waitForExistence(timeout: 5))
         remove.tap()
