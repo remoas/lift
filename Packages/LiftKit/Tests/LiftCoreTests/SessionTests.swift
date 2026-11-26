@@ -295,3 +295,97 @@ final class LifecycleTests: XCTestCase {
         XCTAssertTrue(SessionPlan(workoutID: today, routineID: nil, blocks: [.init(exerciseID: curl, sets: [s(curl, 0, 12, done: false)])]).isEmptyWhenFinalized)
     }
 }
+
+final class OutcomeTests: XCTestCase {
+    let push = UUID(), pull = UUID(), legs = UUID()
+    let t0 = Date(timeIntervalSince1970: 3_000_000)
+    var order: [UUID] { [push, pull, legs] }
+
+    func plan(_ workout: UUID, logged: Int, unlogged: Int) -> SessionPlan {
+        let ex = UUID()
+        let sets = (0..<(logged + unlogged)).map { i in
+            LoggedSet(snapshot: SetSnapshot(workoutID: workout, weight: 185, unit: .lb, reps: 8, date: t0), exerciseID: ex, isDone: i < logged)
+        }
+        return SessionPlan(workoutID: workout, routineID: nil, blocks: [.init(exerciseID: ex, sets: sets)])
+    }
+
+    func record(_ routine: UUID?, _ outcome: WorkoutOutcome, at offset: TimeInterval, logged: Int = 3, unlogged: Int = 0) -> WorkoutRecord {
+        let id = UUID()
+        return WorkoutRecord(id: id, routineID: routine, startedAt: t0.addingTimeInterval(offset), outcome: outcome, plan: plan(id, logged: logged, unlogged: unlogged))
+    }
+
+    func testDiscardAndUndoLeaveRotationAndHealthUntouched() {
+        let history = [record(push, .finished, at: 0)]
+        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history), pull)
+
+        // Start Pull, then discard it: rotation still says Pull, Health gets nothing.
+        var pullToday = record(pull, .discardPending, at: 86_400)
+        var window = UndoWindow<UUID>()
+        window.begin(pullToday.id, at: t0)
+        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), pull)
+        XCTAssertNil(Outcomes.healthPayload(for: pullToday, healthEnabled: true))
+
+        // Undo: back in progress, intact, still not counted.
+        XCTAssertTrue(window.undo(pullToday.id, at: t0.addingTimeInterval(2)))
+        pullToday.outcome = .inProgress
+        XCTAssertEqual(pullToday.plan.allSets.count, 3)
+        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), pull)
+        XCTAssertNil(Outcomes.healthPayload(for: pullToday, healthEnabled: true))
+
+        // Discard again and let it expire: deleted, rotation unchanged.
+        window.begin(pullToday.id, at: t0.addingTimeInterval(10))
+        pullToday.outcome = .discardPending
+        XCTAssertEqual(window.expire(at: t0.addingTimeInterval(16)), pullToday.id)
+        pullToday.outcome = .discarded
+        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), pull)
+        XCTAssertNil(Outcomes.healthPayload(for: pullToday, healthEnabled: true))
+
+        // Only a finished Pull moves it on.
+        pullToday.outcome = .finished
+        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: history + [pullToday]), legs)
+    }
+
+    func testUnloggedSetsDroppedAtDoneNeverReachHealth() {
+        let r = record(push, .finished, at: 0, logged: 2, unlogged: 3)
+        let payload = Outcomes.healthPayload(for: r, healthEnabled: true)
+        XCTAssertEqual(payload?.setCount, 2)
+        XCTAssertEqual(payload?.volumeKg ?? 0, 2 * UnitMath.kilograms(185, .lb) * 8, accuracy: 0.01)
+        XCTAssertNil(Outcomes.healthPayload(for: r, healthEnabled: false))
+        XCTAssertNil(Outcomes.healthPayload(for: r, healthEnabled: nil))
+        // Finished with nothing ticked: not saved, no rotation move, no Health.
+        let empty = record(push, .finished, at: 10, logged: 0, unlogged: 4)
+        XCTAssertFalse(empty.counts)
+        XCTAssertNil(Outcomes.healthPayload(for: empty, healthEnabled: true))
+        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: [empty]), push)
+    }
+
+    func testBlankWorkoutDoesNotMoveRotation() {
+        let records = [record(push, .finished, at: 0), record(nil, .finished, at: 100)]
+        XCTAssertEqual(Outcomes.nextRoutine(order: order, records: records), pull)
+    }
+
+    func testRoutineNameDuplicateSuffix() {
+        XCTAssertEqual(RoutineNaming.resolve("", prefill: "Thursday workout", existing: ["Push", "Pull", "Legs"]), "Thursday workout")
+        XCTAssertEqual(RoutineNaming.resolve("  ", prefill: "Thursday workout", existing: ["Thursday workout"]), "Thursday workout 2")
+        XCTAssertEqual(RoutineNaming.resolve("Arms", prefill: "Thursday workout", existing: ["arms", "Arms 2"]), "Arms 3")
+        XCTAssertEqual(RoutineNaming.resolve("Push", prefill: "x", existing: ["Push", "Pull", "Legs"]), "Push 2")
+        XCTAssertEqual(RoutineNaming.resolve("Upper", prefill: "x", existing: ["Push"]), "Upper")
+    }
+
+    func testDefaultNameIsWeekday() {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = TimeZone(identifier: "Atlantic/Bermuda")!
+        let thursday = cal.date(from: DateComponents(year: 2026, month: 11, day: 26, hour: 7))!
+        XCTAssertEqual(RoutineNaming.defaultName(for: thursday, calendar: cal, locale: Locale(identifier: "en_US")), "Thursday workout")
+    }
+
+    func testRestDefaultNeverOverwritesAcrossRepeatedSaves() {
+        let bench = UUID(), curl = UUID()
+        var rests: [UUID: Int?] = [bench: 180, curl: nil]
+        for (id, v) in RestDefaults.fill(rests, default: 90) { rests[id] = v }
+        XCTAssertEqual(rests[curl], 90)
+        // Changing the day default later fills nothing: both now have their own rest.
+        XCTAssertTrue(RestDefaults.fill(rests, default: 60).isEmpty)
+        XCTAssertEqual(rests[bench], 180)
+    }
+}

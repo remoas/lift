@@ -13,7 +13,21 @@ enum Fixtures {
         "10-history", "11-settings", "12-history-empty", "13-first-workout", "14-health-error", "15-restoring",
         "16-exercise-empty", "17-choose-workout", "18-exercise-picker", "19-reorder", "20-finish-changed",
         "21-finish-blank", "22-today-day-empty", "23-routines-empty",
+        "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none",
+        "25-finish-sets-left", "26-discard-toast", "27-finish-save-routine",
     ]
+
+    enum MediaMode { case normal, hidden, reduceMotion, loading }
+
+    /// 08 matches the no-media layout; 24c/24d force their states.
+    static var mediaMode: MediaMode {
+        switch requested {
+        case "08-exercise": return .hidden
+        case "24c-media-reduce-motion": return .reduceMotion
+        case "24d-media-loading": return .loading
+        default: return .normal
+        }
+    }
 
     static let requested: String? = {
         let args = ProcessInfo.processInfo.arguments
@@ -71,8 +85,18 @@ enum Fixtures {
                 workout = b.finishedToday("Push", topSet: (205, 5))
             case "20-finish-changed":
                 workout = b.finishedToday("Push", topSet: nil, swap: ("incline-dumbbell-press", "cable-crossover"))
-            case "21-finish-blank":
+            case "21-finish-blank", "27-finish-save-routine":
                 workout = b.finishedToday(nil, topSet: nil)
+            case "25-finish-sets-left":
+                workout = b.active("Push", doneSets: 11)
+            case "26-discard-toast":
+                workout = b.active("Pull", doneSets: 2)
+            case "24a-media-video":
+                exercise = b.exercise("barbell-shoulder-press")
+            case "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading":
+                exercise = b.exercise("bench-press")
+            case "24e-media-none":
+                exercise = b.exercise("triceps-pushdown")
             case "08-exercise":
                 exercise = b.exercise("bench-press")
             case "16-exercise-empty":
@@ -212,6 +236,10 @@ struct FixtureRoot: View {
             .onAppear {
                 if frame == "15-restoring" { cloud.debugSimulateFirstRestore() }
                 // Health is written after Done now, so its error is a toast on Today.
+                if frame == "26-discard-toast" {
+                    // Same call RootView makes on Discard: hidden, then deleted when the toast ends.
+                    toasts.show("Pull discarded", undo: {}, onCommit: {})
+                }
                 if frame == "14-health-error" { toasts.show("Couldn't save to Apple Health. Your workout is safe in Lift.") }
             }
     }
@@ -223,9 +251,13 @@ struct FixtureRoot: View {
         case "02c-build-empty", "02d-setup-picker", "02e-build-filled": SetupFlow(onFinish: {}, startAt: [.days, .build(0)])
         case "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "13-first-workout", "19-reorder":
             if let w = Fixtures.workout { ActiveWorkoutView(workout: w, onClose: {}, onFinished: { _ in }) }
-        case "07-finish", "20-finish-changed", "21-finish-blank":
+        case "07-finish", "20-finish-changed", "21-finish-blank", "25-finish-sets-left":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }
-        case "08-exercise", "16-exercise-empty":
+        case "27-finish-save-routine":
+            if let w = Fixtures.workout { FinishView(workout: w, onDone: {}, startWithSaveAsRoutine: true) }
+        case "26-discard-toast":
+            RootView()
+        case "08-exercise", "16-exercise-empty", "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none":
             if let ex = Fixtures.exercise { NavigationStack { ExerciseDetailView(exercise: ex) } }
         case "09-routines", "23-routines-empty": RootView(initialTab: .routines)
         case "10-history", "12-history-empty": RootView(initialTab: .history)

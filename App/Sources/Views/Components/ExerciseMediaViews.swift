@@ -64,86 +64,289 @@ struct ExerciseThumb: View {
     }
 }
 
-/// Exercise detail header: start → end crossfade for stills, a loop for video.
-/// Always muted, never taller than 4:3 or `mediaMaxHeight`, and a still under
-/// Reduce Motion (videos show their first frame).
+/// §3.8 exercise media header (frames 24a–24e). Inset 20, radius 16, 3:2.
+/// Collapses entirely with no media or after 8 s without it (AC 49–54).
 struct ExerciseMediaHeader: View {
     let media: ExerciseMedia
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Reports whether the header is showing, so the screen can move the range control.
+    var onVisibilityChange: (Bool) -> Void = { _ in }
+
+    @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var phase: Phase = .loading
+    @State private var start: UIImage?
+    @State private var end: UIImage?
     @State private var showEnd = false
-    @State private var poster: UIImage?
+    @State private var drag: CGFloat?
     @State private var player: AVQueuePlayer?
     @State private var looper: AVPlayerLooper?
+    @State private var playing = false
+    @State private var poster: UIImage?
+
+    enum Phase: Equatable { case loading, ready, collapsed }
+
+    private var reduceMotion: Bool {
+        #if DEBUG
+        if Fixtures.mediaMode == .reduceMotion { return true }
+        #endif
+        return systemReduceMotion
+    }
 
     var body: some View {
-        GeometryReader { geo in
-            content
-                .frame(width: geo.size.width, height: geo.size.height)
-        }
-        .aspectRatio(Theme.Size.mediaMinAspect, contentMode: .fit)
-        .frame(maxWidth: .infinity, maxHeight: Theme.Size.mediaMaxHeight)
-        .background(Theme.Colors.bgSunken)
-        .clipShape(.continuous(Theme.Radius.banner))
-        .accessibilityElement()
-        .accessibilityLabel("Demonstration")
-        .onChange(of: reduceMotion) { _, reduce in
-            if reduce { player?.pause() } else { player?.play() }
-        }
-    }
-
-    @ViewBuilder private var content: some View {
-        switch media {
-        case .stills(let start, let end):
-            ZStack {
-                still(start)
-                if !reduceMotion { still(end).opacity(showEnd ? 1 : 0) }
-            }
-            .task(id: reduceMotion) {
-                showEnd = false
-                guard !reduceMotion else { return }
-                while !Task.isCancelled {
-                    try? await Task.sleep(for: .seconds(0.9))
-                    withAnimation(.easeInOut(duration: 0.5)) { showEnd.toggle() }
-                }
-            }
-        case .hold(let file):
-            still(file)
-        case .video(let file):
-            if reduceMotion {
-                Group {
-                    if let poster { Image(uiImage: poster).resizable().scaledToFit() } else { Color.clear }
-                }
-                .task { poster = await MediaStore.thumbnail(for: media, side: 600) }
-            } else {
-                VideoPlayer(player: player)
-                    .disabled(true)            // no controls, so it can never be unmuted
-                    .onAppear { startVideo(file) }
-                    .onDisappear { player?.pause() }
-            }
-        }
-    }
-
-    private func still(_ file: String) -> some View {
         Group {
-            if let url = MediaStore.url(file), let img = UIImage(contentsOfFile: url.path) {
-                Image(uiImage: img).resizable().scaledToFit()
-            } else {
-                Color.clear
+            if phase != .collapsed {
+                ZStack {
+                    Theme.Colors.bgSunken
+                    if phase == .loading { MediaSkeleton(animated: !reduceMotion) } else { content }
+                }
+                .aspectRatio(Theme.Size.mediaAspect, contentMode: .fit)
+                .frame(maxWidth: .infinity)
+                .clipShape(.continuous(Theme.Radius.media))
+                .contentShape(.continuous(Theme.Radius.media))
             }
         }
+        .task(id: media) { await load() }
+        .onChange(of: phase) { _, p in onVisibilityChange(p != .collapsed) }
+        .onChange(of: scenePhase) { _, s in if s != .active { pause() } }
+        .onDisappear { pause() }   // scrolled off-screen (List rows are lazy) or navigated away
     }
 
-    private func startVideo(_ file: String) {
-        if let player { player.play(); return }
-        guard let url = MediaStore.url(file) else { return }
-        // Ambient + mix: a silent demo never stops Ben's music.
-        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [.mixWithOthers])
+    // MARK: Loading
+
+    private func load() async {
+        phase = .loading
+        #if DEBUG
+        if Fixtures.mediaMode == .loading { return }        // frame 24d holds the skeleton
+        #endif
+        // Collapse as if there were no media after 8 s (AC 52/53).
+        let timeout = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(Theme.Size.mediaLoadTimeout))
+            if !Task.isCancelled, phase == .loading { phase = .collapsed }
+        }
+        let ok: Bool
+        switch media {
+        case .stills(let a, let b):
+            async let s = decode(a), e = decode(b)
+            (start, end) = await (s, e)
+            ok = start != nil && end != nil
+        case .hold(let a):
+            start = await decode(a); end = start
+            ok = start != nil
+        case .video(let file):
+            ok = await prepareVideo(file)
+        }
+        timeout.cancel()
+        guard phase == .loading else { return }
+        withAnimation(reduceMotion ? nil : Theme.Motion.crossfade) { phase = ok ? .ready : .collapsed }
+        if ok, case .video = media, !reduceMotion, !ProcessInfo.processInfo.isLowPowerModeEnabled { play() }
+    }
+
+    private func decode(_ file: String) async -> UIImage? {
+        guard let url = MediaStore.url(file) else { return nil }
+        return await Task.detached(priority: .userInitiated) { UIImage(contentsOfFile: url.path)?.preparingForDisplay() }.value
+    }
+
+    /// Video-only composition: the audio track is stripped, so there is no
+    /// audio and the shared audio session is never touched (AC 50).
+    private func prepareVideo(_ file: String) async -> Bool {
+        guard let url = MediaStore.url(file) else { return false }
+        let asset = AVURLAsset(url: url)
+        guard let track = try? await asset.loadTracks(withMediaType: .video).first,
+              let duration = try? await asset.load(.duration) else { return false }
+        let comp = AVMutableComposition()
+        guard let v = comp.addMutableTrack(withMediaType: .video, preferredTrackID: kCMPersistentTrackID_Invalid),
+              (try? v.insertTimeRange(CMTimeRange(start: .zero, duration: duration), of: track, at: .zero)) != nil else { return false }
+        v.preferredTransform = (try? await track.load(.preferredTransform)) ?? .identity
         let q = AVQueuePlayer()
         q.isMuted = true
         q.preventsDisplaySleepDuringVideoPlayback = false
         q.audiovisualBackgroundPlaybackPolicy = .pauses
-        looper = AVPlayerLooper(player: q, templateItem: AVPlayerItem(url: url))
+        looper = AVPlayerLooper(player: q, templateItem: AVPlayerItem(asset: comp))
         player = q
-        q.play()
+        // End frame for Reduce Motion (it rests on the End still).
+        let gen = AVAssetImageGenerator(asset: asset)
+        gen.appliesPreferredTrackTransform = true
+        gen.maximumSize = CGSize(width: 1200, height: 1200)
+        let endTime = CMTimeSubtract(duration, CMTime(value: 1, timescale: 10))
+        poster = (try? await gen.image(at: endTime).image).map(UIImage.init(cgImage:))
+        return true
     }
+
+    // MARK: Content
+
+    @ViewBuilder private var content: some View {
+        switch media {
+        case .stills, .hold:
+            stills
+        case .video:
+            video
+        }
+    }
+
+    private var stills: some View {
+        GeometryReader { geo in
+            let progress: CGFloat = drag.map { min(max($0, 0), 1) } ?? (showEnd ? 1 : 0)
+            ZStack(alignment: .bottom) {
+                image(start)
+                image(end).opacity(progress)
+                if case .stills = media {
+                    StillsPill(showEnd: Binding(get: { showEnd }, set: { set($0) }))
+                        .padding(.bottom, 10)
+                }
+            }
+            .frame(width: geo.size.width, height: geo.size.height)
+            .contentShape(Rectangle())
+            .onTapGesture { set(!showEnd) }
+            .gesture(DragGesture(minimumDistance: 8).onChanged { g in
+                guard case .stills = media else { return }
+                let base: CGFloat = showEnd ? 1 : 0
+                drag = base + g.translation.width / max(geo.size.width * 0.6, 1) * (showEnd ? 1 : 1)
+            }.onEnded { _ in
+                let target = (drag ?? 0) >= 0.5
+                withAnimation(reduceMotion ? Theme.Motion.crossfade : .snappy) { drag = nil; set(target) }
+            })
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Demonstration, \(showEnd ? "end" : "start") position")
+    }
+
+    private func set(_ end: Bool) {
+        guard end != showEnd else { return }
+        Haptics.step()
+        withAnimation(Theme.Motion.crossfade) { showEnd = end }
+    }
+
+    private var video: some View {
+        ZStack(alignment: .bottomLeading) {
+            if let player {
+                PlayerLayerView(player: player)
+                    .opacity(reduceMotion && !playing ? 0 : 1)
+            }
+            if reduceMotion, !playing {
+                image(poster)
+            }
+            Button(action: toggle) {
+                if reduceMotion && !playing {
+                    Label("Play", systemImage: "play.fill")
+                        .font(.body.weight(.semibold))
+                        .padding(.horizontal, Theme.Spacing.s4)
+                        .frame(minHeight: Theme.Size.hit)
+                        .background(.ultraThinMaterial, in: Capsule())
+                } else {
+                    Image(systemName: playing ? "pause.fill" : "play.fill")
+                        .font(.system(size: 20, weight: .semibold))
+                        .frame(width: Theme.Size.hit, height: Theme.Size.hit)
+                        .background(.ultraThinMaterial, in: Circle())
+                }
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.Colors.textPrimary)
+            .padding(10)
+            .accessibilityLabel(playing ? "Pause demonstration" : "Play demonstration")
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(perform: toggle)
+    }
+
+    private func image(_ img: UIImage?) -> some View {
+        Group {
+            if let img { Image(uiImage: img).resizable().scaledToFill() } else { Color.clear }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .clipped()
+    }
+
+    // MARK: Playback
+
+    private func toggle() { playing ? pause() : play() }
+
+    private func play() {
+        guard let player else { return }
+        if reduceMotion {
+            // Plays the loop once, then rests on the End still.
+            looper?.disableLooping()
+            NotificationCenter.default.addObserver(forName: AVPlayerItem.didPlayToEndTimeNotification, object: player.currentItem, queue: .main) { _ in
+                MainActor.assumeIsolated { withAnimation(Theme.Motion.crossfade) { playing = false } }
+            }
+            player.seek(to: .zero)
+        }
+        player.play()
+        withAnimation(Theme.Motion.crossfade) { playing = true }
+    }
+
+    private func pause() {
+        player?.pause()
+        playing = false
+    }
+}
+
+/// "Start | End" glass pill, 44 pt tall, each segment ≥ 64 pt.
+private struct StillsPill: View {
+    @Binding var showEnd: Bool
+    @Namespace private var ns
+
+    var body: some View {
+        HStack(spacing: 0) {
+            segment("Start", selected: !showEnd) { showEnd = false }
+            segment("End", selected: showEnd) { showEnd = true }
+        }
+        .padding(4)
+        .background(.ultraThinMaterial, in: Capsule())
+        .accessibilityElement(children: .contain)
+    }
+
+    private func segment(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.Colors.textPrimary)
+                .frame(minWidth: 64, minHeight: Theme.Size.hit - 8)
+                .background {
+                    if selected { Capsule().fill(Theme.Colors.bgRaised).matchedGeometryEffect(id: "sel", in: ns) }
+                }
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+/// Skeleton at the final 3:2 size; a soft shimmer ≤ 1.2 s per cycle, static under Reduce Motion.
+private struct MediaSkeleton: View {
+    let animated: Bool
+    @State private var x: CGFloat = -1
+
+    var body: some View {
+        GeometryReader { geo in
+            Theme.Colors.bgSunken
+                .overlay {
+                    if animated {
+                        LinearGradient(colors: [.clear, Theme.Colors.bgRaised.opacity(0.35), .clear], startPoint: .leading, endPoint: .trailing)
+                            .frame(width: geo.size.width * 0.5)
+                            .offset(x: x * geo.size.width)
+                    }
+                }
+                .clipped()
+        }
+        .onAppear {
+            guard animated else { return }
+            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: false)) { x = 1 }
+        }
+        .accessibilityLabel("Loading demonstration")
+    }
+}
+
+/// AVPlayerLayer without system controls (no route/volume UI).
+private struct PlayerLayerView: UIViewRepresentable {
+    let player: AVPlayer
+    final class LayerView: UIView {
+        override class var layerClass: AnyClass { AVPlayerLayer.self }
+        var playerLayer: AVPlayerLayer { layer as! AVPlayerLayer }
+    }
+    func makeUIView(context: Context) -> LayerView {
+        let v = LayerView()
+        v.playerLayer.videoGravity = .resizeAspectFill
+        v.playerLayer.player = player
+        return v
+    }
+    func updateUIView(_ v: LayerView, context: Context) { v.playerLayer.player = player }
 }

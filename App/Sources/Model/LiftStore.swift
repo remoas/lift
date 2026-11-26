@@ -61,7 +61,7 @@ enum LiftStore {
             return existing
         }
         let ex = Exercise(library: entry)
-        if let rest = entry.restSeconds { ex.restOverride = rest }
+        if let rest = entry.restSeconds { ex.restSec = rest }
         context.insert(ex)
         return ex
     }
@@ -81,7 +81,7 @@ enum LiftStore {
         }
         let ex = Exercise(name: trimmed, primary: primary, secondary: secondary, equipment: equipment, variant: v, repRange: repRange, isCustom: true)
         ex.unitOverride = unit
-        ex.restOverride = rest
+        ex.restSec = rest
         context.insert(ex)
         _ = save(context)
         return ex
@@ -156,7 +156,7 @@ enum LiftStore {
 
     static func defaultSlot(for exercise: Exercise, sets: Int? = nil, restDefault: Int) -> Slot {
         let lastCount = (exercise.sets ?? []).isEmpty ? nil : lastSessionSets(for: exercise).count
-        return Slot(sets: sets ?? lastCount ?? 3, repRange: exercise.repRange, rest: exercise.restOverride ?? restDefault)
+        return Slot(sets: sets ?? lastCount ?? 3, repRange: exercise.repRange, rest: exercise.restSec ?? restDefault)
     }
 
     /// Starts a workout as a day-of copy of a routine. Editing it never touches the routine.
@@ -167,7 +167,7 @@ enum LiftStore {
         context.insert(workout)
         for (i, item) in (routine?.sortedItems ?? []).enumerated() {
             guard let ex = item.exercise else { continue }
-            let slot = Slot(sets: item.targetSets, repRange: item.repRange, rest: ex.restOverride ?? routine?.restSeconds ?? 120)
+            let slot = Slot(sets: item.targetSets, repRange: item.repRange, rest: ex.restSec ?? routine?.restSeconds ?? 120)
             insertPrefilledSets(for: ex, slot: slot, exerciseOrder: i, into: workout, globalUnit: globalUnit, context: context)
         }
         _ = save(context)
@@ -311,7 +311,7 @@ enum LiftStore {
                            exercise: exercise)
         set.repMin = template?.repMin ?? exercise.repMin
         set.repMax = template?.repMax ?? exercise.repMax
-        set.restSeconds = template?.restSeconds ?? exercise.restOverride ?? 120
+        set.restSeconds = template?.restSeconds ?? exercise.restSec ?? 120
         context.insert(set)
         set.workout = workout
         _ = save(context)

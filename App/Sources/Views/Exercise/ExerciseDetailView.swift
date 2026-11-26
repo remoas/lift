@@ -11,6 +11,31 @@ struct ExerciseDetailView: View {
     @Query(sort: \Routine.order) private var routines: [Routine]
     @State private var range: ChartRange = .threeMonths
     @State private var selected: Date?
+    /// Starts true when media exists (no layout jump); the header reports collapse.
+    @State private var headerShown: Bool
+
+    init(exercise: Exercise) {
+        self.exercise = exercise
+        var hasMedia = exercise.mediaRef.flatMap(ExerciseMedia.init(key:)) != nil
+        #if DEBUG
+        if Fixtures.mediaMode == .hidden { hasMedia = false }
+        #endif
+        _headerShown = State(initialValue: hasMedia)
+    }
+
+    private var media: ExerciseMedia? {
+        #if DEBUG
+        if Fixtures.mediaMode == .hidden { return nil }
+        #endif
+        return exercise.mediaRef.flatMap(ExerciseMedia.init(key:))
+    }
+
+    private var rangePicker: some View {
+        Picker("Range", selection: $range) {
+            ForEach(ChartRange.allCases) { Text($0.rawValue).tag($0) }
+        }
+        .pickerStyle(.segmented)
+    }
 
     enum ChartRange: String, CaseIterable, Identifiable {
         case month = "1M", threeMonths = "3M", year = "1Y", all = "All"
@@ -33,21 +58,25 @@ struct ExerciseDetailView: View {
     var body: some View {
         List {
             Section {
-                if let media = exercise.mediaRef.flatMap(ExerciseMedia.init(key:)) {
-                    ExerciseMediaHeader(media: media).listRowSeparator(.hidden)
+                if let media {
+                    ExerciseMediaHeader(media: media, onVisibilityChange: { headerShown = $0 })
+                        .listRowInsets(EdgeInsets(top: Theme.Spacing.s2, leading: Theme.Spacing.s5, bottom: 0, trailing: Theme.Spacing.s5))
+                        .listRowSeparator(.hidden)
                 }
-                VStack(alignment: .leading, spacing: Theme.Spacing.s2) {
+                VStack(alignment: .leading, spacing: Theme.Spacing.s1) {
+                    Text(exercise.name).font(Theme.Fonts.display).foregroundStyle(Theme.Colors.textPrimary)
                     Text("\(exercise.equipment.label) · \(unit.symbol)").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
                     lede.font(.body).foregroundStyle(Theme.Colors.textSecondary)
+                        .padding(.top, Theme.Spacing.s2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .listRowSeparator(.hidden)
                 if workoutCount > 0 {
-                    Picker("Range", selection: $range) {
-                        ForEach(ChartRange.allCases) { Text($0.rawValue).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    .listRowSeparator(.hidden)
+                    // With a media header the range sits under the chart, so the
+                    // chart stays above the fold on iPhone 16 (AC 54).
+                    if !headerShown { rangePicker.listRowSeparator(.hidden) }
                     chart.listRowSeparator(.hidden)
+                    if headerShown { rangePicker.listRowSeparator(.hidden) }
                 }
             }
             .listRowBackground(Theme.Colors.bgCanvas)
@@ -73,10 +102,11 @@ struct ExerciseDetailView: View {
             Section { settingsRows } header: { Text("Settings for this exercise").textCase(nil) }
         }
         .listStyle(.insetGrouped)
+        .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .background(Theme.Colors.bgCanvas)
-        .navigationTitle(exercise.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
         .onDisappear { _ = LiftStore.save(context) }
     }
 
@@ -216,8 +246,8 @@ struct ExerciseDetailView: View {
     @ViewBuilder private var settingsRows: some View {
         Stepper("From \(exercise.repMin) reps", value: $exercise.repMin, in: 1...50).monospacedDigit()
         Stepper("To \(exercise.repMax) reps", value: $exercise.repMax, in: exercise.repMin...60).monospacedDigit()
-        Stepper(value: Binding(get: { exercise.restOverride ?? settings.workingRestSeconds }, set: { exercise.restOverride = $0 }), in: 15...600, step: 15) {
-            Text("Rest \(RestCountdown.format(TimeInterval(exercise.restOverride ?? settings.workingRestSeconds)))").monospacedDigit()
+        Stepper(value: Binding(get: { exercise.restSec ?? settings.workingRestSeconds }, set: { exercise.restSec = $0 }), in: 15...600, step: 15) {
+            Text("Rest \(RestCountdown.format(TimeInterval(exercise.restSec ?? settings.workingRestSeconds)))").monospacedDigit()
         }
         Stepper(value: Binding(get: { exercise.step(for: unit) }, set: { exercise.plateStep = $0 }), in: 0.5...20, step: unit == .kg ? 1.25 : 2.5) {
             Text("Plate step \(UnitMath.format(exercise.step(for: unit))) \(unit.symbol)").monospacedDigit()

@@ -29,7 +29,7 @@ final class Exercise {
     var repMin: Int = 8
     var repMax: Int = 12
     /// Per-exercise rest; nil = the routine's (or Settings') default.
-    var restOverride: Int?
+    var restSec: Int?
     /// Sticky note that follows the exercise into every workout.
     var note: String = ""
     var createdAt: Date = Date()

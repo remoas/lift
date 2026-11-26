@@ -10,6 +10,8 @@ struct FinishView: View {
     var onBack: () -> Void = {}
     /// Done with nothing logged: handled like Discard (Undo toast, then deleted).
     var onDiscard: (Workout) -> Void = { _ in }
+    /// Debug fixture (frame 27) only.
+    var startWithSaveAsRoutine = false
 
     @Environment(\.modelContext) private var context
     @Environment(AppSettings.self) private var settings
@@ -57,7 +59,7 @@ struct FinishView: View {
             return done.isEmpty ? nil : (g.exercise, done)
         }
     }
-    private var defaultRoutineName: String { "\(workout.startedAt.formatted(.dateTime.weekday(.wide))) workout" }
+    private var defaultRoutineName: String { RoutineNaming.defaultName(for: workout.startedAt) }
 
     var body: some View {
         ScrollView {
@@ -66,7 +68,9 @@ struct FinishView: View {
                 Text("\(workout.routineName), done.").font(Theme.Fonts.display).foregroundStyle(Theme.Colors.textPrimary)
                 lede.font(.body).foregroundStyle(Theme.Colors.textSecondary).fixedSize(horizontal: false, vertical: true)
                 if isPending, unlogged > 0 {
-                    Button("Back to workout", action: onBack).buttonStyle(TextActionStyle())
+                    Button("Back to workout", action: onBack)
+                        .buttonStyle(TextActionStyle())
+                        .frame(minHeight: Theme.Size.hit)
                 }
 
                 if !bests.isEmpty {
@@ -132,7 +136,7 @@ struct FinishView: View {
                             }
                         }
                     if saveAsRoutine {
-                        TextField(defaultRoutineName, text: $routineName)
+                        TextField("Routine name", text: $routineName, prompt: Text(defaultRoutineName))
                             .focused($focus, equals: .routineName)
                             .submitLabel(.done)
                             .onSubmit { focus = nil }
@@ -174,7 +178,10 @@ struct FinishView: View {
                 DispatchQueue.main.async { UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil) }
             }
         }
-        .onAppear(perform: prepare)
+        .onAppear {
+            prepare()
+            if startWithSaveAsRoutine { saveAsRoutine = true }
+        }
     }
 
     // MARK: Pieces
@@ -186,8 +193,9 @@ struct FinishView: View {
 
     @ViewBuilder private var lede: some View {
         if isPending, unlogged > 0 {
-            (Text("\(unlogged) set\(unlogged == 1 ? "" : "s") not logged").fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary)
-             + Text(workout.doneSets.isEmpty ? ". Nothing will be saved." : ". They won't be saved. ") + (workout.doneSets.isEmpty ? Text("") : baseLede))
+            // AC 45 copy, exactly.
+            Text("\(unlogged) set\(unlogged == 1 ? "" : "s") not logged, so \(unlogged == 1 ? "it won't" : "they won't") be saved. ")
+                + Text(workout.doneSets.isEmpty ? "Nothing was ticked yet." : "Everything you ticked is.")
         } else {
             baseLede
         }
@@ -341,8 +349,7 @@ struct FinishView: View {
             }
         }
         if isBlank, saveAsRoutine {
-            let typed = routineName.trimmingCharacters(in: .whitespacesAndNewlines)
-            let name = typed.isEmpty ? defaultRoutineName : typed
+            let name = RoutineNaming.resolve(routineName, prefill: defaultRoutineName, existing: routines.map(\.name))
             _ = LiftStore.saveAsRoutine(workout, name: name, context: context)
             toasts.show("\(name) saved as a routine")
         }

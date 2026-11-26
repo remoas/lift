@@ -103,7 +103,7 @@ struct SetEditorSheet: View {
 
             if exercise != nil, entry.kind != .warmup {
                 HStack {
-                    Text("Rest").sectionLabel()
+                    Text("Rest for \(exercise?.name ?? "this exercise")").font(Theme.Fonts.body).foregroundStyle(Theme.Colors.textPrimary)
                     Spacer()
                     Picker("Rest for \(exercise?.name ?? "this exercise")", selection: restBinding) {
                         ForEach(RestChoices.all(including: restBinding.wrappedValue), id: \.self) {
@@ -147,8 +147,8 @@ struct SetEditorSheet: View {
     /// Rest is the exercise's own: changing it here updates the exercise and
     /// this workout's unlogged sets of it, never other exercises.
     private var restBinding: Binding<Int> {
-        Binding(get: { exercise?.restOverride ?? entry.restSeconds }, set: { v in
-            exercise?.restOverride = v
+        Binding(get: { exercise?.restSec ?? entry.restSeconds }, set: { v in
+            exercise?.restSec = v
             entry.restSeconds = v
             for s in entry.workout?.allSets ?? [] where s.exercise === exercise && !s.isDone && s.kind != .warmup {
                 s.restSeconds = v

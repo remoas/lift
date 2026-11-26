@@ -85,3 +85,82 @@ extension SessionPlan {
     /// A workout with nothing logged is not saved at all.
     public var isEmptyWhenFinalized: Bool { doneSets.isEmpty }
 }
+
+// MARK: Naming
+
+public enum RoutineNaming {
+    /// "{Weekday} workout", the Save-as-routine prefill.
+    public static func defaultName(for date: Date, calendar: Calendar = .current, locale: Locale = .current) -> String {
+        let f = DateFormatter()
+        f.calendar = calendar
+        f.locale = locale
+        f.timeZone = calendar.timeZone
+        f.setLocalizedDateFormatFromTemplate("EEEE")
+        return "\(f.string(from: date)) workout"
+    }
+
+    /// Empty falls back to the prefill; a duplicate (case-insensitive) gets
+    /// " 2", then " 3", and so on. No alert, ever.
+    public static func resolve(_ typed: String, prefill: String, existing: [String]) -> String {
+        let trimmed = typed.trimmingCharacters(in: .whitespacesAndNewlines)
+        let base = trimmed.isEmpty ? prefill : trimmed
+        let taken = Set(existing.map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() })
+        guard taken.contains(base.lowercased()) else { return base }
+        var n = 2
+        while taken.contains("\(base) \(n)".lowercased()) { n += 1 }
+        return "\(base) \(n)"
+    }
+}
+
+// MARK: Workout outcome
+
+/// How a workout ended. Only `.finished` with at least one logged set moves
+/// the rotation, counts toward the week, feeds comparisons, or reaches Health.
+public enum WorkoutOutcome: Equatable, Sendable {
+    case inProgress
+    /// Discarded; still undoable until its window ends.
+    case discardPending
+    case discarded
+    case finished
+}
+
+public struct WorkoutRecord: Equatable, Sendable {
+    public var id: UUID
+    public var routineID: UUID?
+    public var startedAt: Date
+    public var outcome: WorkoutOutcome
+    public var plan: SessionPlan
+
+    public init(id: UUID, routineID: UUID?, startedAt: Date, outcome: WorkoutOutcome, plan: SessionPlan) {
+        self.id = id
+        self.routineID = routineID
+        self.startedAt = startedAt
+        self.outcome = outcome
+        self.plan = plan
+    }
+
+    /// Counts for rotation, week dots, history and comparisons.
+    public var counts: Bool { outcome == .finished && !plan.doneSets.isEmpty }
+}
+
+public enum Outcomes {
+    /// The next routine from counted workouts only (discarded/in-progress ignored).
+    public static func nextRoutine(order: [UUID], records: [WorkoutRecord]) -> UUID? {
+        let last = records.filter(\.counts).filter { $0.routineID != nil }.max { $0.startedAt < $1.startedAt }
+        return Rotation.next(order: order, lastCompleted: last?.routineID)
+    }
+
+    /// What Done sends to Apple Health; nil when nothing should be written.
+    public struct HealthPayload: Equatable, Sendable {
+        public var workoutID: UUID
+        public var setCount: Int
+        public var volumeKg: Double
+    }
+
+    public static func healthPayload(for record: WorkoutRecord, healthEnabled: Bool?) -> HealthPayload? {
+        guard healthEnabled == true, record.counts else { return nil }
+        let final = record.plan.finalized()
+        return HealthPayload(workoutID: record.id, setCount: final.doneSets.count,
+                             volumeKg: final.doneSets.filter { $0.snapshot.kind != .warmup }.reduce(0) { $0 + $1.snapshot.volumeKg })
+    }
+}

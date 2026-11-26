@@ -279,7 +279,7 @@ final class WorkoutSession {
     /// Rest lives on the exercise: sets its own rest and applies it to this
     /// workout's unlogged sets of that exercise (warm-ups keep their default).
     func setRest(for exercise: Exercise, seconds: Int) {
-        exercise.restOverride = seconds
+        exercise.restSec = seconds
         for set in workout.allSets where set.exercise === exercise && !set.isDone && set.kind != .warmup {
             set.restSeconds = seconds
         }
