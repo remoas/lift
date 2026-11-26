@@ -1,0 +1,6 @@
+{
+  "name": "lift",
+  "private": true,
+  "description": "Metadata shim so EAS CLI can run the custom native build in .eas/build. Lift has no JavaScript or React Native.",
+  "version": "1.0.0"
+}

@@ -61,12 +61,25 @@ targets:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
         Debug:
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+  LiftUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources: [App/UITests]
+    dependencies:
+      - target: Lift
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.benspink.lift.uitests
+        TEST_TARGET_NAME: Lift
+        GENERATE_INFOPLIST_FILE: YES
 schemes:
   Lift:
     build:
       targets:
         Lift: all
+        LiftUITests: [test]
     test:
       config: Debug
+      targets: [LiftUITests]
     run:
       config: Debug
