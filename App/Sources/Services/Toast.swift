@@ -1,5 +1,6 @@
 import SwiftUI
 import Observation
+import LiftCore
 
 /// Undo toasts replace confirmation popups: the action happens immediately and
 /// can be reversed for a few seconds.
@@ -14,25 +15,49 @@ final class ToastCenter {
     }
 
     private(set) var current: Toast?
+    private var window = UndoWindow<UUID>()
+    /// Deferred commits (e.g. deleting a discarded workout), run when the
+    /// window ends, a newer toast replaces it, or the toast is swiped away.
+    private var commits: [UUID: () -> Void] = [:]
     private var dismissTask: Task<Void, Never>?
 
-    func show(_ message: String, undo: (() -> Void)? = nil) {
-        current = Toast(message: message, undo: undo)
+    /// - Parameters:
+    ///   - undo: restores the previous state inside the 5 s window.
+    ///   - onCommit: makes the action final once it can no longer be undone.
+    func show(_ message: String, undo: (() -> Void)? = nil, onCommit: (() -> Void)? = nil) {
+        let toast = Toast(message: message, undo: undo)
+        if let previous = window.begin(toast.id, at: Date()) { commit(previous) }
+        if let onCommit { commits[toast.id] = onCommit }
+        current = toast
         dismissTask?.cancel()
-        let id = current?.id
         dismissTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(5))
-            guard !Task.isCancelled, self?.current?.id == id else { return }
-            self?.current = nil
+            try? await Task.sleep(for: .seconds(UndoWindow<UUID>.defaultDuration) + .milliseconds(50))
+            guard !Task.isCancelled, let self else { return }
+            if let id = self.window.expire(at: Date()) { self.commit(id) }
+            if self.current?.id == toast.id { self.current = nil }
         }
     }
 
     func performUndo() {
-        current?.undo?()
+        guard let toast = current else { return }
+        if window.undo(toast.id, at: Date()) {
+            commits[toast.id] = nil
+            toast.undo?()
+        }
         current = nil
     }
 
-    func dismiss() { current = nil }
+    func dismiss() {
+        if let id = window.flush() { commit(id) }
+        current = nil
+    }
+
+    /// Call when the app goes to the background so nothing stays half-done.
+    func flush() { dismiss() }
+
+    private func commit(_ id: UUID) {
+        commits.removeValue(forKey: id)?()
+    }
 }
 
 struct ToastOverlay: View {

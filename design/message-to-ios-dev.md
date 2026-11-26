@@ -5,7 +5,7 @@ Ben's approval to start (6:38am Bermuda time, 26 Nov, relayed by Grok Bot): "Yes
 **Files** (all in /workspace/lift/design/)
 - spec.md: screens, flows, copy, states and 24 acceptance criteria (§6)
 - DESIGN.md: colour assets (hex, light/dark, Color asset names), SF Pro text styles, spacing, radii, motion and haptics
-- mock.html: 27 iPhone frames in light and dark (00-board.png shows them all)
+- mock.html: 35 iPhone frames in light and dark (00-board.png shows them all)
 - shots/: PNG renders `<nn-name>-<light|dark>.png`, plus 00-board.png and icon-draft.png
 - icon/: two icon drafts, as SVG and 1024 PNG
 
@@ -30,12 +30,12 @@ PPL is now only the suggestion. New specs are spec §3.2 (Today), §3.3 (workout
 - In a workout: "•••" per exercise (Swap, Add set, Edit today, Remove), swipe to remove, and Add exercise at the end of the list. Everything is for today only.
 - Exercise picker sheet: search focused, Recent (last 8 with their last set), All A–Z, and Create “{query}”. Swap keeps the set count, rep range, rest and position, and prefills from the new exercise's own history.
 - Edit today: a native List in edit mode with red remove controls and drag handles (44 pt each), plus lift-on-drag motion.
-- Remove has no confirm dialog. Instead there's a 5 s undo toast ("Dips removed · Undo").
+- Remove has no confirm dialog. Instead there's a 5 s undo toast ("Dips removed · Undo"). This now applies app-wide; see the next delta.
 - Finish: when a routine workout changed, one switch, "Update Push routine with today's changes", **off by default**, with a plain diff. It writes exercises, order, sets and rep ranges only, never weights. A blank workout gets "Save as routine" instead.
 - Data: history, "Last time", prefill and bests are keyed to the **exercise**, not the routine slot (AC 33). Please model SetEntry → exerciseId as the source of truth, with routineId only on the Workout.
 New acceptance criteria are AC 25 to 33.
 
-**Acceptance criteria:** spec.md §6, AC 1 to 43. AC 24 is visual QA. Please send me simulator screenshots of all 27 frames in light and dark (iPhone 16), plus the set row at AX3, before anything goes to Ben as a TestFlight request.
+**Acceptance criteria:** spec.md §6, AC 1 to 54. AC 24 is visual QA. Please send me simulator screenshots of all 35 frames in light and dark (iPhone 16), plus the set row at AX3, before anything goes to Ben as a TestFlight request.
 
 **Delta: own exercises** (Ben's answers, 6:47am 26 Nov, relayed by Grok Bot)
 All five earlier questions are resolved (spec §7):
@@ -51,7 +51,7 @@ What changes:
   - On Days, tapping a tile advances after 0.25 s, with no Continue button. lb is preset there with an inline Change.
   - Each Build day:
     - Empty, it shows **Add exercises**, which opens the §3.12 picker in multi-select mode: Recent (hidden when empty), Common on {Day}, search, All exercises, Create, and the primary **Add {n}**.
-    - Filled, each exercise has an inline "− 3 sets +" stepper and a rep-range menu, plus one "Rest between sets 2:00" default per day. The primary is **Next: {day}**, and on Legs **Finish setup**.
+    - Filled, each exercise has an inline "− 3 sets +" stepper and a rep-range menu, plus one "Default rest for new exercises 2:00" (see the next delta). The primary is **Next: {day}**, and on Legs **Finish setup**.
   - Skip is always available (nav, plus "Skip {Day} for now").
   - Typical setup takes ≤30 taps (AC 35 to 39, 42).
 - **Today, empty suggested day** (frame 22): the lede "{Day} doesn't have any exercises yet…", the primary **Add exercises to {Day}** (opens the build screen as a sheet with Save), and Other routine · Blank workout still under it. The rotation never auto-skips an empty day (AC 40, 43).
@@ -60,5 +60,21 @@ What changes:
 - §3.11: done, as I sent earlier. The indeterminate line only, with no count.
 
 New acceptance criteria are AC 34 to 43.
+
+**Delta: no alerts, rest, media header** (matches the decisions sent to you on @282f09f)
+- **No confirm alerts anywhere** (AC 44).
+  - Finish with sets left goes straight to the summary. The lede reads "{n} sets not logged, so they won't be saved. Everything you ticked is." plus a **Back to workout** text button. Unlogged sets are dropped on Done (AC 45, frame 25).
+  - **Discard workout** is the last, destructive item in a new workout-level "•••" in the nav, next to Finish. With no alert, it returns to Today with "Push discarded · Undo" for 5 s, the rotation unchanged and nothing sent to Health. Close only minimises (AC 46, frame 26).
+  - Save as routine (blank workouts) is now a switch, off by default. When on, an inline "Routine name" field appears under it, prefilled "{Weekday} workout", focused with the text selected. Empty falls back to the prefill, and a duplicate becomes "… 2" (AC 47, frames 21 and 27).
+- **Rest lives on the exercise** (`Exercise.restSec`). The Build/setup row is now "Default rest for new exercises". It fills only exercises with no rest yet and never overwrites. Rest is editable from the exercise "•••" → Rest, a new "Rest for {Exercise}" row in the set editor, and exercise settings (AC 48, frames 02e and 05).
+- **Exercise media header** (spec §3.8, AC 49 to 54, frames 24a to 24e):
+  - 3:2, inset 20, radius 16, never taller than 4:3.
+  - Video is a muted loop with no audio session, with a 44 pt glass play/pause and tap-to-toggle. It pauses off-screen.
+  - Stills are a Start/End pair with a glass segmented pill, tap-to-toggle and drag-to-scrub.
+  - Under Reduce Motion it shows the End still with a "▶ Play" pill and no autoplay.
+  - Loading is a skeleton at the final size (static under Reduce Motion), and it collapses after 8 s.
+  - With no media, the header collapses completely.
+  - With the header, the range control moves under the chart so the e1RM chart stays above the fold on iPhone 16.
+- New or changed frames: 02e, 05, 21, 24a–24e, 25, 26 and 27, each in light and dark. The media art in the mock is a placeholder drawing; use the build's real stills or video.
 
 **Open questions:** none for Ben in phase 1.

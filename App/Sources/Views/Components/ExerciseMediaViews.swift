@@ -64,43 +64,63 @@ struct ExerciseThumb: View {
     }
 }
 
-/// Exercise detail header: start → end crossfade for stills, a muted loop for video.
+/// Exercise detail header: start → end crossfade for stills, a loop for video.
+/// Always muted, never taller than 4:3 or `mediaMaxHeight`, and a still under
+/// Reduce Motion (videos show their first frame).
 struct ExerciseMediaHeader: View {
     let media: ExerciseMedia
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showEnd = false
+    @State private var poster: UIImage?
     @State private var player: AVQueuePlayer?
     @State private var looper: AVPlayerLooper?
 
     var body: some View {
-        Group {
-            switch media {
-            case .stills(let start, let end):
-                ZStack {
-                    still(start)
-                    still(end).opacity(showEnd ? 1 : 0)
+        GeometryReader { geo in
+            content
+                .frame(width: geo.size.width, height: geo.size.height)
+        }
+        .aspectRatio(Theme.Size.mediaMinAspect, contentMode: .fit)
+        .frame(maxWidth: .infinity, maxHeight: Theme.Size.mediaMaxHeight)
+        .background(Theme.Colors.bgSunken)
+        .clipShape(.continuous(Theme.Radius.banner))
+        .accessibilityElement()
+        .accessibilityLabel("Demonstration")
+        .onChange(of: reduceMotion) { _, reduce in
+            if reduce { player?.pause() } else { player?.play() }
+        }
+    }
+
+    @ViewBuilder private var content: some View {
+        switch media {
+        case .stills(let start, let end):
+            ZStack {
+                still(start)
+                if !reduceMotion { still(end).opacity(showEnd ? 1 : 0) }
+            }
+            .task(id: reduceMotion) {
+                showEnd = false
+                guard !reduceMotion else { return }
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(0.9))
+                    withAnimation(.easeInOut(duration: 0.5)) { showEnd.toggle() }
                 }
-                .task {
-                    guard !reduceMotion else { return }
-                    while !Task.isCancelled {
-                        try? await Task.sleep(for: .seconds(0.9))
-                        withAnimation(.easeInOut(duration: 0.5)) { showEnd.toggle() }
-                    }
+            }
+        case .hold(let file):
+            still(file)
+        case .video(let file):
+            if reduceMotion {
+                Group {
+                    if let poster { Image(uiImage: poster).resizable().scaledToFit() } else { Color.clear }
                 }
-            case .hold(let file):
-                still(file)
-            case .video(let file):
+                .task { poster = await MediaStore.thumbnail(for: media, side: 600) }
+            } else {
                 VideoPlayer(player: player)
-                    .disabled(true)
+                    .disabled(true)            // no controls, so it can never be unmuted
                     .onAppear { startVideo(file) }
                     .onDisappear { player?.pause() }
             }
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: Theme.Size.mediaHeight)
-        .background(Theme.Colors.bgSunken)
-        .clipShape(.continuous(Theme.Radius.banner))
-        .accessibilityLabel("Demonstration")
     }
 
     private func still(_ file: String) -> some View {
@@ -114,12 +134,16 @@ struct ExerciseMediaHeader: View {
     }
 
     private func startVideo(_ file: String) {
-        guard player == nil, let url = MediaStore.url(file) else { player?.play(); return }
-        let item = AVPlayerItem(url: url)
+        if let player { player.play(); return }
+        guard let url = MediaStore.url(file) else { return }
+        // Ambient + mix: a silent demo never stops Ben's music.
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, mode: .default, options: [.mixWithOthers])
         let q = AVQueuePlayer()
         q.isMuted = true
-        looper = AVPlayerLooper(player: q, templateItem: item)
+        q.preventsDisplaySleepDuringVideoPlayback = false
+        q.audiovisualBackgroundPlaybackPolicy = .pauses
+        looper = AVPlayerLooper(player: q, templateItem: AVPlayerItem(url: url))
         player = q
-        if !reduceMotion { q.play() }
+        q.play()
     }
 }

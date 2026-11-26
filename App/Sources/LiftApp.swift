@@ -7,6 +7,7 @@ struct LiftApp: App {
     @State private var toasts = ToastCenter()
     @State private var cloud = CloudSyncMonitor()
     private let container: ModelContainer
+    @Environment(\.scenePhase) private var scenePhase
 
     init() {
         #if DEBUG
@@ -34,6 +35,10 @@ struct LiftApp: App {
                 .tint(Theme.Colors.accent)
         }
         .modelContainer(container)
+        .onChange(of: scenePhase) { _, phase in
+            // Pending discards/deletes become final rather than lingering.
+            if phase == .background { toasts.flush() }
+        }
     }
 
     @ViewBuilder private var root: some View {

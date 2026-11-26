@@ -165,7 +165,10 @@ struct BuildDayView: View {
             }
         } label: {
             HStack {
-                Text("Rest between sets").foregroundStyle(Theme.Colors.textPrimary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Rest between sets").foregroundStyle(Theme.Colors.textPrimary)
+                    Text("For exercises without their own rest").font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
+                }
                 Spacer()
                 Text("\(RestCountdown.format(TimeInterval(rest))) ▾").font(Theme.Fonts.bodyNumber).foregroundStyle(Theme.Colors.textSecondary)
             }
@@ -195,7 +198,11 @@ struct BuildDayView: View {
             modelContext.insert(ri)
             ri.routine = routine
         }
+        // The day's rest is only a default: it fills exercises with no rest of
+        // their own and never overwrites one (CDO, 26 Nov).
         routine.restSeconds = rest
+        let fills = RestDefaults.fill(Dictionary(items.map { ($0.exercise.id, $0.exercise.restOverride) }, uniquingKeysWith: { a, _ in a }), default: rest)
+        for d in items { if let v = fills[d.exercise.id] { d.exercise.restOverride = v } }
         _ = LiftStore.save(modelContext)
     }
 }

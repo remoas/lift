@@ -2,7 +2,7 @@
 
 Ben's private strength-training app. Native SwiftUI, iOS 17+, local-first.
 
-**Status:** phase 1 code complete and not yet compiled with Xcode. The shared logic package is tested on Linux (51 tests passing). The app needs one manual macOS CI run to type-check and screenshot it (see *CI*). The design is CDO's draft until Ben approves it.
+**Status:** phase 1 code complete and not yet compiled with Xcode. The shared logic package is tested on Linux (59 tests passing). The app needs one manual macOS CI run to type-check and screenshot it (see *CI*). The design is CDO's draft until Ben approves it.
 
 ## Layout
 

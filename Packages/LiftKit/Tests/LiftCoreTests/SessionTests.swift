@@ -211,3 +211,87 @@ final class RoutineDiffTests: XCTestCase {
         XCTAssertEqual(RoutineDiff.summary(ch), "C added. B 3 → 4 sets. …and 1 more change")
     }
 }
+
+final class LifecycleTests: XCTestCase {
+    let t0 = Date(timeIntervalSince1970: 2_000_000)
+
+    func testDiscardCommitsOnlyAfterWindow() {
+        var w = UndoWindow<UUID>()
+        let workout = UUID()
+        XCTAssertNil(w.begin(workout, at: t0))
+        XCTAssertTrue(w.isPending(workout))
+        XCTAssertNil(w.expire(at: t0.addingTimeInterval(4.9)), "Still undoable at 4.9 s")
+        XCTAssertEqual(w.expire(at: t0.addingTimeInterval(5.1)), workout, "Deleted after 5 s")
+        XCTAssertFalse(w.isPending(workout))
+        XCTAssertNil(w.expire(at: t0.addingTimeInterval(10)), "Committed once only")
+    }
+
+    func testUndoRestoresAndNeverCommits() {
+        var w = UndoWindow<UUID>()
+        let workout = UUID()
+        w.begin(workout, at: t0)
+        XCTAssertTrue(w.undo(workout, at: t0.addingTimeInterval(3)))
+        XCTAssertNil(w.expire(at: t0.addingTimeInterval(6)))
+        XCTAssertFalse(w.undo(workout, at: t0.addingTimeInterval(7)), "Nothing left to undo")
+    }
+
+    func testUndoTooLateFails() {
+        var w = UndoWindow<UUID>()
+        let workout = UUID()
+        w.begin(workout, at: t0)
+        XCTAssertFalse(w.undo(workout, at: t0.addingTimeInterval(5.5)))
+    }
+
+    func testNewActionCommitsThePreviousOne() {
+        var w = UndoWindow<UUID>()
+        let a = UUID(), b = UUID()
+        w.begin(a, at: t0)
+        XCTAssertEqual(w.begin(b, at: t0.addingTimeInterval(1)), a)
+        XCTAssertFalse(w.undo(a, at: t0.addingTimeInterval(2)))
+        XCTAssertTrue(w.undo(b, at: t0.addingTimeInterval(2)))
+    }
+
+    func testFlushCommitsImmediately() {
+        var w = UndoWindow<UUID>()
+        let a = UUID()
+        w.begin(a, at: t0)
+        XCTAssertEqual(w.flush(), a)
+        XCTAssertNil(w.flush())
+    }
+
+    func testRestDefaultFillsOnlyExercisesWithoutRest() {
+        let bench = UUID(), curl = UUID(), fly = UUID()
+        let fills = RestDefaults.fill([bench: 180, curl: nil, fly: nil], default: 90)
+        XCTAssertEqual(fills, [curl: 90, fly: 90])
+        XCTAssertNil(fills[bench], "Never overwrites an exercise's own rest")
+        XCTAssertEqual(RestDefaults.fill([bench: 180], default: 60), [:])
+    }
+
+    func testEffectiveRest() {
+        XCTAssertEqual(RestDefaults.effective(kind: .working, exercise: 180, dayDefault: 90, settingsWorking: 120, settingsWarmup: 60), 180)
+        XCTAssertEqual(RestDefaults.effective(kind: .working, exercise: nil, dayDefault: 90, settingsWorking: 120, settingsWarmup: 60), 90)
+        XCTAssertEqual(RestDefaults.effective(kind: .working, exercise: nil, dayDefault: nil, settingsWorking: 120, settingsWarmup: 60), 120)
+        XCTAssertEqual(RestDefaults.effective(kind: .warmup, exercise: 180, dayDefault: 90, settingsWorking: 120, settingsWarmup: 60), 60)
+    }
+
+    func testFinalizeDropsUnloggedSetsNeverSavesZeros() {
+        let bench = UUID(), curl = UUID(), today = UUID()
+        func s(_ ex: UUID, _ w: Double, _ r: Int, done: Bool) -> LoggedSet {
+            LoggedSet(snapshot: SetSnapshot(workoutID: today, weight: w, unit: .lb, reps: r, date: t0), exerciseID: ex, isDone: done)
+        }
+        let plan = SessionPlan(workoutID: today, routineID: nil, blocks: [
+            .init(exerciseID: bench, sets: [s(bench, 185, 8, done: true), s(bench, 185, 8, done: false)]),
+            .init(exerciseID: curl, sets: [s(curl, 0, 12, done: false), s(curl, 0, 12, done: false)]),
+        ])
+        XCTAssertEqual(plan.unloggedCount, 3)
+        let final = plan.finalized()
+        XCTAssertEqual(final.allSets.count, 1)
+        XCTAssertEqual(final.blocks.map(\.exerciseID), [bench], "Exercise with nothing logged leaves the workout")
+        XCTAssertFalse(final.allSets.contains { $0.snapshot.weight == 0 })
+        XCTAssertEqual(final.unloggedCount, 0)
+        // Finalising is a pure preview: the live plan is untouched until Done.
+        XCTAssertEqual(plan.allSets.count, 4)
+        XCTAssertFalse(plan.isEmptyWhenFinalized)
+        XCTAssertTrue(SessionPlan(workoutID: today, routineID: nil, blocks: [.init(exerciseID: curl, sets: [s(curl, 0, 12, done: false)])]).isEmptyWhenFinalized)
+    }
+}

@@ -276,6 +276,16 @@ final class WorkoutSession {
         return RoutineDiff.changes(routine: LiftStore.slots(of: routine), workout: LiftStore.slots(of: workout))
     }
 
+    /// Rest lives on the exercise: sets its own rest and applies it to this
+    /// workout's unlogged sets of that exercise (warm-ups keep their default).
+    func setRest(for exercise: Exercise, seconds: Int) {
+        exercise.restOverride = seconds
+        for set in workout.allSets where set.exercise === exercise && !set.isDone && set.kind != .warmup {
+            set.restSeconds = seconds
+        }
+        save()
+    }
+
     func refreshBests() { bestIDs = LiftStore.bestSetIDs(in: workout) }
 
     func save() { _ = LiftStore.save(context) }

@@ -77,7 +77,11 @@ enum Theme {
         static let setRow: CGFloat = 56
         static let groupedRow: CGFloat = 48
         static let thumb: CGFloat = 44
-        static let mediaHeight: CGFloat = 220
+        /// Exercise media header cap: keeps the e1RM chart above the fold on
+        /// iPhone 16 (852 pt) with a large title and tab bar.
+        static let mediaMaxHeight: CGFloat = 200
+        /// Never taller than 4:3 (width:height).
+        static let mediaMinAspect: CGFloat = 4.0 / 3.0
         static let hit: CGFloat = 44
         static let ring: CGFloat = 30
         static let ringCurrent: CGFloat = 34

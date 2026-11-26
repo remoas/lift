@@ -6,6 +6,10 @@ import LiftCore
 struct FinishView: View {
     let workout: Workout
     var onDone: () -> Void
+    /// "Back to workout": nothing has been saved yet, so this just returns.
+    var onBack: () -> Void = {}
+    /// Done with nothing logged: handled like Discard (Undo toast, then deleted).
+    var onDiscard: (Workout) -> Void = { _ in }
 
     @Environment(\.modelContext) private var context
     @Environment(AppSettings.self) private var settings
@@ -18,12 +22,16 @@ struct FinishView: View {
     @State private var health: HealthLine = .idle
     @State private var updateRoutine = false
     @State private var changes: [String] = []
-    @State private var naming = false
+    @State private var saveAsRoutine = false
     @State private var routineName = ""
     @State private var noting = false
+    @FocusState private var focus: Field?
+
+    enum Field { case routineName, note }
     @State private var bests: [Best] = []
 
-    enum HealthLine: Equatable { case idle, ask, saving, saved, failed, denied, unavailable }
+    /// Health is written at Done (nothing is final before that).
+    enum HealthLine: Equatable { case idle, ask, willSave, denied, unavailable }
 
     struct Best: Identifiable {
         let id: UUID
@@ -37,7 +45,19 @@ struct FinishView: View {
         finished.first { $0 !== workout && $0.startedAt < workout.startedAt && (isBlank ? false : $0.routineID == workout.routineID) }
     }
     private var unit: WeightUnit { settings.unit }
-    private var next: Routine? { LiftStore.nextRoutine(routines: routines, finished: finished) }
+    /// Still open until Done.
+    private var isPending: Bool { workout.endedAt == nil }
+    private var unlogged: Int { workout.allSets.filter { !$0.isDone }.count }
+    /// Counts this workout as finished, since that's what Done will do.
+    private var finishedIncludingThis: [Workout] { (isPending ? [workout] : []) + finished.filter { $0 !== workout } }
+    private var next: Routine? { LiftStore.nextRoutine(routines: routines, finished: finishedIncludingThis) }
+    private var loggedGroups: [(exercise: Exercise, sets: [SetEntry])] {
+        workout.groups.compactMap { g in
+            let done = g.sets.filter(\.isDone)
+            return done.isEmpty ? nil : (g.exercise, done)
+        }
+    }
+    private var defaultRoutineName: String { "\(workout.startedAt.formatted(.dateTime.weekday(.wide))) workout" }
 
     var body: some View {
         ScrollView {
@@ -45,6 +65,9 @@ struct FinishView: View {
                 Text(eyebrow).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
                 Text("\(workout.routineName), done.").font(Theme.Fonts.display).foregroundStyle(Theme.Colors.textPrimary)
                 lede.font(.body).foregroundStyle(Theme.Colors.textSecondary).fixedSize(horizontal: false, vertical: true)
+                if isPending, unlogged > 0 {
+                    Button("Back to workout", action: onBack).buttonStyle(TextActionStyle())
+                }
 
                 if !bests.isEmpty {
                     section("New bests") {
@@ -63,7 +86,7 @@ struct FinishView: View {
 
                 if isBlank {
                     section("Exercises") {
-                        ForEach(workout.groups, id: \.exercise.id) { g in
+                        ForEach(loggedGroups, id: \.exercise.id) { g in
                             row { Text(g.exercise.name).font(.body) } detail: {
                                 "\(g.sets.count) sets" + (topText(g.sets).map { " · top \($0)" } ?? "")
                             }
@@ -74,7 +97,7 @@ struct FinishView: View {
                         row { Text("\(volumeText(workout.volumeKg)) moved").font(.body.monospacedDigit()) } detail: { volumeDetail }
                         if let next {
                             row { Text("\(next.name) is next").font(.body) } detail: {
-                                "\(Week.count(finished.map(\.startedAt), inWeekOf: Date())) of \(settings.daysPerWeek) this week"
+                                "\(Week.count(finishedIncludingThis.map(\.startedAt), inWeekOf: Date())) of \(settings.daysPerWeek) this week"
                             }
                         }
                     }
@@ -94,6 +117,40 @@ struct FinishView: View {
                     .frame(minHeight: Theme.Size.groupedRow)
                     .padding(.top, Theme.Spacing.s3)
                 }
+
+                if isBlank, !workout.allSets.isEmpty {
+                    Toggle("Save as routine", isOn: $saveAsRoutine)
+                        .tint(Theme.Colors.success)
+                        .frame(minHeight: Theme.Size.groupedRow)
+                        .padding(.top, Theme.Spacing.s3)
+                        .onChange(of: saveAsRoutine) { _, on in
+                            if on {
+                                if routineName.isEmpty { routineName = defaultRoutineName }
+                                focus = .routineName
+                            } else if focus == .routineName {
+                                focus = nil
+                            }
+                        }
+                    if saveAsRoutine {
+                        TextField(defaultRoutineName, text: $routineName)
+                            .focused($focus, equals: .routineName)
+                            .submitLabel(.done)
+                            .onSubmit { focus = nil }
+                            .frame(minHeight: Theme.Size.hit)
+                            .padding(.horizontal, Theme.Spacing.s3)
+                            .background(Theme.Colors.bgSunken, in: .continuous(Theme.Radius.control))
+                            .accessibilityLabel("Routine name")
+                    }
+                }
+
+                if noting {
+                    TextField("Note for this workout", text: Binding(get: { workout.note }, set: { workout.note = $0 }), axis: .vertical)
+                        .focused($focus, equals: .note)
+                        .frame(minHeight: Theme.Size.hit)
+                        .padding(.horizontal, Theme.Spacing.s3)
+                        .background(Theme.Colors.bgSunken, in: .continuous(Theme.Radius.control))
+                        .padding(.top, Theme.Spacing.s3)
+                }
             }
             .screenMargins()
             .padding(.top, Theme.Spacing.s7)
@@ -103,32 +160,19 @@ struct FinishView: View {
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 Button("Done", action: done).buttonStyle(PrimaryButtonStyle())
-                if isBlank {
-                    Button("Save as routine") {
-                        routineName = "Workout \(workout.startedAt.formatted(.dateTime.day().month(.abbreviated)))"
-                        naming = true
-                    }
-                    .buttonStyle(TextActionStyle())
-                } else {
-                    Button("Add a note") { noting = true }.buttonStyle(TextActionStyle())
+                if !noting {
+                    Button("Add a note") { noting = true; focus = .note }.buttonStyle(TextActionStyle())
                 }
             }
             .screenMargins()
             .padding(.vertical, Theme.Spacing.s2)
             .background(Theme.Colors.bgCanvas)
         }
-        .alert("Save as routine", isPresented: $naming) {
-            TextField("Name", text: $routineName)
-            Button("Save") {
-                let name = routineName.trimmingCharacters(in: .whitespaces)
-                _ = LiftStore.saveAsRoutine(workout, name: name.isEmpty ? "Workout" : name, context: context)
-                toasts.show("\(name.isEmpty ? "Workout" : name) saved as a routine")
+        .onChange(of: focus) { _, f in
+            // Prefilled name arrives fully selected, so typing replaces it.
+            if f == .routineName, routineName == defaultRoutineName {
+                DispatchQueue.main.async { UIApplication.shared.sendAction(#selector(UIResponder.selectAll(_:)), to: nil, from: nil, for: nil) }
             }
-            Button("Cancel", role: .cancel) {}
-        }
-        .alert("Add a note", isPresented: $noting) {
-            TextField("Note", text: Binding(get: { workout.note }, set: { workout.note = $0 }))
-            Button("Save") { _ = LiftStore.save(context) }
         }
         .onAppear(perform: prepare)
     }
@@ -141,16 +185,25 @@ struct FinishView: View {
     }
 
     @ViewBuilder private var lede: some View {
+        if isPending, unlogged > 0 {
+            (Text("\(unlogged) set\(unlogged == 1 ? "" : "s") not logged").fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary)
+             + Text(workout.doneSets.isEmpty ? ". Nothing will be saved." : ". They won't be saved. ") + (workout.doneSets.isEmpty ? Text("") : baseLede))
+        } else {
+            baseLede
+        }
+    }
+
+    private var baseLede: Text {
         if isBlank {
-            Text("\(workout.groups.count) exercises, ") + Text("\(volumeText(workout.volumeKg))").fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary)
+            return Text("\(loggedGroups.count) exercises, ") + Text("\(volumeText(workout.volumeKg))").fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary)
                 + Text(" moved. Your rotation still has ") + Text(next?.name ?? "Push").fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary) + Text(" next.")
         } else if isFirstOfRoutine {
-            Text("First \(workout.routineName) logged. These are your numbers to beat.")
+            return Text("First \(workout.routineName) logged. These are your numbers to beat.")
         } else if !bests.isEmpty {
-            Text("\(countWord(bests.count)) new best\(bests.count == 1 ? "" : "s") today") + volumeLede
+            return Text("\(countWord(bests.count)) new best\(bests.count == 1 ? "" : "s") today") + volumeLede
         } else {
             let (matched, total) = matchedCount
-            Text("Solid. ") + Text("\(matched) of \(total)").fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary) + Text(" sets matched or beat last time.")
+            return Text("Solid. ") + Text("\(matched) of \(total)").fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary) + Text(" sets matched or beat last time.")
         }
     }
 
@@ -190,20 +243,13 @@ struct FinishView: View {
 
     @ViewBuilder private var healthLine: some View {
         switch health {
-        case .saved:
-            Label("Saved to Apple Health", systemImage: "checkmark").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.success)
-        case .saving:
-            Text("Saving to Apple Health…").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
+        case .willSave:
+            Label("Saves to Apple Health when you tap Done", systemImage: "heart").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
         case .ask:
             HStack(spacing: Theme.Spacing.s4) {
                 Button("Save workouts to Apple Health") { Task { await askHealth() } }.buttonStyle(TextActionStyle())
                 Button("Not now") { settings.healthEnabled = false; health = .idle }
                     .buttonStyle(TextActionStyle()).foregroundStyle(Theme.Colors.textSecondary)
-            }
-        case .failed:
-            VStack(alignment: .leading, spacing: 0) {
-                Text("Couldn't save to Apple Health. Your workout is safe in Lift.").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.danger)
-                Button("Try again") { Task { await saveHealth() } }.buttonStyle(TextActionStyle())
             }
         case .denied:
             Button {
@@ -237,19 +283,11 @@ struct FinishView: View {
     // MARK: Logic
 
     private func prepare() {
-        #if DEBUG
-        if Fixtures.requested == "14-health-error" {
-            changes = []
-            computeBests()
-            health = .failed
-            return
-        }
-        #endif
         changes = workout.routineID == nil ? [] : (routine.map { RoutineDiff.changes(routine: LiftStore.slots(of: $0), workout: LiftStore.slots(of: workout)) } ?? [])
         computeBests()
         switch settings.healthEnabled {
         case nil: health = HealthService.shared.isAvailable ? .ask : .unavailable
-        case true?: Task { await saveHealth() }
+        case true?: health = .willSave
         case false?: health = .idle
         }
     }
@@ -284,24 +322,17 @@ struct FinishView: View {
     private func askHealth() async {
         let ok = await HealthService.shared.requestAccess()
         settings.healthEnabled = ok
-        if ok { await saveHealth() } else { health = .denied }
+        health = ok ? .willSave : .denied
     }
 
-    private func saveHealth() async {
-        health = .saving
-        let result = await HealthService.shared.save(start: workout.startedAt, end: workout.endedAt ?? Date(), routineName: workout.routineName, workoutID: workout.id)
-        switch result {
-        case .saved(let id):
-            workout.healthKitID = id.uuidString
-            _ = LiftStore.save(context)
-            health = .saved
-        case .denied: health = .denied
-        case .failed: health = .failed
-        case .unavailable: health = .unavailable
-        }
-    }
-
+    /// The only place a workout becomes final.
     private func done() {
+        focus = nil
+        guard !workout.doneSets.isEmpty else {
+            onDiscard(workout)
+            return
+        }
+        // Structure first (planned sets, logged or not), then drop unlogged sets.
         if updateRoutine, let routine {
             if LiftStore.update(routine, from: workout, context: context) {
                 toasts.show("\(routine.name) routine updated")
@@ -309,6 +340,14 @@ struct FinishView: View {
                 toasts.show("Couldn't update \(routine.name). Today's workout is saved.")
             }
         }
+        if isBlank, saveAsRoutine {
+            let typed = routineName.trimmingCharacters(in: .whitespacesAndNewlines)
+            let name = typed.isEmpty ? defaultRoutineName : typed
+            _ = LiftStore.saveAsRoutine(workout, name: name, context: context)
+            toasts.show("\(name) saved as a routine")
+        }
+        if isPending { LiftStore.finish(workout, context: context) } else { _ = LiftStore.save(context) }
+        if settings.healthEnabled == true { HealthSync.save(workout, context: context, toasts: toasts) }
         onDone()
     }
 
@@ -325,5 +364,27 @@ struct FinishView: View {
 
     private func countWord(_ n: Int) -> String {
         ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"].indices.contains(n) ? ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"][n] : "\(n)"
+    }
+}
+
+/// Writes a finished workout to Apple Health after Done. Outlives the summary;
+/// a failure is reported in a toast and never affects the saved workout.
+@MainActor
+enum HealthSync {
+    static func save(_ workout: Workout, context: ModelContext, toasts: ToastCenter) {
+        let start = workout.startedAt, end = workout.endedAt ?? Date(), name = workout.routineName, id = workout.id
+        Task { @MainActor in
+            switch await HealthService.shared.save(start: start, end: end, routineName: name, workoutID: id) {
+            case .saved(let hk):
+                workout.healthKitID = hk.uuidString
+                _ = LiftStore.save(context)
+            case .failed:
+                toasts.show("Couldn't save to Apple Health. Your workout is safe in Lift.")
+            case .denied:
+                toasts.show("Apple Health is off for Lift. Turn it on in Settings.")
+            case .unavailable:
+                break
+            }
+        }
     }
 }

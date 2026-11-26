@@ -361,8 +361,9 @@ enum LiftStore {
         workout.groups.map { PlanSlot(exerciseID: $0.exercise.id, name: $0.exercise.name, sets: $0.sets.count) }
     }
 
-    /// Rewrites a routine from a workout's structure: exercises, order, set
-    /// counts, rep ranges and rest. Never weights or reps.
+    /// Rewrites a routine from a workout's planned structure: exercises, order,
+    /// set counts (logged or not, so a skipped set never shrinks the routine)
+    /// and rep ranges. Never weights or reps. Call before `finish`.
     static func update(_ routine: Routine, from workout: Workout, context: ModelContext) -> Bool {
         for item in routine.items ?? [] { context.delete(item) }
         for (i, g) in workout.groups.enumerated() {
@@ -371,7 +372,7 @@ enum LiftStore {
             context.insert(item)
             item.routine = routine
         }
-        if let rest = workout.groups.first?.sets.first?.restSeconds { routine.restSeconds = rest }
+        // Rest lives on each exercise, so the routine's day default is left alone.
         return save(context)
     }
 

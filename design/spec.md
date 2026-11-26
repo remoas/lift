@@ -42,7 +42,9 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
      - Inline below it: a sets stepper "− {n} sets +" (44 pt segments, range 1–10, default 3) and a reps chip "{range} reps ▾".
      - The reps menu offers 3–5, 5–8, 6–8, 8–10, 8–12, 10–12, 12–15, 15–20 and Custom… (two number fields). The default comes from the library entry, e.g. 8–10.
      - Swipe left removes an exercise, with the undo toast.
-     - Then "Add exercise" (text button), then the row "Rest between sets  2:00 ▾". This is one default for the day (1:00–5:00 in 15 s steps), and individual exercises can override it later in exercise settings.
+     - Then "Add exercise" (text button), then the row **"Default rest for new exercises  2:00 ▾"** (1:00–5:00 in 15 s steps).
+     - **Rest belongs to the exercise.** This default only fills exercises that have no rest yet: new picks and custom exercises. It never overwrites an exercise's existing rest. Changing it shows no prompt and changes nothing already set.
+     - An exercise's rest is edited from the workout "•••" menu → Rest, from the set editor's "Rest for {Exercise}" row, or in exercise settings (§3.8). Every route writes the same `Exercise.restSec`.
      - Primary: **Next: {next day}**, and on Legs **Finish setup**.
    - Taps: Ben's typical setup is ≈ 1 + 1 + 3 × (1 + ~5 picks + 1 + 1) ≈ 26 taps. That's Get started, the day tile, then per day: open the picker, the picks, Add {n} and Next. Steppers and rep chips are only needed where the defaults are wrong.
 - **Setup picker** (`02d-setup-picker`) is the §3.12 picker in multi-select mode.
@@ -78,7 +80,8 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
   - The rotation never skips an empty day on its own. Ben can pick another routine with Other routine.
 
 ### 3.3 Active workout (`03-workout`, `04-rest`, `13-first-workout`)
-- Nav: Close (minimise) · title "Push" with elapsed time below (`caption`, monospaced digits) · **Finish** (semibold accent text).
+- Nav: Close (minimise) · title "Push" with elapsed time below (`caption`, monospaced digits) · **"•••"** workout menu (44 pt, textSecondary) · **Finish** (semibold accent text).
+- The workout "•••" menu holds Add exercise · Edit today · **Discard workout** (destructive, red, last, after a divider).
 - Per exercise: name (`exercise`), meta "6–8 reps · 2:30 rest", and an optional sticky note in italic `secondary` (the note lives on the exercise, not the routine).
 - Column heads once per exercise, `caption`: "Last time", "Today".
 - **Set row** (min 56 pt) has four parts: set number (`textTertiary`); last time "185 × 8" (`secondary`); today "185 lb × 8" (`setValue`, with the unit in secondary); and the tick ring (44 pt hit area).
@@ -94,7 +97,7 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
 - **Tap the value** (weight × reps) = open the set editor (§3.4).
 - **Long-press a row:** set type (Warm-up / Working / Drop / Failure), Delete set, Add note. **Swipe left:** Delete (with undo toast "Set deleted. Undo", 5 s).
 - Under each exercise's last set is a quiet "Add set" text button (44 pt). It copies the last set's weight and reps.
-- **Exercise menu "•••"** (44 pt, trailing the exercise name, textSecondary) holds: Swap exercise · Add set · Edit today (reorder) · Remove exercise (destructive). Swipe left on the exercise header also removes it.
+- **Exercise menu "•••"** (44 pt, trailing the exercise name, textSecondary) holds: Swap exercise · Add set · Rest ({m:ss}) · Edit today (reorder) · Remove exercise (destructive). Swipe left on the exercise header also removes it.
 - At the end of the list, a quiet accent text button **Add exercise** (44 pt) opens the picker (§3.12).
 - **Today only.** Adding, swapping, reordering or removing exercises or sets changes this workout and never the routine. The routine changes only through the Finish switch (§3.6) or Routines.
 - **Remove** is instant, with no confirm dialog. A toast (`19-reorder`) reads "{Exercise} removed" with **Undo**. It's textPrimary-filled, radius 14, 52 pt tall, sits above the rest bar or home indicator, and lasts 5 s or until the next action. Undo restores the exercise in its place, with any ticked sets. Removing an exercise that has ticked sets works the same way; its logged sets are dropped only once the toast expires. Removing a set works the same way: "Set 3 removed · Undo".
@@ -108,8 +111,10 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
   At 0 it gives the warning haptic, then the text "Rest's up · 185 × 6" for 3 s, and then it collapses. If the app is backgrounded, a local notification fires: "Rest's up. Bench Press, 185 × 6." Rest length comes from the exercise, and warm-up sets use the warm-up default.
 - **Finish:**
   - With every set done, Finish becomes the primary (an accent-filled pill replaces the text button) and the ring area shows "All sets done".
-  - With sets left, Finish asks in an alert: "Finish with {n} sets left? Unticked sets won't be saved." Buttons: **Finish** / Keep going.
-- **Close with nothing ticked** asks "Discard this workout?" with **Discard** (destructive) / Keep.
+  - With sets left, Finish goes **straight to the summary**, with no alert (`25-finish-sets-left`). See §3.6.
+- **No confirm alerts anywhere in Lift.** Ben's rule is undo toasts, not confirm popups.
+- **Discard workout** (from the workout "•••" menu) has no alert. It closes the workout and returns to Today, with the toast "{Routine} discarded · **Undo**" for 5 s (`26-discard-toast`). Undo reopens the workout exactly as it was: ticked sets, current set, elapsed time and rest. After 5 s, or on the next action, the workout and its sets are deleted, nothing reaches Health, and the rotation doesn't move.
+- **Close** always minimises and never asks anything, even with nothing ticked.
 
 ### 3.4 Set editor sheet (`05-set-editor`)
 - Medium detent and a grabber. The workout stays visible behind a scrim.
@@ -118,6 +123,7 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
 - **Weight:** − [**190** lb] +. The steppers are 64 pt circles, each step is the exercise's plate step (default 5 lb / 2.5 kg), and holding repeats at 8 Hz after 0.4 s. The number has *the bar* under it. Tapping the number opens a decimal keypad (no dials, ever).
 - Plate line under it: "45 bar, then 45 + 25 + 2.5 a side". For dumbbell or machine equipment it hides. If the weight isn't loadable, it reads "Closest you can load: 187.5".
 - "Working set ▾" menu, right of the Weight label: Warm-up / Working / Drop / Failure.
+- Row "Rest for {Exercise}  {m:ss} ▾" (48 pt) under Reps edits the exercise's rest (`Exercise.restSec`), and it applies from this set on.
 - **Reps:** − [**7**] +, steps of 1.
 - Primary: **Log set** logs, ticks and starts rest in one go. Dismissing by swipe keeps the edited value without logging it.
 
@@ -149,13 +155,22 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
   - first time: a "Save workouts to Apple Health" button that opens the system prompt, with "Not now" beside it;
   - error: "Couldn't save to Apple Health. Your workout is safe in Lift." plus Try again;
   - denied: "Apple Health is off for Lift. Turn it on in Settings." (opens Settings).
+- **Sets left** (`25-finish-sets-left`), with no alert:
+  - Lede: "**{n} sets not logged**, so they won't be saved. Everything you ticked is." (singular: "1 set not logged, so it won't be saved.")
+  - Directly under it is an accent text button, **Back to workout** (44 pt). It reopens the workout with the unlogged sets intact, the elapsed time still running, and the summary discarded.
+  - On Done, the unlogged sets are dropped, and volume and comparisons count logged sets only.
 - **Routine changed** (`20-finish-changed`): when a routine workout differs from its routine (exercise added, swapped, removed or reordered, or a set count changed), show one switch row above the buttons:
   - Label: "Update {Routine} routine with today's changes". **Off by default.**
   - Secondary line: a plain-language diff of at most 2 lines, e.g. "Machine Chest Press instead of Incline Dumbbell Press. Dips removed."; past that, "…and 2 more changes".
   - Turning it on rewrites the routine when you tap Done. Weights and reps are never written into the routine, only exercises, order, set counts, rep ranges and rest.
   - No changes, no row.
-- **Blank workout** (`21-finish-blank`): hero "Workout, done.", lede "{n} exercises, **{volume}** moved. Your rotation still has **{Next}** next.", and a list of exercises with sets and the top set. There's no update switch. The secondary text button **Save as routine** asks for a name (alert with a text field, default "Workout {date}") and saves the exercises, order and set counts.
-- Primary **Done** → Today (the rotation advances per §3.2). Secondary "Add a note" (or "Save as routine" for a blank workout; "Add a note" then moves into the "•••" menu).
+- **Blank workout** (`21-finish-blank`): hero "Workout, done.", lede "{n} exercises, **{volume}** moved. Your rotation still has **{Next}** next.", and a list of exercises with sets and the top set. Instead of the update switch, there's one switch row, **"Save as routine"**, off by default, with "Keeps these {n} exercises, their order and sets."
+- Turning it on (`27-finish-save-routine`) shows an inline text field directly under the switch: label "Routine name", prefilled "**{Weekday} workout**" (e.g. "Saturday workout"), focused with the text **selected**, so typing replaces it. Helper: "Leave it empty to keep “{Weekday} workout”."
+  - An empty field falls back to the prefill.
+  - A name already in use gets " 2" appended. No alert; the helper reads "Saved as “Saturday workout 2”."
+  - Return or Done saves. There's no separate Save button and no alert.
+  - The field scrolls above the keyboard, and Done stays reachable above it.
+- Primary **Done** → Today (the rotation advances per §3.2). Secondary "Add a note".
 
 ### 3.7 Routines (`09-routines`)
 - Hero "Routines". Lede: "Push, Pull, Legs, then round again. **{n} days a week.**"
@@ -169,7 +184,17 @@ Five steps, one primary each. The back chevron sits top-left from step 1 on, and
   - The screen has no filled primary.
   - With some days filled, filled rows show their exercise sentence as in `09-routines`, and empty rows show "No exercises yet · Add exercises".
 
-### 3.8 Exercise detail (`08-exercise`, `16-exercise-empty`)
+### 3.8 Exercise detail (`08-exercise`, `16-exercise-empty`, media header `24a`–`24e`)
+- **Media header** (optional; only when the exercise has media). It's inset 20 pt each side, radius 16, at **3:2** (350 × 233 pt on a 390 pt screen), and never taller than 4:3. It sits under the nav, above the name. The background is `bgSunken`, and media is aspect-fill, centred.
+  - **Video** (`24a-media-video`): a muted loop that autoplays only when Reduce Motion is off and Low Power Mode is off.
+    - There's **no audio, ever**: the audio track is stripped or the player is muted, and it never takes over the audio session, so Ben's music keeps playing.
+    - Play/pause is a 44 pt glass circle (20 pt glyph, `.ultraThinMaterial`), bottom-left at 10 pt inset. Tapping the media also toggles. VoiceOver: "Pause demonstration" / "Play demonstration".
+    - It pauses when scrolled off-screen or when the app backgrounds.
+  - **Stills** (`24b-media-stills`): a Start / End pair. A glass segmented pill sits bottom-centre ("Start" | "End", 44 pt tall, each segment ≥ 64 pt). Tapping the image toggles, and a horizontal drag crossfades between the two (scrub; it snaps at release). Selection haptic on change. Default: Start.
+  - **Reduce Motion** (`24c-media-reduce-motion`): no autoplay. It shows the **End** still with a glass "▶ Play" pill (44 pt), bottom-left. Tapping plays the loop once, through a crossfade only, then rests on the End still. With stills only, it shows the pair as above, with crossfades.
+  - **Loading** (`24d-media-loading`): a `bgSunken` box at the final 3:2 size, so the layout never jumps. A soft shimmer runs for at most 1.2 s per cycle, and under Reduce Motion it's static. After 8 s with no media, the header collapses as if there were none.
+  - **No media** (`24e-media-none`): the header **collapses entirely**. No placeholder box, no icon, no "Add media". The screen is identical to `08-exercise`.
+  - The **e1RM chart stays above the fold** on iPhone 16 (390 × 844) at default text size. With the header, the range control moves under the chart, and the chart's bottom edge sits at ≤ 780 pt.
 - Hero is the exercise name, with eyebrow "{equipment} · {unit}".
 - Lede: "Your estimated max is **239 lb**, up 21 since September." When it's flat for 3+ sessions: "Holding at 239 lb for 3 sessions." (The Stuck? nudge is phase 2.)
 - Range: 1M · 3M · 1Y · All (default 3M).
@@ -245,13 +270,13 @@ Start stays available throughout. If the restore fails: "Couldn't reach iCloud. 
 | Workout | first-time exercise row | — (local) | save failure: "Couldn't save that set. Try again." with the ring reverting | tick, PR banner |
 | Set editor | "Add weight", keypad open | — | non-loadable weight copy | Log set |
 | Finish | first-session lede | Health saving: "Saving to Apple Health…" | Health error / denied | saved |
-| Exercise | once / never | chart skeleton line if >300 ms | — | new best dot |
+| Exercise | once / never; no media: header collapses (`24e`) | media skeleton (`24d`); chart skeleton line if >300 ms | — | new best dot |
 | History | empty copy | — | — | — |
 | Settings | Health "Not set up" | — | iCloud off copy | backup time |
 | Choose workout | only one routine: the list still shows Blank | — | — | starts immediately |
 | Exercise picker | no recents: the section is hidden; no results: only the Create row, with "No match in your library" above it | — | create failed (duplicate name): "You already have {name}." | sheet closes, exercise appears with a 0.2 s highlight |
 | Edit today | one exercise: the remove control stays, and removing the last one leaves "Add your first exercise" | — | — | undo toast |
-| Finish | no changes: no switch; blank: Save as routine | — | routine update failed: "Couldn't update Push. Today's workout is saved." | "Push routine updated" toast on Today |
+| Finish | no changes: no switch; blank: Save as routine switch + inline name (`27`); sets left: "{n} sets not logged" + Back to workout (`25`) | — | routine update failed: "Couldn't update Push. Today's workout is saved." | "Push routine updated" toast on Today |
 
 ## 5. Accessibility
 - Dynamic Type to AX5. At accessibility sizes the set row stacks: the value is on line 1 with the ring trailing, and last time is on line 2. The steppers keep 64 pt, and the number scales via `@ScaledMetric`.
@@ -285,7 +310,7 @@ Start stays available throughout. If the restore fails: "Couldn't reach iCloud. 
 21. Motion uses the DESIGN.md springs, and with Reduce Motion it's crossfade only. Haptics are as listed.
 22. The set row, rest bar and PR banner are standalone views fed by a view model, with no phone-only layout assumptions, so phase 2 Watch and Live Activity can reuse the logic. No Watch or friends UI ships in phase 1.
 23. The app icon is icon A (`icon/icon-a-ember.svg`, resolved by Ben at 6:47am) in all builds.
-24. Visual QA: the developer sends simulator screenshots of all 27 frames in light and dark (iPhone 16, default text size) and the set row at AX3, and CDO signs off before Ben sees a TestFlight request.
+24. Visual QA: the developer sends simulator screenshots of all 35 frames in light and dark (iPhone 16, default text size) and the set row at AX3, and CDO signs off before Ben sees a TestFlight request.
 
 ### Flexibility (Ben, 6:48am 26 Nov: "The app shouldn't be too restricting I should be able to select whatever exercises I'm doing for that day. I might switch things up etc")
 25. Today keeps exactly one filled primary (Start {suggested}). "Other routine" and "Blank workout" are unfilled accent text buttons, each ≥44 pt. Any routine or a blank workout starts in ≤2 taps from Today.
@@ -309,6 +334,19 @@ Start stays available throughout. If the restore fails: "Couldn't reach iCloud. 
 41. Routines with empty days show "No exercises yet" and an Add exercises text button per routine, with no filled primary on the screen.
 42. Ben's typical setup (3 days × ~5 exercises, default sets, reps and rest) takes ≤ 30 taps from first launch to Today.
 43. A missed day slides: the suggestion is always the routine after the last one finished, whatever the calendar says. No day is ever auto-skipped, including empty days.
+
+### No alerts, rest on the exercise, media header (decisions sent to the iOS Developer, 7:14am 26 Nov, against remoas/lift @282f09f)
+44. There are no confirm alerts or popups anywhere in the app. Every destructive or lossy action is immediate with a 5 s undo toast, or reversible in place (`Back to workout`).
+45. Finish with unlogged sets goes straight to the summary. The lede reads "{n} sets not logged, so they won't be saved. Everything you ticked is." and a 44 pt **Back to workout** text button reopens the workout intact. On Done, unlogged sets are dropped and never reach Health or the comparisons.
+46. **Discard workout** is the last, destructive item in the workout "•••" menu. With no alert, it returns to Today with "{Routine} discarded · Undo" for 5 s. Undo fully restores the workout. Otherwise it's deleted, the rotation doesn't move, and nothing reaches Health. Close only minimises.
+47. Save as routine (blank workouts) is a switch, off by default. On, it shows an inline field prefilled "{Weekday} workout", focused with the text selected. Empty falls back to the prefill, a duplicate gets " 2", and there's no alert or extra Save button.
+48. Rest is stored on the exercise (`Exercise.restSec`). The setup and build "Default rest for new exercises" fills only exercises without a rest and never overwrites. Rest is editable from the exercise "•••" → Rest, the set editor's "Rest for {Exercise}" row, and exercise settings, and all three edit the same value.
+49. The exercise media header is inset 20 pt, radius 16, 3:2, never taller than 4:3, and shown only when media exists.
+50. Video is a muted loop with no audio track or session, never interrupts other audio, and has a 44 pt play/pause plus tap-to-toggle. It pauses off-screen and in the background.
+51. Stills show as a Start/End pair with a 44 pt segmented pill, tap-to-toggle, and drag-to-scrub crossfade.
+52. Under Reduce Motion, nothing autoplays: it shows the End still with a 44 pt "Play" pill. The loading skeleton is static under Reduce Motion and shimmers otherwise, at the final size with no layout jump.
+53. With no media, the header collapses completely (no placeholder), and the screen matches `08-exercise`.
+54. With a media header, the e1RM chart is fully visible without scrolling on iPhone 16 (390 × 844) at the default text size.
 
 ## 7. Decisions (resolved)
 Ben, 6:47am 26 Nov, relayed by Grok Bot:

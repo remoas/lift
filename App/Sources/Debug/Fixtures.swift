@@ -67,7 +67,7 @@ enum Fixtures {
                 workout = b.active("Push", doneSets: 2)
             case "06-pr-banner":
                 workout = b.active("Push", doneSets: 2, topSet: (205, 5))
-            case "07-finish", "14-health-error":
+            case "07-finish":
                 workout = b.finishedToday("Push", topSet: (205, 5))
             case "20-finish-changed":
                 workout = b.finishedToday("Push", topSet: nil, swap: ("incline-dumbbell-press", "cable-crossover"))
@@ -187,7 +187,7 @@ enum Fixtures {
                 LiftStore.swap(old, for: new, in: w, globalUnit: .lb, context: context)
                 for s in w.allSets where s.exercise === new { s.isDone = true; s.doneAt = Date().addingTimeInterval(-20 * 60); if s.weight == 0 { s.weight = 30 } }
             }
-            LiftStore.finish(w, at: Date().addingTimeInterval(-3 * 60), context: context)
+            // Left open: the summary is shown before Done, like the real flow.
             return w
         }
 
@@ -201,6 +201,7 @@ enum Fixtures {
 struct FixtureRoot: View {
     let frame: String
     @Environment(CloudSyncMonitor.self) private var cloud
+    @Environment(ToastCenter.self) private var toasts
     @Query(sort: \Routine.order) private var routines: [Routine]
     @Query(filter: #Predicate<Workout> { $0.endedAt != nil }, sort: \Workout.startedAt, order: .reverse)
     private var finished: [Workout]
@@ -208,7 +209,11 @@ struct FixtureRoot: View {
     var body: some View {
         content
             .overlay { ToastOverlay() }
-            .onAppear { if frame == "15-restoring" { cloud.debugSimulateFirstRestore() } }
+            .onAppear {
+                if frame == "15-restoring" { cloud.debugSimulateFirstRestore() }
+                // Health is written after Done now, so its error is a toast on Today.
+                if frame == "14-health-error" { toasts.show("Couldn't save to Apple Health. Your workout is safe in Lift.") }
+            }
     }
 
     @ViewBuilder private var content: some View {
@@ -218,7 +223,7 @@ struct FixtureRoot: View {
         case "02c-build-empty", "02d-setup-picker", "02e-build-filled": SetupFlow(onFinish: {}, startAt: [.days, .build(0)])
         case "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "13-first-workout", "19-reorder":
             if let w = Fixtures.workout { ActiveWorkoutView(workout: w, onClose: {}, onFinished: { _ in }) }
-        case "07-finish", "14-health-error", "20-finish-changed", "21-finish-blank":
+        case "07-finish", "20-finish-changed", "21-finish-blank":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }
         case "08-exercise", "16-exercise-empty":
             if let ex = Fixtures.exercise { NavigationStack { ExerciseDetailView(exercise: ex) } }

@@ -101,6 +101,21 @@ struct SetEditorSheet: View {
                 StepperCircle(symbol: "plus", label: "More reps") { adjustReps(1) }
             }
 
+            if exercise != nil, entry.kind != .warmup {
+                HStack {
+                    Text("Rest").sectionLabel()
+                    Spacer()
+                    Picker("Rest for \(exercise?.name ?? "this exercise")", selection: restBinding) {
+                        ForEach(RestChoices.all(including: restBinding.wrappedValue), id: \.self) {
+                            Text(RestCountdown.format(TimeInterval($0))).tag($0)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .font(Theme.Fonts.bodyNumber)
+                }
+                .frame(minHeight: Theme.Size.hit)
+            }
+
             Spacer(minLength: 0)
             Button(entry.isDone ? "Save set" : "Log set") {
                 focus = nil
@@ -127,6 +142,18 @@ struct SetEditorSheet: View {
                 Button("Done") { focus = nil }
             }
         }
+    }
+
+    /// Rest is the exercise's own: changing it here updates the exercise and
+    /// this workout's unlogged sets of it, never other exercises.
+    private var restBinding: Binding<Int> {
+        Binding(get: { exercise?.restOverride ?? entry.restSeconds }, set: { v in
+            exercise?.restOverride = v
+            entry.restSeconds = v
+            for s in entry.workout?.allSets ?? [] where s.exercise === exercise && !s.isDone && s.kind != .warmup {
+                s.restSeconds = v
+            }
+        })
     }
 
     private var unitBinding: Binding<WeightUnit> {

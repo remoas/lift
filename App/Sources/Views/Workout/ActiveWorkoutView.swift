@@ -6,7 +6,10 @@ import LiftCore
 struct ActiveWorkoutView: View {
     let workout: Workout
     var onClose: () -> Void
+    /// Opens the summary. Nothing is final until Done there.
     var onFinished: (Workout) -> Void
+    /// Back to Today with a 5 s Undo; deleted only when the window ends.
+    var onDiscard: (Workout) -> Void = { _ in }
 
     @Environment(\.modelContext) private var context
     @Environment(AppSettings.self) private var settings
@@ -16,8 +19,6 @@ struct ActiveWorkoutView: View {
     @State private var editing: SetEntry?
     @State private var picker: ExercisePicker.Mode?
     @State private var showEditToday = false
-    @State private var confirmFinish = false
-    @State private var confirmDiscard = false
     @State private var detail: Exercise?
 
     var body: some View {
@@ -56,16 +57,6 @@ struct ActiveWorkoutView: View {
         }
         .sheet(isPresented: $showEditToday) {
             if let session { EditTodayView(session: session, onAdd: { showEditToday = false; picker = .add }) }
-        }
-        .alert("Finish with \(session?.setsLeft ?? 0) sets left?", isPresented: $confirmFinish) {
-            Button("Finish") { finish() }
-            Button("Keep going", role: .cancel) {}
-        } message: {
-            Text("Unticked sets won't be saved.")
-        }
-        .alert("Discard this workout?", isPresented: $confirmDiscard) {
-            Button("Discard", role: .destructive) { discard() }
-            Button("Keep", role: .cancel) { onClose() }
         }
     }
 
@@ -185,6 +176,10 @@ struct ActiveWorkoutView: View {
                     Button("Swap exercise") { picker = .swap(ex) }
                     Button("Add set") { session.addSet(to: ex) }
                     Button("Edit today") { showEditToday = true }
+                    Picker("Rest", selection: Binding(get: { rest }, set: { session.setRest(for: ex, seconds: $0) })) {
+                        ForEach(RestChoices.all(including: rest), id: \.self) { Text(RestCountdown.format(TimeInterval($0))).tag($0) }
+                    }
+                    .pickerStyle(.menu)
                     Button("Remove exercise", role: .destructive) { session.remove(ex, toasts: toasts) }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -219,9 +214,8 @@ struct ActiveWorkoutView: View {
 
     @ToolbarContentBuilder private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .cancellationAction) {
-            Button("Close") {
-                if workout.doneSets.isEmpty && !workout.allSets.isEmpty { confirmDiscard = true } else { onClose() }
-            }
+            Button("Close") { onClose() }
+                .accessibilityHint("Keeps the workout running")
         }
         ToolbarItem(placement: .principal) {
             VStack(spacing: 0) {
@@ -237,6 +231,17 @@ struct ActiveWorkoutView: View {
                 }
             }
         }
+        ToolbarItem(placement: .primaryAction) {
+            Menu {
+                Button("Add exercise", systemImage: "plus") { picker = .add }
+                Button("Edit today", systemImage: "arrow.up.arrow.down") { showEditToday = true }
+                Divider()
+                Button("Discard workout", systemImage: "trash", role: .destructive) { discard() }
+            } label: {
+                Image(systemName: "ellipsis.circle").frame(width: Theme.Size.hit, height: Theme.Size.hit)
+            }
+            .accessibilityLabel("Workout options")
+        }
         ToolbarItem(placement: .confirmationAction) {
             if session?.allDone == true {
                 Button("Finish") { finish() }
@@ -246,12 +251,8 @@ struct ActiveWorkoutView: View {
                     .frame(minHeight: 36)
                     .background(Theme.Colors.accent, in: Capsule())
             } else {
-                Button("Finish") {
-                    if (session?.setsLeft ?? 0) > 0 && !workout.doneSets.isEmpty { confirmFinish = true }
-                    else if workout.doneSets.isEmpty { confirmDiscard = true }
-                    else { finish() }
-                }
-                .fontWeight(.semibold)
+                Button("Finish") { finish() }
+                    .fontWeight(.semibold)
             }
         }
     }
@@ -262,17 +263,25 @@ struct ActiveWorkoutView: View {
         return "\(ex.name), set \(i + 1)"
     }
 
+    /// Straight to the summary, no alert. Sets aren't touched until Done.
     private func finish() {
         session?.stopRest()
-        LiftStore.finish(workout, context: context)
+        session?.save()
         onFinished(workout)
     }
 
     private func discard() {
         session?.stopRest()
-        context.delete(workout)
-        _ = LiftStore.save(context)
-        onClose()
+        session?.save()
+        onDiscard(workout)
+    }
+}
+
+/// Rest choices for the ••• menu and set editor (15 s steps up to 5 min).
+enum RestChoices {
+    static func all(including current: Int) -> [Int] {
+        let base = [30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]
+        return base.contains(current) ? base : (base + [current]).sorted()
     }
 }
 

@@ -6,6 +6,8 @@ import LiftCore
 /// full-screen workout → (Close minimises to a bar) → Finish summary → Today.
 struct RootView: View {
     @Environment(AppSettings.self) private var settings
+    @Environment(\.modelContext) private var context
+    @Environment(ToastCenter.self) private var toasts
     @Query(filter: #Predicate<Workout> { $0.endedAt == nil }, sort: \Workout.startedAt, order: .reverse)
     private var activeWorkouts: [Workout]
 
@@ -13,6 +15,11 @@ struct RootView: View {
     @State private var presented: Workout?
     @State private var finishing: Workout?
     @State private var didRestore = false
+    /// A discarded workout stays in memory (and the store) until its Undo
+    /// window ends, hidden from Today, then it is deleted.
+    @State private var pendingDiscard: Workout?
+
+    private var activeWorkout: Workout? { activeWorkouts.first { $0 !== pendingDiscard } }
 
     enum Tab: Hashable { case today, history, routines }
 
@@ -50,29 +57,53 @@ struct RootView: View {
                               onFinished: { done in
                                   presented = nil
                                   finishing = done
-                              })
+                              },
+                              onDiscard: discard)
                 .overlay { ToastOverlay() }
         }
         .fullScreenCover(item: $finishing) { workout in
-            FinishView(workout: workout) {
-                finishing = nil
-                tab = .today
-            }
+            FinishView(workout: workout,
+                       onDone: {
+                           finishing = nil
+                           tab = .today
+                       },
+                       onBack: {
+                           finishing = nil
+                           presented = workout
+                       },
+                       onDiscard: discard)
             .overlay { ToastOverlay() }
         }
         .onAppear {
             // Reopen a workout that was in progress when the app was closed.
             guard !didRestore else { return }
             didRestore = true
-            if presented == nil, let active = activeWorkouts.first { presented = active }
+            if presented == nil, let active = activeWorkout { presented = active }
         }
     }
 
     private func open(_ workout: Workout) { presented = workout }
 
+    /// Discard: no alert. Back to Today with a 5 s Undo; deleted when it ends.
+    private func discard(_ workout: Workout) {
+        presented = nil
+        finishing = nil
+        tab = .today
+        pendingDiscard = workout
+        let name = workout.routineName.isEmpty ? "Workout" : workout.routineName
+        toasts.show("\(name) discarded", undo: {
+            pendingDiscard = nil
+            presented = workout
+        }, onCommit: {
+            if pendingDiscard === workout { pendingDiscard = nil }
+            context.delete(workout)
+            _ = LiftStore.save(context)
+        })
+    }
+
     /// "Push · 18:42 · Resume" while a workout is minimised.
     @ViewBuilder private var minimisedBar: some View {
-        if presented == nil, finishing == nil, let w = activeWorkouts.first {
+        if presented == nil, finishing == nil, let w = activeWorkout {
             Button { presented = w } label: {
                 HStack(spacing: Theme.Spacing.s2) {
                     Text(w.routineName.isEmpty ? "Workout" : w.routineName).font(Theme.Fonts.label)
