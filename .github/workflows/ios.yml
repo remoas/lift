@@ -48,7 +48,7 @@ jobs:
           grep -E "Test Suite|Executed|passed|failed" review-logs/xcodebuild.log | tail -30
           xcrun simctl delete "$UDID" || true
       - name: Screenshots
-        if: ${{ inputs.screenshots }}
+        if: ${{ !cancelled() && inputs.screenshots && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         run: scripts/screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review
       - uses: actions/upload-artifact@v4
         if: always()

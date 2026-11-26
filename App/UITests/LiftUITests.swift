@@ -14,7 +14,10 @@ final class LiftUITests: XCTestCase {
     func testWorkoutHasFinishAndDiscardWithoutAlerts() {
         let app = launch("03-workout")
         XCTAssertTrue(app.buttons["Finish"].waitForExistence(timeout: 10))
-        app.buttons["Workout options"].tap()
+        // Toolbar menus can refuse AX scroll-to-visible inside a cover; tap the point.
+        let options = app.buttons["Workout options"]
+        XCTAssertTrue(options.waitForExistence(timeout: 5))
+        options.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
         XCTAssertTrue(app.buttons["Discard workout"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.alerts.count, 0)
     }
