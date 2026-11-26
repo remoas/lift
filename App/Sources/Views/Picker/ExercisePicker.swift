@@ -220,7 +220,7 @@ struct ExercisePicker: View {
                 }
             }
             .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: isSetup ? "Search or create" : "Search")
-            .searchFocused($searchFocused)
+            .modifier(SearchFocus(focused: $searchFocused))
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -422,5 +422,17 @@ struct MusclePicker: View {
             }
         }
         .navigationTitle(title)
+    }
+}
+
+/// `searchFocused` is iOS 18+; on iOS 17 the search field simply isn't auto-focused.
+private struct SearchFocus: ViewModifier {
+    var focused: FocusState<Bool>.Binding
+    func body(content: Content) -> some View {
+        if #available(iOS 18.0, *) {
+            content.searchFocused(focused)
+        } else {
+            content
+        }
     }
 }
