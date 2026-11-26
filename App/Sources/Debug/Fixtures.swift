@@ -11,13 +11,31 @@ enum Fixtures {
         "01-log-empty", "01b-log-active", "01c-target-hit", "01d-stale-saved-toast",
         "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "07-finish", "08-exercise",
         "10-history", "11-settings", "12-history-empty", "13-first-workout", "14-health-error", "15-restoring",
-        "16-exercise-empty", "18-exercise-picker", "18b-picker-search", "19-reorder",
+        "16-exercise-empty", "18a-picker-empty", "18b-picker-bench", "18c-picker-rdl", "18d-picker-zzqx", "18e-picker-press",
+        "18f-picker-squat", "18g-picker-deadlift", "18h-picker-pull-up", "18i-picker-db-incline", "18j-picker-benhc", "19-reorder",
         "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none",
         "25-finish-sets-left", "26-discard-toast",
     ]
 
     /// Screen-recording starts (AC 61), not design frames.
     static let recordings = ["rec-pr"]
+
+    /// Picker frames (§10.8): the query typed when the sheet opens.
+    static var pickerQuery: String? {
+        switch requested {
+        case "18b-picker-bench": return "bench"
+        case "18c-picker-rdl": return "rdl"
+        case "18d-picker-zzqx": return "zzqx"
+        case "18e-picker-press": return "press"
+        case "18f-picker-squat": return "squat"
+        case "18g-picker-deadlift": return "deadlift"
+        case "18h-picker-pull-up": return "pull up"
+        case "18i-picker-db-incline": return "db incline"
+        case "18j-picker-benhc": return "benhc"
+        default: return nil
+        }
+    }
+    static var isPicker: Bool { requested?.hasPrefix("18") == true }
 
     enum MediaMode { case normal, hidden, reduceMotion, loading }
 
@@ -54,6 +72,10 @@ enum Fixtures {
         switch frame {
         case "01-log-empty", "15-restoring", "12-history-empty":
             break
+        case "18e-picker-press":
+            // "press" with a logged Seated Dumbbell Press: it floats to the top (§10.8).
+            let cal = Calendar.current
+            for d in [9, 5, 2] { b.session(["seated-dumbbell-press"], at: cal.date(byAdding: .day, value: -d, to: Date())!, bump: 0) }
         case "13-first-workout":
             // Nothing in history: no Last line, "First time. Log what you do."
             workout = b.active(["bench-press", "barbell-shoulder-press"], doneSets: 0)
@@ -128,7 +150,7 @@ enum Fixtures {
             "bench-press": (185, 8), "barbell-shoulder-press": (115, 8), "incline-dumbbell-press": (60, 10),
             "side-lateral-raise": (20, 12), "triceps-pushdown": (50, 10),
             "deadlift": (315, 5), "pullups": (0, 9), "bent-over-row": (155, 8), "face-pull": (40, 12), "barbell-curl": (70, 9),
-            "barbell-squat": (245, 6), "romanian-deadlift": (205, 8), "leg-press": (360, 10), "leg-curl": (90, 10), "calf-raises": (180, 12),
+            "barbell-squat": (245, 6), "romanian-deadlift": (205, 8), "leg-press": (360, 10), "leg-curl": (90, 10), "calf-raises": (180, 12), "seated-dumbbell-press": (50, 10),
         ]
 
         func exercise(_ id: String) -> Exercise? {
@@ -272,7 +294,7 @@ struct FixtureRoot: View {
             }
         case "10-history", "12-history-empty": RootView(initialTab: .history)
         case "11-settings": SettingsView()
-        case "18-exercise-picker", "18b-picker-search": ExercisePicker(mode: .add) { _ in }
+        case _ where Fixtures.isPicker: ExercisePicker(mode: .add) { _ in }
         default: RootView()
         }
     }
