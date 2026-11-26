@@ -17,3 +17,6 @@ AuthKey_*
 # Local review output (shared with CDO out-of-band)
 screenshots-review/*.png
 research/__pycache__/
+
+# Third-party API dumps (wger CC BY-SA with contributor emails, Everkinetic CC BY-SA): research inputs only, never published
+research/raw/
