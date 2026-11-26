@@ -90,8 +90,10 @@ struct SetRowView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
                 // Anchors for the PR banner morph (§8.5): the banner starts here.
-                .liftMatched(.prValue(model.id))
-                .background(Color.clear.liftMatched(.prBanner(model.id)))
+                // Where the PR banner lifts from and lands back on (§8.5, QA run 2 #10).
+                // A geometry callback, not matchedGeometryEffect: List cells are reused,
+                // and a reused cell's match source pointed the ghost at the wrong set.
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { SetValueFrames.shared.frames[model.id] = $0 }
                 if let secondary = model.secondary {
                     Text(secondary).font(Theme.Fonts.caption).foregroundStyle(Theme.Colors.textSecondary)
                 }

@@ -7,6 +7,9 @@ struct SetEditorSheet: View {
     @Bindable var entry: SetEntry
     let title: String
     let lastTime: String?
+    /// Shown when there's no matching set last time: "First time" only for a new
+    /// exercise, "No set 4 last time" otherwise, nil for no line (N2).
+    var noLastText: String? = "First time"
     var onLog: () -> Void
 
     @Environment(AppSettings.self) private var settings
@@ -28,9 +31,11 @@ struct SetEditorSheet: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title).font(Theme.Fonts.title).foregroundStyle(Theme.Colors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(lastTime.map { "Last time \($0)" } ?? "First time")
-                    .font(Theme.Fonts.secondary)
-                    .foregroundStyle(Theme.Colors.textSecondary)
+                if let meta = lastTime.map({ "Last time \($0)" }) ?? noLastText {
+                    Text(meta)
+                        .font(Theme.Fonts.secondary)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                }
             }
 
             HStack(spacing: Theme.Spacing.s3) {

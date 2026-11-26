@@ -197,7 +197,7 @@ struct WorkoutDetailView: View {
         }
         .navigationTitle(HistoryView.title(workout))
         .sheet(item: $editing) { s in
-            SetEditorSheet(entry: s, title: s.exercise?.name ?? "", lastTime: nil) { _ = LiftStore.save(context) }
+            SetEditorSheet(entry: s, title: s.exercise?.name ?? "", lastTime: nil, noLastText: nil) { _ = LiftStore.save(context) }
         }
     }
 }

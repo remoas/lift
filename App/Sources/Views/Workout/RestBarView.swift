@@ -55,6 +55,10 @@ struct RestBarView: View {
             }
         }
         .background(Theme.Colors.bgRaised)
-        .overlay(alignment: .top) { Rectangle().fill(Theme.Colors.separator).frame(height: 0.5) }
+        // The hairline drew over the drain's top 0.5 pt (measured 2.33 pt; QA run 2 #17).
+        // While counting, the 3 pt drain is the top edge; the hairline shows otherwise.
+        .overlay(alignment: .top) {
+            if countdown == nil { Rectangle().fill(Theme.Colors.separator).frame(height: 0.5) }
+        }
     }
 }

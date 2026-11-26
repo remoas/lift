@@ -23,6 +23,11 @@ final class WorkoutSession {
     private(set) var bestIDs: Set<UUID> = []
     var saveError: String?
 
+    /// The exercise of the set just logged: it keeps the bar while its rest runs (N1).
+    private(set) var lastLoggedExercise: Exercise?
+    /// True while the set editor is up: the banner's 4 s clock waits (flow 3).
+    private var bannerHeld = false
+    private var editBefore: (weight: Double, reps: Int, unit: WeightUnit)?
     private var restTask: Task<Void, Never>?
     private var bannerTask: Task<Void, Never>?
 
@@ -102,6 +107,13 @@ final class WorkoutSession {
     /// The exercise holding the current set: the only one with the bar.
     var currentExercise: Exercise? { currentSet?.exercise }
 
+    /// Where the one 4 pt bar sits when no banner shows: the exercise just logged
+    /// while its rest runs, otherwise the current exercise (qa-quicklog-run2 N1).
+    var barExercise: Exercise? {
+        if rest != nil || restDoneText != nil, let ex = lastLoggedExercise, groups.contains(where: { $0.exercise === ex }) { return ex }
+        return currentExercise
+    }
+
     func log(_ set: SetEntry) {
         let wasHit = set.exercise.map { targetHit(for: $0) } ?? true
         // The clock starts at the first logged set (nothing logged = nothing timed).
@@ -115,6 +127,14 @@ final class WorkoutSession {
             return
         }
         if let ex = set.exercise, !wasHit, targetHit(for: ex) { Haptics.step() }
+        lastLoggedExercise = set.exercise
+        detectRecords(set)
+        // Later sets prefill with what was just logged (AC 64, Ben 2:16 pm).
+        if let ex = set.exercise { LiftStore.prefill(ex, in: workout, globalUnit: settings.unit); _ = LiftStore.save(context) }
+        if !workout.isBackLog, settings.autoStartRest { startRest(after: set) }
+    }
+
+    private func detectRecords(_ set: SetEntry) {
         let kinds = LiftStore.newRecords(for: set, in: workout)
         bestIDs = LiftStore.bestSetIDs(in: workout)
         if let ex = set.exercise, !kinds.isEmpty {
@@ -123,9 +143,26 @@ final class WorkoutSession {
                 showBanner(content, exercise: ex, setID: set.id)
             }
         }
-        // Later sets prefill with what was just logged (AC 64, Ben 2:16 pm).
-        if let ex = set.exercise { LiftStore.prefill(ex, in: workout, globalUnit: settings.unit); _ = LiftStore.save(context) }
-        if !workout.isBackLog, settings.autoStartRest { startRest(after: set) }
+    }
+
+    /// A logged set edited in the editor ("Save set"): a new best still gets its banner.
+    func saveEdited(_ set: SetEntry) {
+        guard LiftStore.save(context) else { saveError = "Couldn't save that set. Try again."; return }
+        let changed = editBefore.map { $0.weight != set.weight || $0.reps != set.reps || $0.unit != set.unit } ?? true
+        bestIDs = LiftStore.bestSetIDs(in: workout)
+        if changed { detectRecords(set) }
+    }
+
+    /// The set editor pauses the banner's clock; closing it gives the banner a fresh 4 s.
+    func holdBanner(editing set: SetEntry) {
+        editBefore = (set.weight, set.reps, set.unit)
+        bannerHeld = true
+        bannerTask?.cancel()
+    }
+
+    func resumeBanner() {
+        bannerHeld = false
+        if banner != nil { scheduleBannerDismiss() }
     }
 
     /// Back-logged sets are stamped in order on the workout's own day.
@@ -142,8 +179,17 @@ final class WorkoutSession {
         guard seconds > 0 else { return }
         rest = RestCountdown(seconds: seconds, setID: set.id)
         restDoneText = nil
-        if let next = currentSet {
-            restNextText = "\(next.needsWeight ? "Add weight" : UnitMath.format(next.weight)) × \(next.reps)"
+        if let next = currentSet, let nextEx = next.exercise {
+            // Next is the prefill (N3). Another exercise: prefill its first set at
+            // the target and name it ("Shoulder Press · 110 × 9").
+            let other = nextEx !== set.exercise
+            if other { LiftStore.prefill(nextEx, in: workout, globalUnit: settings.unit) }
+            let bodyweight = nextEx.equipment == .bodyweight
+            let pair: String
+            if next.needsWeight { pair = "Add weight × \(next.reps)" }
+            else if bodyweight { pair = next.weight <= 0 ? "\(next.reps) reps" : "BW + \(UnitMath.format(next.weight)) × \(next.reps)" }
+            else { pair = "\(UnitMath.format(next.weight)) × \(next.reps)" }
+            restNextText = other ? "\(nextEx.name) · \(pair)" : pair
         } else {
             restNextText = nil
         }
@@ -196,6 +242,11 @@ final class WorkoutSession {
         banner = content
         bannerExercise = exercise
         bannerSetID = setID
+        bannerTask?.cancel()
+        if !bannerHeld { scheduleBannerDismiss() }
+    }
+
+    private func scheduleBannerDismiss() {
         bannerTask?.cancel()
         bannerTask = Task { [weak self] in
             // 4.0 s on screen once the number has landed (~0.4 s morph).
