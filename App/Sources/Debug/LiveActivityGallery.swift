@@ -135,7 +135,8 @@ struct LiveActivityGallery: View {
                 Text("Render of the Lift Live Activity views · Island outline is a stand-in")
                     .font(.caption2).foregroundStyle(RestTokens.secondary(scheme))
             }
-            .padding(.top, 11)
+            // Below the sim's own Island cutout, so the render isn't hidden by it.
+            .padding(.top, 72)
         }
         .environment(\.colorScheme, .dark)
     }
@@ -149,9 +150,8 @@ struct LiveActivityGallery: View {
                 .frame(width: 360)
                 .background(RestTokens.raised(.dark), in: RoundedRectangle(cornerRadius: 22, style: .continuous))
                 .environment(\.colorScheme, .dark)
-                .scaleEffect(1.0)
-                .rotationEffect(.degrees(90))
-            VStack { Spacer(); Text("StandBy (landscape) · render").font(.caption2).foregroundStyle(.white.opacity(0.6)).padding(.bottom, 30) }
+                .scaleEffect(1.08)
+            VStack { Spacer(); Text("StandBy reuses the Lock Screen view, scaled by the system · render").font(.caption2).foregroundStyle(.white.opacity(0.6)).padding(.bottom, 30) }
         }
     }
 }

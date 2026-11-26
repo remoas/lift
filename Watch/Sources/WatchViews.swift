@@ -207,7 +207,10 @@ struct ExercisePage: View {
                 } else {
                     if let last = BeatItText.last(exercise.last, date: exercise.lastDate, compact: !WatchTheme.isLarge) {
                         // Wraps at set boundaries, never mid-number (§3.2).
+                        // 40/41 mm: one line, so the prefill stays above Log set.
                         Text(last.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}")).watchCaption()
+                            .lineLimit(WatchTheme.isLarge ? nil : 1)
+                            .minimumScaleFactor(WatchTheme.isLarge ? 1 : 0.7)
                     }
                     if !exercise.countable || !store.motionAvailable {
                         Text("Counting off.").watchCaption()
@@ -249,7 +252,7 @@ struct ExercisePage: View {
                 .accessibilityElement(children: .combine)
             }
             valueRow
-                .padding(.top, 2)
+                .padding(.top, WatchTheme.isLarge ? 2 : 0)
         } else {
             // 3.5 First time: no Last, no bar; Crown sets the weight.
             Text("First time. Log what you do.").watchCaption()
