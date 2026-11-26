@@ -153,8 +153,8 @@ struct ExercisePage: View {
 
     // The log state: Last, Beat it with the bar, the value, Log set.
     private var logView: some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(exercise.name).font(.system(size: WatchTheme.isLarge ? 19 : 17, weight: .semibold)).lineLimit(2)
+        VStack(alignment: .leading, spacing: WatchTheme.isLarge ? 3 : 1) {
+            Text(exercise.name).font(.system(size: WatchTheme.isLarge ? 19 : 16, weight: .semibold)).lineLimit(WatchTheme.isLarge ? 2 : 1)
             if let count = store.liveCount(for: exercise) {
                 countingBody(count)
             } else {
@@ -168,7 +168,7 @@ struct ExercisePage: View {
                 targetBlock
             }
             statusLine
-            Spacer(minLength: 2)
+            Spacer(minLength: 0)
             if WatchTheme.isLarge {
                 Text("Double tap to log.").font(.caption2).foregroundStyle(WatchTheme.textTertiary)
             }
@@ -265,7 +265,7 @@ struct ExercisePage: View {
 
     private func newBestView(_ text: String) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(exercise.name).font(.system(size: WatchTheme.isLarge ? 19 : 17, weight: .semibold)).lineLimit(2)
+            Text(exercise.name).font(.system(size: WatchTheme.isLarge ? 19 : 16, weight: .semibold)).lineLimit(WatchTheme.isLarge ? 2 : 1)
             Text("New best").font(.caption2.weight(.semibold)).foregroundStyle(WatchTheme.ember)
             Text(text).font(WatchTheme.hero(30)).theBar(dimmed: dimmed)
             Spacer()
@@ -424,7 +424,11 @@ struct AddExerciseView: View {
             if !rows.recents.isEmpty {
                 Section("Recents") { ForEach(rows.recents) { row($0, meta: ago($0.lastDate)) } }
             }
-            Section("All") { ForEach(rows.all) { row($0, meta: nil) } }
+            Section {
+                ForEach(rows.all) { row($0, meta: nil) }
+            } header: { Text("All") } footer: {
+                if query.isEmpty { Text("Search for more.").foregroundStyle(WatchTheme.textSecondary) }
+            }
         }
         .searchable(text: $query, prompt: "Search")
         .navigationTitle("Add exercise")

@@ -380,7 +380,7 @@ final class WatchStore: NSObject {
         let q = query.trimmingCharacters(in: .whitespaces)
         let recents = live.recents.filter { !inToday.contains($0.id) && (q.isEmpty || finder.matches($0.name, q)) }
         let recentIDs = Set(recents.map(\.id))
-        let all = finder.find(q, limit: q.isEmpty ? 400 : 100).compactMap { WatchLibrary.byID[$0] }
+        let all = finder.find(q, limit: q.isEmpty ? 40 : 60).compactMap { WatchLibrary.byID[$0] }
             .filter { !inToday.contains($0.id) && !recentIDs.contains($0.id) }
         return (recents, Array(all))
     }

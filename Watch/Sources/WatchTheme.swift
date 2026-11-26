@@ -12,9 +12,9 @@ enum WatchTheme {
     static let separator = Color(red: 0x2C / 255, green: 0x2C / 255, blue: 0x30 / 255)
 
     /// Room under the ••• / Finish row so the exercise name never sits behind it.
-    static var toolbarClearance: CGFloat { isLarge ? 30 : 26 }
+    static var toolbarClearance: CGFloat { isLarge ? 28 : 18 }
     static let inset: CGFloat = 10
-    static let primaryHeight: CGFloat = 44
+    static var primaryHeight: CGFloat { isLarge ? 44 : 40 }
     static let buttonRadius: CGFloat = 14
 
     /// 45 / 49 mm get the larger step (watch.md §3).
