@@ -126,6 +126,11 @@ jobs:
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" 2>&1 | tee tf-logs/upload.log
           # altool can exit 0 on a rejected upload; fail unless it says it worked.
           grep -q "UPLOAD SUCCEEDED" tf-logs/upload.log
+      - name: Wait for processing, add to Lift Internal
+        if: ${{ inputs.upload }}
+        run: |
+          pip3 install --quiet --break-system-packages pyjwt cryptography 2>/dev/null || pip3 install --quiet pyjwt cryptography
+          python3 scripts/asc_add_to_group.py 6839677746 "${{ inputs.build_number }}" "Lift Internal" 45 2>&1 | tee tf-logs/group.log
       - name: Remove key
         if: always()
         run: rm -rf ~/.appstoreconnect
