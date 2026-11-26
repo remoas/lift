@@ -29,6 +29,8 @@ struct ActiveWorkoutView: View {
     @State private var bannerLanded = false
     /// Exercise whose inline rep-goal stepper is showing.
     @State private var repGoalFor: UUID?
+    /// Exercise whose rest picker sheet is open (frame 28).
+    @State private var restFor: Exercise?
 
     var body: some View {
         NavigationStack {
@@ -43,9 +45,12 @@ struct ActiveWorkoutView: View {
             .toolbar { toolbar }
             .navigationDestination(item: $detail) { ExerciseDetailView(exercise: $0).liftZoomDestination(.exercise($0.id)) }
         }
+        .sheet(item: $restFor) { ex in
+            RestPickerSheet(exercise: ex, current: ex.restSec ?? settings.workingRestSeconds) { session?.setRest(for: ex, seconds: $0) }
+                .presentationDetents([.medium])
+        }
         .onAppear {
             if session == nil { session = WorkoutSession(workout: workout, context: context, settings: settings) }
-            RestNotifications.requestPermissionIfNeeded()
             #if DEBUG
             applyFixture()
             #endif
@@ -141,7 +146,8 @@ struct ActiveWorkoutView: View {
             .scrollContentBackground(.hidden)
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 RestBarView(countdown: session.rest, nextText: session.restNextText, doneText: session.restDoneText,
-                            onAdjust: { session.adjustRest(by: $0) }, onSkip: { session.stopRest() })
+                            caption: session.restCaption,
+                            onAdjust: { session.adjustRest(by: $0) }, onSkip: { session.skipRest(toasts: toasts) })
                     .opacity(session.rest == nil && session.restDoneText == nil ? 0 : 1)
                     .frame(height: session.rest == nil && session.restDoneText == nil ? 0 : nil)
                     .animation(reduceMotion ? Theme.Motion.crossfade : Theme.Motion.springBanner, value: session.rest == nil)
@@ -225,10 +231,7 @@ struct ActiveWorkoutView: View {
                 Menu {
                     Button("Swap") { picker = .swap(ex) }
                     Button("Add set") { session.addSet(to: ex) }
-                    Picker("Rest", selection: Binding(get: { rest }, set: { session.setRest(for: ex, seconds: $0) })) {
-                        ForEach(RestChoices.all(including: rest), id: \.self) { Text(RestCountdown.format(TimeInterval($0))).tag($0) }
-                    }
-                    .pickerStyle(.menu)
+                    Button("Rest · \(RestChoices.label(ex.restSec ?? rest))") { restFor = ex }
                     Button("Rep goal · \(ex.repGoal)") { repGoalFor = ex.id }
                     Button("Remove", role: .destructive) { session.remove(ex, toasts: toasts) }
                 } label: {

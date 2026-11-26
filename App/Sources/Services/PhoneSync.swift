@@ -6,6 +6,8 @@ import LiftCore
 extension Notification.Name {
     /// The watch changed today's log in a way the screens must re-read (finish).
     static let liftWatchFinished = Notification.Name("lift.watchFinished")
+    /// Discarded on the watch; `object` is the fresh open log.
+    static let liftWatchDiscarded = Notification.Name("lift.watchDiscarded")
 }
 
 /// The phone's end of the live link to the watch (WatchConnectivity).
@@ -116,6 +118,16 @@ final class PhoneSync: NSObject {
                 HealthSync.save(w, context: context, toasts: nil)
             }
             NotificationCenter.default.post(name: .liftWatchFinished, object: w)
+        case .discarded(let w):
+            // The watch already gave its 5 s Undo. A fresh log first, so the
+            // screens never hold the deleted one.
+            rest = nil
+            scheduleAlert()
+            onRemoteRest?(nil)
+            let fresh = LiftStore.startBlank(context: context)
+            NotificationCenter.default.post(name: .liftWatchDiscarded, object: fresh)
+            context.delete(w)
+            _ = LiftStore.save(context)
         case .watchSession(let active):
             watchSessionActive = active
             scheduleAlert()

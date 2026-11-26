@@ -10,7 +10,9 @@ struct LiftWatchApp: App {
         #if DEBUG
         if let f = WatchFixtures.requested {
             frame = f
-            _store = State(initialValue: WatchStore(fixture: f.live))
+            let s = WatchStore(fixture: f.live, dimmed: f.dimmed, unreachable: f.unreachable)
+            s.applyFixture(f)
+            _store = State(initialValue: s)
             return
         }
         #endif

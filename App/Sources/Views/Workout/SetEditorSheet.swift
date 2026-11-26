@@ -108,7 +108,7 @@ struct SetEditorSheet: View {
                     Spacer()
                     Picker("Rest for \(exercise?.name ?? "this exercise")", selection: restBinding) {
                         ForEach(RestChoices.all(including: restBinding.wrappedValue), id: \.self) {
-                            Text(RestCountdown.format(TimeInterval($0))).tag($0)
+                            Text(RestChoices.label($0)).tag($0)
                         }
                     }
                     .pickerStyle(.menu)

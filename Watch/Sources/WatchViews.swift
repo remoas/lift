@@ -2,9 +2,8 @@ import SwiftUI
 import WatchKit
 import LiftCore
 
-// Watch screens (engine-first; CDO's watch spec will restyle these).
-// Ben's rules: tabular numbers, undo instead of confirm, no spinners, haptic
-// on target hit (WatchStore.log).
+// Watch screens to CDO's watch.md (§3) and AC 69–82. Dark only.
+// One exercise per vertical page; the last page is Add exercise.
 
 struct WatchRoot: View {
     @Environment(WatchStore.self) private var store
@@ -12,504 +11,538 @@ struct WatchRoot: View {
     @State private var page = 0
     @State private var adding = false
     @State private var finishing = false
+    @State private var pickingRestFor: LiveExercise?
 
-    private var count: Int { store.live.exercises.count }
+    private var exercises: [LiveExercise] { store.live.exercises }
 
     var body: some View {
         NavigationStack {
-            if store.live.exercises.isEmpty {
-                EmptyLogView(onAdd: { adding = true })
-            } else {
-                TabView(selection: $page) {
-                    ForEach(Array(store.live.exercises.enumerated()), id: \.element.id) { i, ex in
-                        ExercisePage(exercise: ex, index: i, count: count,
-                                     startCounting: frame?.counting == true && i == page,
-                                     go: go, onAdd: { adding = true })
-                            .tag(i)
+            Group {
+                if exercises.isEmpty {
+                    EmptyLogView(onAdd: { adding = true })
+                } else {
+                    TabView(selection: $page) {
+                        ForEach(Array(exercises.enumerated()), id: \.element.id) { i, ex in
+                            ExercisePage(exercise: ex, isCurrent: i == (store.live.currentIndex ?? 0),
+                                         onFinish: { finishing = true },
+                                         onRest: { pickingRestFor = ex })
+                                .tag(i)
+                        }
+                        AddPage(onAdd: { adding = true }).tag(exercises.count)
                     }
-                    EndPage(onAdd: { adding = true }, onFinish: { finishing = true }, onBack: { go(count - 1) })
-                        .tag(count)
+                    .tabViewStyle(.verticalPage)
                 }
-                .tabViewStyle(.page(indexDisplayMode: .automatic))
             }
-        }
-        .overlay(alignment: .bottom) { UndoToast() }
-        .sheet(isPresented: $adding) {
-            AddExerciseView { ex in
-                store.add(ex)
-                if let i = store.live.exercises.firstIndex(where: { $0.id == ex.id }) { page = i }
+            .navigationDestination(isPresented: $adding) {
+                AddExerciseView { added in
+                    if let first = added.first, let i = store.live.exercises.firstIndex(where: { $0.id == first }) { page = i }
+                }
             }
+            .navigationDestination(item: $pickingRestFor) { ex in RestPicker(exercise: ex) }
         }
+        .overlay(alignment: .bottom) { ToastBar() }
         .fullScreenCover(isPresented: $finishing) {
-            FinishSummaryView(onDone: {
-                finishing = false
-                page = 0
-            })
+            FinishView(onDone: { finishing = false; page = 0 }, onBack: { finishing = false })
         }
+        .environment(\.watchDimmed, store.forceDimmed)
         .onAppear {
             page = frame?.page ?? store.current
             adding = frame?.adding == true
             finishing = frame?.finishing == true
+            if frame?.restPicker == true { pickingRestFor = store.live.exercises.first }
+            store.showPage(store.live.exercises[safe: page])
         }
-    }
-
-    private func go(_ i: Int) {
-        withAnimation { page = max(0, min(count, i)) }
-        WKInterfaceDevice.current().play(.click)
+        .onChange(of: page) { _, i in store.showPage(store.live.exercises[safe: i]) }
     }
 }
 
-// MARK: Empty
+private struct DimmedKey: EnvironmentKey { static let defaultValue = false }
+extension EnvironmentValues {
+    /// Always-On (or its w11 preview).
+    var watchDimmed: Bool {
+        get { self[DimmedKey.self] }
+        set { self[DimmedKey.self] = newValue }
+    }
+}
+
+// MARK: 3.1 Empty
 
 struct EmptyLogView: View {
     let onAdd: () -> Void
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 10) {
-                Text(Date().formatted(.dateTime.weekday(.wide))).font(.headline)
-                Text("Log what you lift. Lift remembers it for next time.")
-                    .font(.footnote).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                Button("Add exercise", systemImage: "plus", action: onAdd)
-                    .buttonStyle(.borderedProminent)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 6) {
+            Text(Date().formatted(.dateTime.weekday(.wide))).font(.title3.weight(.semibold))
+            Text("Log what you lift. Lift remembers it for next time.")
+                .font(.footnote).foregroundStyle(WatchTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 4)
+            Button("Add exercise", action: onAdd).buttonStyle(WatchPrimaryStyle())
         }
+        .padding(.horizontal, WatchTheme.inset)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 }
 
-// MARK: Exercise page
+// MARK: 3.2–3.5, 3.8, 3.11 Exercise page
 
 struct ExercisePage: View {
     @Environment(WatchStore.self) private var store
+    @Environment(\.isLuminanceReduced) private var aod
+    @Environment(\.watchDimmed) private var previewDimmed
     let exercise: LiveExercise
-    let index: Int
-    let count: Int
-    var startCounting = false
-    let go: (Int) -> Void
-    let onAdd: () -> Void
+    /// The lift being done: the only page with the bar on its target.
+    let isCurrent: Bool
+    let onFinish: () -> Void
+    let onRest: () -> Void
 
-    enum Field: Hashable { case weight, reps }
+    enum Field: Hashable { case weight, reps, count }
     @State private var weight = 0.0
     @State private var reps = 0.0
     @FocusState private var focus: Field?
-    @State private var counting = false
-    @State private var pickingRest = false
 
-    /// Changes when the set to log next changes (after a log, undo or sync).
+    private var dimmed: Bool { aod || previewDimmed }
+    private var resting: RestState? {
+        guard let r = store.live.rest, !r.isOver(at: Date()), isCurrent || r.exercise == exercise.name else { return nil }
+        return r
+    }
+
+    /// Changes when the set to log next changes (after a log or a sync).
     private var draftKey: String {
-        "\(exercise.doneSets.count)-\(exercise.sets.first { !$0.isDone }?.id.uuidString ?? "")-\(exercise.target.map { "\($0.weight)x\($0.reps)" } ?? "")"
+        let n = exercise.nextSet
+        return "\(exercise.doneSets.count)-\(n.id)-\(n.weight)-\(n.reps)"
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 6) {
-                header
-                if let rest = store.live.rest, !rest.isOver(at: Date()) {
-                    RestRow(rest: rest)
-                } else if store.restUp {
-                    Text("Rest's up").font(.footnote.weight(.semibold)).foregroundStyle(.tint)
-                }
-                Text(exercise.name).font(.headline).lineLimit(2)
-                if let last = BeatItText.last(exercise.last, date: exercise.lastDate) {
-                    Text(last).font(.caption2).foregroundStyle(.secondary).lineLimit(2).monospacedDigit()
-                }
-                targetLine
-                values
-                actions
-                logged
-                Button { pickingRest = true } label: {
-                    Label("Rest \(WatchText.rest(exercise.restSeconds))", systemImage: "timer").monospacedDigit()
-                }
-                .font(.footnote)
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .padding(.top, 4)
+        Group {
+            if let best = store.newBest, best.exerciseID == exercise.id {
+                newBestView(best.text)
+            } else if let rest = resting {
+                RestView(rest: rest, exercise: exercise, onEdit: onRest)
+            } else if store.restUpFor == exercise.id {
+                RestUpView(exercise: exercise, onLog: log)
+            } else {
+                logView
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .opacity(dimmed ? 0.6 : 1)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button("Add exercise", systemImage: "plus", action: onAdd)
+            ToolbarItem(placement: .topBarLeading) {
+                Menu {
+                    Button("Rest · \(RestChoices.label(exercise.restSeconds))", action: onRest)
+                    Button("Discard workout", role: .destructive) { store.discard() }
+                } label: { Image(systemName: "ellipsis") }
+                .accessibilityLabel("\(exercise.name) options")
             }
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button("Previous exercise", systemImage: "chevron.left") { go(index - 1) }
-                    .disabled(index == 0)
-                Spacer()
-                Button("Next exercise", systemImage: "chevron.right") { go(index + 1) }
+            if !store.live.doneSets.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Finish", action: onFinish)
+                        .foregroundStyle(WatchTheme.textPrimary)
+                        .frame(minWidth: 44, minHeight: 44)
+                }
             }
         }
-        .sheet(isPresented: $counting) {
-            CountView(exercise: exercise, weight: weight) { n in
-                reps = Double(n)
-                store.log(exercise: exercise, weight: weight, reps: n)
-            }
-        }
-        .sheet(isPresented: $pickingRest) { RestPicker(exercise: exercise) }
-        .onAppear {
-            load()
-            if startCounting { counting = true }
-        }
+        .onAppear(perform: load)
         .onChange(of: draftKey) { _, _ in load() }
     }
 
-    private var header: some View {
-        HStack {
-            Text("\(index + 1) of \(count)").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
-            Spacer()
-            if let hr = store.workout.heartRate {
-                Label("\(hr)", systemImage: "heart.fill").font(.caption2).foregroundStyle(.red).monospacedDigit()
-            }
-        }
-    }
-
-    @ViewBuilder private var targetLine: some View {
-        if let t = exercise.target {
-            if exercise.targetHit {
-                Label("Target hit", systemImage: "checkmark").font(.footnote.weight(.semibold)).foregroundStyle(.green)
+    // The log state: Last, Beat it with the bar, the value, Log set.
+    private var logView: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(exercise.name).font(.system(size: WatchTheme.isLarge ? 19 : 17, weight: .semibold)).lineLimit(2)
+            if let count = store.liveCount(for: exercise) {
+                countingBody(count)
             } else {
-                Text("Beat it · \(BeatItText.number(t, bodyweight: exercise.bodyweight))")
-                    .font(.footnote.weight(.semibold)).foregroundStyle(.tint).monospacedDigit()
+                if let last = BeatItText.last(exercise.last, date: exercise.lastDate) {
+                    Text(last).font(.caption2).foregroundStyle(WatchTheme.textSecondary).monospacedDigit()
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                }
+                if !exercise.countable || !store.motionAvailable {
+                    Text("Counting off.").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+                }
+                targetBlock
             }
+            statusLine
+            Spacer(minLength: 2)
+            if WatchTheme.isLarge, #available(watchOS 11, *) {
+                Text("Double tap to log.").font(.caption2).foregroundStyle(WatchTheme.textTertiary)
+            }
+            logButton
+        }
+        .padding(.horizontal, WatchTheme.inset)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    @ViewBuilder private var targetBlock: some View {
+        if exercise.target == nil {
+            // 3.5 First time: no Last, no bar; Crown sets the weight.
+            Text("First time. Log what you do.").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+            if weight <= 0 && !exercise.bodyweight && focus != .weight {
+                Button { focus = .weight } label: {
+                    Text("Add weight").font(WatchTheme.hero(22)).foregroundStyle(WatchTheme.ember)
+                }
+                .buttonStyle(.plain)
+            } else {
+                valueRow(bar: false)
+            }
+            Text("\(Int(reps)) reps · Crown to set").font(.caption2).foregroundStyle(WatchTheme.textSecondary).monospacedDigit()
+        } else {
+            if exercise.targetHit {
+                Label("Target hit", systemImage: "checkmark").font(.caption2.weight(.semibold)).foregroundStyle(WatchTheme.ember)
+            } else {
+                Text("Beat it").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+            }
+            valueRow(bar: isCurrent && !exercise.targetHit)
         }
     }
 
-    private var values: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
+    /// "185 × 9": tap the weight or the reps, then the Crown changes it.
+    private func valueRow(bar: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 0) {
             if !exercise.bodyweight || weight > 0 {
-                field(UnitMath.format(weight), unit: exercise.unit.symbol, .weight)
+                Text(UnitMath.format(weight))
+                    .focusable(true).focused($focus, equals: .weight)
                     .digitalCrownRotation($weight, from: 0, through: 1500, by: exercise.step, sensitivity: .low,
                                           isContinuous: false, isHapticFeedbackEnabled: true)
-                Text("×").foregroundStyle(.secondary)
+                    .onTapGesture { focus = .weight }
+                    .foregroundStyle(focus == .weight ? WatchTheme.ember : WatchTheme.textPrimary)
+                Text(" × ")
             }
-            field("\(Int(reps))", unit: "reps", .reps)
-                .digitalCrownRotation($reps, from: 0, through: 100, by: 1, sensitivity: .low,
+            Text("\(Int(reps))\(exercise.bodyweight && weight <= 0 ? " reps" : "")")
+                .focusable(true).focused($focus, equals: .reps)
+                .digitalCrownRotation($reps, from: 1, through: 100, by: 1, sensitivity: .low,
                                       isContinuous: false, isHapticFeedbackEnabled: true)
+                .onTapGesture { focus = .reps }
+                .foregroundStyle(focus == .reps ? WatchTheme.ember : WatchTheme.textPrimary)
+        }
+        .font(WatchTheme.hero(24))
+        .theBar(bar, dimmed: dimmed)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Beat it, \(UnitMath.format(weight)) \(exercise.unit.symbol) times \(Int(reps))")
+        .accessibilityHint("Tap the weight or the reps, then turn the Digital Crown")
+    }
+
+    // 3.3 Live count: the bar moves under the estimate; Crown corrects it.
+    private func countingBody(_ count: Int) -> some View {
+        let target = exercise.target?.reps ?? Int(reps)
+        return VStack(alignment: .leading, spacing: 0) {
+            Text("\(UnitMath.format(weight)) \(exercise.unit.symbol) · Beat \(target)")
+                .font(.caption2).foregroundStyle(WatchTheme.textSecondary).monospacedDigit()
+            Text("\(count)")
+                .font(WatchTheme.hero(48))
+                .contentTransition(.numericText())
+                .focusable(true)
+                .focused($focus, equals: .count)
+                .onAppear { focus = .count }
+                .digitalCrownRotation(Binding(get: { Double(count) }, set: { store.countOffset = Int($0.rounded()) - store.motion.count }),
+                                      from: 0, through: 100, by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
+                .theBar(dimmed: dimmed)
+                .accessibilityLabel("\(count) reps counted, an estimate")
+            Text("of \(target) · Crown to correct").font(.caption2).foregroundStyle(WatchTheme.textSecondary).monospacedDigit()
         }
     }
 
-    private func field(_ text: String, unit: String, _ f: Field) -> some View {
-        VStack(spacing: 0) {
-            Text(text).font(.system(size: 26, weight: .semibold, design: .rounded)).monospacedDigit()
-                .minimumScaleFactor(0.6).lineLimit(1)
-            Text(unit).font(.caption2).foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 6)
-        .padding(.vertical, 2)
-        .background(RoundedRectangle(cornerRadius: 8).fill(focus == f ? Color.accentColor.opacity(0.25) : Color.white.opacity(0.08)))
-        .overlay(RoundedRectangle(cornerRadius: 8).stroke(focus == f ? Color.accentColor : .clear, lineWidth: 1.5))
-        .focusable(true)
-        .focused($focus, equals: f)
-        .onTapGesture { focus = f }
-        .accessibilityLabel(f == .weight ? "Weight \(text) \(unit)" : "\(text) reps")
-        .accessibilityHint("Turn the Digital Crown to change")
-    }
-
-    private var actions: some View {
-        HStack(spacing: 6) {
-            Button { counting = true } label: { Image(systemName: "waveform.path.ecg") }
-                .accessibilityLabel("Start set and count reps")
-                .frame(maxWidth: 52)
-            Button {
-                store.log(exercise: exercise, weight: weight, reps: Int(reps))
-                focus = nil
-            } label: {
-                Label("Log", systemImage: "checkmark").frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.borderedProminent)
-            .disabled(reps < 1)
+    @ViewBuilder private var statusLine: some View {
+        if !store.phoneReachable {
+            Text("On this Watch only.").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+        } else if store.healthOff {
+            Text("Apple Health is off. Your sets are safe in Lift.").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    @ViewBuilder private var logged: some View {
-        let done = exercise.doneSets
-        if !done.isEmpty {
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach(Array(done.enumerated()), id: \.element.id) { i, s in
-                    HStack {
-                        Text("\(i + 1)").foregroundStyle(.secondary)
-                        Text(exercise.bodyweight && s.weight <= 0 ? "\(s.reps) reps" : "\(UnitMath.format(s.weight)) × \(s.reps)")
-                        Spacer()
-                        if s.source == "watch" { Image(systemName: "applewatch").foregroundStyle(.secondary).font(.caption2) }
-                    }
-                    .font(.footnote).monospacedDigit()
-                }
-            }
-            .padding(.top, 2)
+    private var logButton: some View {
+        Button("Log set") { log() }
+            .buttonStyle(WatchPrimaryStyle())
+            .modifier(DoubleTapLogs())
+    }
+
+    private func newBestView(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(exercise.name).font(.system(size: WatchTheme.isLarge ? 19 : 17, weight: .semibold)).lineLimit(2)
+            Text("New best").font(.caption2.weight(.semibold)).foregroundStyle(WatchTheme.ember)
+            Text(text).font(WatchTheme.hero(30)).theBar(dimmed: dimmed)
+            Spacer()
         }
+        .padding(.horizontal, WatchTheme.inset)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    /// Never blocked: logs whatever is on screen (the live count if counting).
+    private func log() {
+        let r = store.liveCount(for: exercise) ?? Int(reps)
+        store.log(exercise: exercise, weight: weight, reps: max(r, 1))
+        focus = nil
     }
 
     private func load() {
         let next = exercise.nextSet
         weight = UnitMath.convert(next.weight, from: next.unit, to: exercise.unit)
-        reps = Double(next.reps)
+        reps = Double(max(next.reps, 1))
     }
 }
 
-// MARK: Rest
+/// Double Tap logs on Series 9 / Ultra 2 and later (watchOS 11 API).
+struct DoubleTapLogs: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(watchOS 11, *) {
+            content.handGestureShortcut(.primaryAction)
+        } else {
+            content
+        }
+    }
+}
 
-struct RestRow: View {
+// MARK: 3.8 Rest
+
+struct RestView: View {
     @Environment(WatchStore.self) private var store
+    @Environment(\.isLuminanceReduced) private var aod
+    @Environment(\.watchDimmed) private var previewDimmed
     let rest: RestState
+    let exercise: LiveExercise
+    let onEdit: () -> Void
 
     var body: some View {
+        let dimmed = aod || previewDimmed
+        // Steps once a second (Always-On and Reduce Motion alike).
         TimelineView(.periodic(from: .now, by: 1)) { ctx in
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text("Rest").font(.caption2).foregroundStyle(.secondary)
-                    Text(RestCountdown.format(rest.remaining(at: ctx.date)))
-                        .font(.system(size: 24, weight: .semibold, design: .rounded)).monospacedDigit()
-                        .contentTransition(.numericText(countsDown: true))
+            let left = rest.remaining(at: ctx.date)
+            VStack(spacing: 2) {
+                ZStack {
+                    Circle().stroke(WatchTheme.separator, lineWidth: 4)
+                    Circle()
+                        .trim(from: 0, to: rest.countdown.progress(at: ctx.date))
+                        .stroke(WatchTheme.ember.opacity(dimmed ? 0.5 : 1), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                    Text(RestCountdown.format(left))
+                        .font(WatchTheme.hero(30))
+                        .foregroundStyle(dimmed ? WatchTheme.textSecondary : WatchTheme.textPrimary)
+                        .accessibilityLabel("Rest, \(Int(left.rounded(.up))) seconds left")
                 }
-                HStack(spacing: 6) {
-                    Button("+30s") { store.addRest(30) }
-                    Button("Skip") { store.skipRest() }
+                .frame(width: WatchTheme.isLarge ? 92 : 76, height: WatchTheme.isLarge ? 92 : 76)
+                .onLongPressGesture(perform: onEdit)
+                if let next = rest.next {
+                    Text("Next").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+                    Text(next).font(.body.weight(.semibold)).monospacedDigit().theBar(dimmed: dimmed)
                 }
-                .font(.footnote)
-                .controlSize(.small)
+                if !dimmed {
+                    HStack(spacing: 6) {
+                        Button("+30s") { store.addRest(30) }.buttonStyle(WatchChipStyle())
+                            .accessibilityLabel("30 seconds more, this break only")
+                        Button("Skip") { store.skipRest() }.buttonStyle(WatchChipStyle(accent: true))
+                    }
+                }
             }
+            .padding(.horizontal, WatchTheme.inset)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .accessibilityElement(children: .contain)
     }
 }
+
+struct RestUpView: View {
+    @Environment(WatchStore.self) private var store
+    let exercise: LiveExercise
+    let onLog: () -> Void
+
+    var body: some View {
+        VStack(spacing: 2) {
+            ZStack {
+                Circle().stroke(WatchTheme.separator, lineWidth: 4)
+                Text("Rest’s up").font(.body.weight(.semibold))
+            }
+            .frame(width: WatchTheme.isLarge ? 92 : 76, height: WatchTheme.isLarge ? 92 : 76)
+            .onTapGesture { store.dismissRestUp() }
+            Text("Next").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+            Text(BeatItText.number(exercise.prefill, bodyweight: exercise.bodyweight)).font(.body.weight(.semibold)).monospacedDigit().theBar()
+            Button("Log set", action: onLog).buttonStyle(WatchPrimaryStyle()).modifier(DoubleTapLogs())
+        }
+        .padding(.horizontal, WatchTheme.inset)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: 3.10 Rest picker
 
 struct RestPicker: View {
     @Environment(WatchStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
     let exercise: LiveExercise
-
-    var body: some View {
-        List(RestChoices.all(including: exercise.restSeconds), id: \.self) { s in
-            Button {
-                store.setRest(exercise, seconds: s)
-                dismiss()
-            } label: {
-                HStack {
-                    Text(WatchText.rest(s)).monospacedDigit()
-                    Spacer()
-                    if s == exercise.restSeconds { Image(systemName: "checkmark").foregroundStyle(.tint) }
-                }
-            }
-        }
-        .navigationTitle("Rest")
-    }
-}
-
-// MARK: Counting
-
-/// Start set → live count from the wrist → Crown corrects → Log.
-struct CountView: View {
-    @Environment(WatchStore.self) private var store
-    @Environment(\.dismiss) private var dismiss
-    let exercise: LiveExercise
-    let weight: Double
-    let onLog: (Int) -> Void
-
-    @State private var offset = 0
-    @State private var stopped = false
-    @State private var final = 0
-    @FocusState private var crown: Bool
-
-    private var shown: Int { max(0, (stopped ? final : store.motion.count) + offset) }
+    @State private var value = 0
 
     var body: some View {
         VStack(spacing: 4) {
-            Text(stopped ? "Reps" : "Counting reps").font(.footnote).foregroundStyle(.secondary)
-            Text("\(shown)")
-                .font(.system(size: 64, weight: .bold, design: .rounded)).monospacedDigit()
-                .contentTransition(.numericText())
-                .focusable(true)
-                .focused($crown)
-                .digitalCrownRotation(Binding(get: { Double(shown) }, set: { offset = Int($0.rounded()) - (stopped ? final : store.motion.count) }),
-                                      from: 0, through: 100, by: 1, sensitivity: .low, isContinuous: false, isHapticFeedbackEnabled: true)
-                .accessibilityLabel("\(shown) reps")
-            if !store.motion.isAvailable && !stopped {
-                Text("Motion isn't available. Turn the Crown to count.").font(.caption2).foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-            } else if !stopped {
-                Text("Turn the Crown to correct").font(.caption2).foregroundStyle(.secondary)
-            }
-            if stopped {
-                Button {
-                    onLog(shown)
-                    dismiss()
-                } label: {
-                    Text(exercise.bodyweight && weight <= 0 ? "Log \(shown) reps" : "Log \(UnitMath.format(weight)) × \(shown)").monospacedDigit()
+            Text("\(exercise.name) · 15 s steps").font(.caption2).foregroundStyle(WatchTheme.textSecondary).lineLimit(1)
+            Picker("Rest", selection: $value) {
+                ForEach(RestChoices.all(including: exercise.restSeconds), id: \.self) { s in
+                    Text(RestChoices.label(s)).font(WatchTheme.hero(22)).tag(s)
                 }
-                .buttonStyle(.borderedProminent)
-                .disabled(shown < 1)
-            } else {
-                Button("Done") {
-                    final = store.motion.stop()
-                    stopped = true
-                    WKInterfaceDevice.current().play(.stop)
-                }
-                .buttonStyle(.borderedProminent)
             }
+            .pickerStyle(.wheel)
+            .labelsHidden()
+            Text("Crown to adjust · Off to 5:00").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
         }
-        .onAppear {
-            store.startSessionIfNeeded()
-            store.motion.start()
-            #if DEBUG
-            if let n = WatchFixtures.requested?.countedReps { offset = n }
-            #endif
-            crown = true
-            WKInterfaceDevice.current().play(.start)
-        }
-        .onDisappear { store.motion.stop() }
+        .navigationTitle("Rest")
+        .onAppear { value = exercise.restSeconds }
+        .onDisappear { if value != exercise.restSeconds { store.setRest(exercise, seconds: value) } }
     }
 }
 
-// MARK: Add exercise
+// MARK: 3.6 Add exercise
+
+struct AddPage: View {
+    let onAdd: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Add exercise").font(.title3.weight(.semibold))
+            Text("Recents first.").font(.footnote).foregroundStyle(WatchTheme.textSecondary)
+            Spacer(minLength: 4)
+            Button("Add exercise", action: onAdd).buttonStyle(WatchPrimaryStyle())
+        }
+        .padding(.horizontal, WatchTheme.inset)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
 
 struct AddExerciseView: View {
     @Environment(WatchStore.self) private var store
     @Environment(\.dismiss) private var dismiss
-    let onPick: (LiveExercise) -> Void
+    let onDone: ([UUID]) -> Void
     @State private var query = ""
+    @State private var added: [UUID] = []
 
     var body: some View {
         let rows = store.pickerRows(query: query)
-        NavigationStack {
-            List {
-                if !rows.recents.isEmpty {
-                    Section("Recents") { ForEach(rows.recents) { row($0) } }
-                }
-                Section(query.isEmpty ? "All exercises" : "Results") {
-                    ForEach(rows.all) { row($0) }
+        List {
+            if !rows.recents.isEmpty {
+                Section("Recents") { ForEach(rows.recents) { row($0, meta: ago($0.lastDate)) } }
+            }
+            Section("All") { ForEach(rows.all) { row($0, meta: nil) } }
+        }
+        .searchable(text: $query, prompt: "Search")
+        .navigationTitle("Add exercise")
+        .toolbar {
+            if !added.isEmpty {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { onDone(added); dismiss() }
                 }
             }
-            .searchable(text: $query, prompt: "Search")
-            .navigationTitle("Add")
         }
     }
 
-    private func row(_ ex: LiveExercise) -> some View {
-        Button {
-            onPick(ex)
-            dismiss()
+    private func row(_ ex: LiveExercise, meta: String?) -> some View {
+        let isAdded = added.contains(ex.id) || store.live.exercises.contains { $0.id == ex.id }
+        return Button {
+            guard !isAdded else { return }
+            store.add(ex)
+            added.append(ex.id)
+            WKInterfaceDevice.current().play(.click)
         } label: {
-            VStack(alignment: .leading, spacing: 2) {
+            HStack {
                 Text(ex.name).lineLimit(2)
-                if let last = BeatItText.last(ex.last, date: ex.lastDate) {
-                    Text(last).font(.caption2).foregroundStyle(.secondary).lineLimit(1).monospacedDigit()
+                Spacer(minLength: 4)
+                if isAdded {
+                    Image(systemName: "checkmark").foregroundStyle(WatchTheme.ember)
+                } else if let meta {
+                    Text(meta).font(.caption2).foregroundStyle(WatchTheme.textSecondary)
                 }
             }
+            .frame(minHeight: 44)
         }
+    }
+
+    /// "2d ago" within a week, else the weekday.
+    private func ago(_ d: Date?) -> String? {
+        guard let d else { return nil }
+        let days = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: d), to: Calendar.current.startOfDay(for: Date())).day ?? 0
+        if days <= 0 { return "Today" }
+        if days < 3 { return "\(days)d ago" }
+        return d.formatted(.dateTime.weekday(.abbreviated))
     }
 }
 
-// MARK: End page and finish
+// MARK: 3.7 Finish
 
-struct EndPage: View {
+struct FinishView: View {
     @Environment(WatchStore.self) private var store
-    let onAdd: () -> Void
-    let onFinish: () -> Void
+    let onDone: () -> Void
     let onBack: () -> Void
 
     var body: some View {
+        let w = store.live
+        let t = w.targetsBeaten
+        let beaten = w.beaten
         ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-                let t = store.live.targetsBeaten
-                if t.of > 0 {
-                    (Text("\(t.beaten) of \(t.of)").fontWeight(.semibold) + Text(" targets beaten."))
-                        .font(.footnote).monospacedDigit()
+            VStack(alignment: .leading, spacing: 6) {
+                if t.of == 0 {
+                    Text("First time on these. Next time, they’re your numbers to beat.").font(.body.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                } else {
+                    Text("\(t.beaten) of \(t.of) targets beaten.").font(.title3.weight(.semibold)).monospacedDigit()
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text("\(store.live.doneSets.count) sets logged").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
-                Button("Add exercise", systemImage: "plus", action: onAdd)
-                Button("Finish", action: onFinish)
-                    .buttonStyle(.borderedProminent)
-                    .disabled(store.live.doneSets.isEmpty)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
-                Button("Previous exercise", systemImage: "chevron.left", action: onBack)
-                Spacer()
-            }
-        }
-    }
-}
-
-/// Finish shows the summary at once and saves after 5 s or on Done; Resume
-/// inside that window undoes it (no confirm alert).
-struct FinishSummaryView: View {
-    @Environment(WatchStore.self) private var store
-    let onDone: () -> Void
-    @State private var committed = false
-    @State private var commitTask: Task<Void, Never>?
-    @State private var summary: (beaten: Int, of: Int, sets: Int, minutes: Int)?
-
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("\(store.live.startedAt.formatted(.dateTime.weekday(.wide)))'s workout").font(.headline)
-                if let s = summary {
-                    if s.of == 0 {
-                        Text("First time on these. Next time, they're your numbers to beat.").font(.footnote)
-                            .fixedSize(horizontal: false, vertical: true)
-                    } else {
-                        (Text("\(s.beaten) of \(s.of)").fontWeight(.semibold) + Text(" targets beaten.")).font(.footnote).monospacedDigit()
+                ForEach(Array(beaten.enumerated()), id: \.element.exercise.id) { i, b in
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text(b.exercise.name).font(.footnote).lineLimit(1)
+                        Text(BeatItText.number(b.best, bodyweight: b.exercise.bodyweight)).font(.footnote.weight(.semibold)).monospacedDigit()
+                            .theBar(i == 0)
                     }
-                    Text("\(s.minutes) min · \(s.sets) sets").font(.caption2).foregroundStyle(.secondary).monospacedDigit()
+                }
+                if let v = w.volumeComparison {
+                    Text(volumeLine(v, unit: w.unit, lastDate: w.exercises.compactMap(\.lastDate).max()))
+                        .font(.caption2).foregroundStyle(WatchTheme.textSecondary).monospacedDigit()
+                }
+                if w.unloggedCount > 0 {
+                    let n = w.unloggedCount
+                    Text("\(n) set\(n == 1 ? "" : "s") not logged, so \(n == 1 ? "it won’t" : "they won’t") be saved.")
+                        .font(.caption2).foregroundStyle(WatchTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Button("Done") {
-                    commit()
+                    store.finish()
+                    WKInterfaceDevice.current().play(.success)
                     store.startFresh()
                     onDone()
                 }
-                .buttonStyle(.borderedProminent)
-                if !committed {
-                    Button("Resume") {
-                        commitTask?.cancel()
-                        onDone()
-                    }
+                .buttonStyle(WatchPrimaryStyle())
+                if w.unloggedCount > 0 {
+                    Button("Back to workout", action: onBack).buttonStyle(.plain).foregroundStyle(WatchTheme.ember)
+                        .frame(minHeight: 44)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .onAppear {
-            let w = store.live
-            let end = w.doneSets.compactMap(\.doneAt).max() ?? Date()
-            summary = (w.targetsBeaten.beaten, w.targetsBeaten.of, w.doneSets.count, max(1, Int(end.timeIntervalSince(w.startedAt) / 60)))
-            #if DEBUG
-            if WatchFixtures.requested != nil { return }
-            #endif
-            commitTask = Task {
-                try? await Task.sleep(for: .seconds(5))
-                guard !Task.isCancelled else { return }
-                commit()
-            }
+            .padding(.horizontal, WatchTheme.inset)
         }
     }
 
-    private func commit() {
-        guard !committed else { return }
-        committed = true
-        commitTask?.cancel()
-        store.finish()
-        WKInterfaceDevice.current().play(.success)
+    private func volumeLine(_ v: (today: Double, last: Double), unit: WeightUnit, lastDate: Date?) -> String {
+        let total = "\(Int(v.today.rounded()).formatted(.number)) \(unit.symbol)"
+        guard v.last > 0 else { return total }
+        let pct = Int(((v.today - v.last) / v.last * 100).rounded())
+        let day = lastDate.map { " from \($0.formatted(.dateTime.weekday(.wide)))" } ?? ""
+        if pct == 0 { return "\(total) · same as\(day.replacingOccurrences(of: " from", with: ""))" }
+        return "\(total) · \(pct > 0 ? "up" : "down") \(abs(pct))%\(day)"
     }
 }
 
-struct UndoToast: View {
+// MARK: Toast (3.12): 44 pt bar, raised fill, Undo in Ember
+
+struct ToastBar: View {
     @Environment(WatchStore.self) private var store
 
     var body: some View {
-        if let u = store.undo {
-            HStack(spacing: 6) {
-                Text(u.text).font(.caption2).monospacedDigit().lineLimit(1).minimumScaleFactor(0.8)
-                Button("Undo") { store.undoLast() }
-                    .font(.caption2.weight(.semibold))
+        if let t = store.toast {
+            HStack {
+                Text(t.text).font(.footnote).foregroundStyle(WatchTheme.textPrimary).lineLimit(1)
+                Spacer(minLength: 4)
+                Button("Undo") { store.undoToast() }
                     .buttonStyle(.plain)
-                    .foregroundStyle(.tint)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(WatchTheme.ember)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Capsule().fill(.thinMaterial))
-            .padding(.bottom, 2)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(WatchTheme.raised, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.horizontal, 4)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
     }

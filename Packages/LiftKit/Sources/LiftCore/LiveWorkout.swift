@@ -39,8 +39,13 @@ public struct LiveExercise: Codable, Hashable, Sendable, Identifiable {
     public var last: [SetTarget]
     public var lastDate: Date?
     public var sets: [LiveSet]
+    /// Earlier workouts' record-holding sets (the weight × reps Pareto front),
+    /// enough for PRDetector to spot a new best on the watch.
+    public var records: [SetSnapshot] = []
+    public var equipment: Equipment = .other
 
-    public init(id: UUID, libraryID: String? = nil, name: String, unit: WeightUnit, step: Double? = nil, bodyweight: Bool = false, repGoal: Int = Target.defaultRepGoal, restSeconds: Int = 120, last: [SetTarget] = [], lastDate: Date? = nil, sets: [LiveSet] = []) {
+    public init(id: UUID, libraryID: String? = nil, name: String, unit: WeightUnit, step: Double? = nil, bodyweight: Bool = false, repGoal: Int = Target.defaultRepGoal, restSeconds: Int = 120, last: [SetTarget] = [], lastDate: Date? = nil, sets: [LiveSet] = [], equipment: Equipment = .other, records: [SetSnapshot] = []) {
+        self.equipment = equipment; self.records = records
         self.id = id; self.libraryID = libraryID; self.name = name; self.unit = unit
         self.step = step ?? unit.defaultStep; self.bodyweight = bodyweight; self.repGoal = repGoal
         self.restSeconds = restSeconds; self.last = last; self.lastDate = lastDate; self.sets = sets
@@ -49,7 +54,7 @@ public struct LiveExercise: Codable, Hashable, Sendable, Identifiable {
     /// A library entry the phone has never seen used: no history, no target.
     public init(library e: LibraryExercise, unit: WeightUnit, restDefault: Int) {
         self.init(id: e.rowID, libraryID: e.id, name: e.name, unit: unit, bodyweight: e.equipment == .bodyweight,
-                  restSeconds: e.restSeconds ?? restDefault)
+                  restSeconds: e.restSeconds ?? restDefault, equipment: e.equipment)
     }
 
     /// Beat it (the same rule as the phone's Target line and prefill).
@@ -63,20 +68,40 @@ public struct LiveExercise: Codable, Hashable, Sendable, Identifiable {
         return doneSets.contains { $0.kind != .warmup && Target.isHit(weight: UnitMath.convert($0.weight, from: $0.unit, to: unit), reps: $0.reps, target: t) }
     }
 
-    /// The set to log next: the first unlogged one, else a new one.
+    /// The set to log next: the first unlogged one (keeping its id, so the
+    /// phone's row is the one ticked), at the Prefill rule's values.
     public var nextSet: LiveSet {
-        if let open = sets.first(where: { !$0.isDone }) { return open }
-        return LiveSet(weight: prefill.weight, unit: unit, reps: prefill.reps)
+        let p = prefill
+        if var open = sets.first(where: { !$0.isDone }) {
+            open.weight = p.weight
+            open.unit = unit
+            open.reps = p.reps
+            return open
+        }
+        return LiveSet(weight: p.weight, unit: unit, reps: p.reps)
     }
 
-    /// Values for a new set: the target until it's hit, then what was just
-    /// logged, then last time, else nothing (first time: weight 0, rep goal).
     public var prefill: SetTarget {
-        let done = doneSets.filter { $0.kind != .warmup }
-        if let t = target, !targetHit { return t }
-        if let l = done.last { return SetTarget(weight: UnitMath.convert(l.weight, from: l.unit, to: unit), reps: l.reps) }
-        if let first = last.first { return first }
-        return SetTarget(weight: 0, reps: repGoal)
+        let logged = doneSets.filter { $0.kind != .warmup }.map { SetTarget(weight: UnitMath.convert($0.weight, from: $0.unit, to: unit), reps: $0.reps) }
+        return Prefill.next(loggedThisSession: logged, target: target, lastSets: last, repGoal: repGoal)
+    }
+
+    /// Records a candidate set would beat (empty the first session, like the phone).
+    public func newRecords(weight: Double, reps: Int, workoutID: UUID, setID: UUID, now: Date = Date()) -> [RecordKind] {
+        let today = doneSets.filter { $0.id != setID }.map {
+            SetSnapshot(id: $0.id, workoutID: workoutID, weight: $0.weight, unit: $0.unit, reps: $0.reps, kind: $0.kind, date: $0.doneAt ?? now)
+        }
+        let candidate = SetSnapshot(id: setID, workoutID: workoutID, weight: weight, unit: unit, reps: reps, date: now)
+        return PRDetector.newRecords(for: candidate, history: records + today)
+    }
+
+    /// Auto-count is tried only where the wrist travels (watch.md §3.3).
+    public var countable: Bool { RepCountable.isCountable(name: name, equipment: equipment) }
+
+    /// Last session's working volume (in `unit`), for Finish.
+    public var lastVolume: Double { last.reduce(0) { $0 + $1.weight * Double($1.reps) } }
+    public var doneVolume: Double {
+        doneSets.filter { $0.kind != .warmup }.reduce(0) { $0 + UnitMath.convert($1.weight, from: $1.unit, to: unit) * Double($1.reps) }
     }
 }
 
@@ -117,6 +142,30 @@ public struct LiveWorkout: Codable, Equatable, Sendable {
     }
 
     public var doneSets: [LiveSet] { exercises.flatMap(\.doneSets) }
+    public var unloggedCount: Int { exercises.flatMap(\.sets).filter { !$0.isDone }.count }
+
+    /// Beaten lifts with their best set (the heaviest hit), for Finish.
+    public var beaten: [(exercise: LiveExercise, best: SetTarget)] {
+        exercises.compactMap { ex in
+            guard let t = ex.target else { return nil }
+            let hits = ex.doneSets.filter { $0.kind != .warmup }
+                .map { SetTarget(weight: UnitMath.convert($0.weight, from: $0.unit, to: ex.unit), reps: $0.reps) }
+                .filter { Target.isHit(weight: $0.weight, reps: $0.reps, target: t) }
+            guard let best = hits.max(by: { ($0.weight, $0.reps) < ($1.weight, $1.reps) }) else { return nil }
+            return (ex, best)
+        }
+    }
+
+    /// Today's volume and the last time of these same exercises, in `unit`
+    /// (nil when none of today's lifts has a last time).
+    public var volumeComparison: (today: Double, last: Double)? {
+        let logged = exercises.filter { !$0.doneSets.isEmpty }
+        let withLast = logged.filter { $0.lastVolume > 0 }
+        guard !withLast.isEmpty else { return nil }
+        let today = withLast.reduce(0) { $0 + UnitMath.convert($1.doneVolume, from: $1.unit, to: unit) }
+        let last = withLast.reduce(0) { $0 + UnitMath.convert($1.lastVolume, from: $1.unit, to: unit) }
+        return (today, last)
+    }
     public var clockStarted: Bool { !doneSets.isEmpty }
 
     /// "{n} of {m} targets beaten": m counts logged exercises that had a target.
@@ -146,6 +195,8 @@ public enum LiveCommand: Codable, Equatable, Sendable {
     /// Start / +30 s (new end) / skip (nil).
     case rest(RestState?)
     case finish(at: Date)
+    /// Discard today's log (sent after the watch's 5 s Undo).
+    case discard
     case watchSession(active: Bool)
     /// nil = the watch couldn't save; the phone saves instead.
     case healthSaved(healthKitID: UUID?)
@@ -214,6 +265,9 @@ public enum LiveReducer {
             w.exercises.removeAll { $0.sets.isEmpty }
         case .watchSession(let active):
             w.watchSessionActive = active
+        case .discard:
+            w.exercises = []
+            w.rest = nil
         case .healthSaved:
             break
         }
@@ -236,6 +290,53 @@ public enum LiveReducer {
     /// Keeps the phone's applied-id list short.
     public static func remember(_ id: UUID, in applied: [UUID], limit: Int = 200) -> [UUID] {
         Array((applied.filter { $0 != id } + [id]).suffix(limit))
+    }
+}
+
+/// The record-holding sets of a history: nothing else can matter to PRDetector
+/// (heaviest, e1RM, most reps at or above a weight and set volume all grow
+/// with weight and reps), so the phone sends only these to the watch.
+public enum RecordFront {
+    public static func front(_ sets: [SetSnapshot]) -> [SetSnapshot] {
+        let s = sets.filter { $0.kind.countsForRecords && $0.reps > 0 }
+            .sorted { ($0.weightKg, $0.reps) > ($1.weightKg, $1.reps) }
+        var out: [SetSnapshot] = []
+        var bestReps = 0
+        for x in s where x.reps > bestReps {
+            out.append(x)
+            bestReps = x.reps
+        }
+        return out
+    }
+}
+
+// MARK: Prefill (one rule for the phone and the watch)
+
+/// Ben, 2:16pm 26 Nov: the first set of an exercise prefills at the target;
+/// every later set prefills with the set just logged this session. The Beat
+/// it line keeps showing the target until a set beats it.
+public enum Prefill {
+    public static func next(loggedThisSession: [SetTarget], target: SetTarget?, lastSets: [SetTarget], repGoal: Int) -> SetTarget {
+        if let l = loggedThisSession.last { return l }
+        if let t = target { return t }
+        if let f = lastSets.first { return f }
+        return SetTarget(weight: 0, reps: repGoal)
+    }
+}
+
+/// Families the wrist can count (watch.md §3.3–3.4). Anything the wrist barely
+/// travels on shows "Counting off." instead of a guess.
+public enum RepCountable {
+    static let off = ["leg press", "hack squat", "calf", "hip thrust", "glute bridge", "carry", "farmer", "hold", "plank",
+                      "wall sit", "dead hang", "leg extension", "leg curl", "adductor", "abductor", "back squat", "barbell squat",
+                      "front squat", "box squat", "smith machine squat", "good morning", "sled"]
+
+    public static func isCountable(name: String, equipment: Equipment) -> Bool {
+        if equipment == .machine || equipment == .smithMachine || equipment == .sled { return false }
+        let n = Search.fold(name)
+        if off.contains(where: { n.contains($0) }) { return false }
+        if equipment == .barbell, n.contains("squat") { return false }
+        return true
     }
 }
 

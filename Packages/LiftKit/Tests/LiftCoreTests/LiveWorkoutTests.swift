@@ -201,3 +201,72 @@ final class RestTimerTests: XCTestCase {
         XCTAssertFalse(HealthOwnership.phoneShouldSave(healthEnabled: nil, watchRanSession: false, watchSaveFailed: false, alreadySaved: false))
     }
 }
+
+final class PrefillAndCountableTests: XCTestCase {
+    func testFirstSetAtTargetLaterSetsFollowTheLastLogged() {
+        let last = [SetTarget(weight: 185, reps: 8)]
+        let t = SetTarget(weight: 185, reps: 9)
+        XCTAssertEqual(Prefill.next(loggedThisSession: [], target: t, lastSets: last, repGoal: 10), t)
+        let logged = [SetTarget(weight: 185, reps: 7)]
+        XCTAssertEqual(Prefill.next(loggedThisSession: logged, target: t, lastSets: last, repGoal: 10), logged[0], "below target: still the set just logged")
+        XCTAssertEqual(Prefill.next(loggedThisSession: [], target: nil, lastSets: [], repGoal: 12), SetTarget(weight: 0, reps: 12))
+    }
+
+    func testWatchNextSetKeepsThePhoneRowIDAndBeatItStaysOnTarget() {
+        let open = LiveSet(weight: 185, unit: .lb, reps: 8, source: "phone")
+        var ex = LiveExercise(id: UUID(), name: "Bench Press", unit: .lb, last: [.init(weight: 185, reps: 8)], sets: [open])
+        XCTAssertEqual(ex.nextSet.id, open.id)
+        XCTAssertEqual(ex.nextSet.reps, 9, "first set prefills at the target")
+        ex.sets.insert(LiveSet(weight: 185, unit: .lb, reps: 7, isDone: true, doneAt: Date()), at: 0)
+        XCTAssertEqual(ex.nextSet.reps, 7)
+        XCTAssertEqual(ex.target, SetTarget(weight: 185, reps: 9))
+        XCTAssertFalse(ex.targetHit)
+    }
+
+    func testCountableFamilies() {
+        XCTAssertTrue(RepCountable.isCountable(name: "Barbell Bench Press", equipment: .barbell))
+        XCTAssertTrue(RepCountable.isCountable(name: "Dumbbell Curl", equipment: .dumbbell))
+        XCTAssertTrue(RepCountable.isCountable(name: "Face Pull", equipment: .cable))
+        XCTAssertFalse(RepCountable.isCountable(name: "Leg Press", equipment: .machine))
+        XCTAssertFalse(RepCountable.isCountable(name: "Barbell Squat", equipment: .barbell))
+        XCTAssertFalse(RepCountable.isCountable(name: "Seated Calf Raise", equipment: .other))
+        XCTAssertFalse(RepCountable.isCountable(name: "Farmer's Walk", equipment: .dumbbell))
+    }
+
+    func testRecordFrontKeepsPRDetectionIdentical() {
+        let w = UUID()
+        var history: [SetSnapshot] = []
+        for (wt, r) in [(100.0, 5), (100.0, 8), (90.0, 10), (110.0, 3), (80.0, 9), (60.0, 15)] {
+            history.append(SetSnapshot(workoutID: w, weight: wt, unit: .kg, reps: r, date: Date()))
+        }
+        let front = RecordFront.front(history)
+        XCTAssertEqual(front.count, 4)
+        for (wt, r) in [(100.0, 9), (110.0, 4), (120.0, 1), (85.0, 10), (60.0, 16), (100.0, 8)] {
+            let c = SetSnapshot(workoutID: UUID(), weight: wt, unit: .kg, reps: r, date: Date())
+            XCTAssertEqual(PRDetector.newRecords(for: c, history: front), PRDetector.newRecords(for: c, history: history), "\(wt)×\(r)")
+        }
+    }
+
+    func testRestChoicesOffAndSteps() {
+        XCTAssertEqual(RestChoices.base.first, 0)
+        XCTAssertEqual(RestChoices.base[1], 30)
+        XCTAssertEqual(RestChoices.base.last, 300)
+        XCTAssertEqual(RestChoices.base.count, 20)
+        XCTAssertEqual(RestChoices.label(0), "Off")
+        XCTAssertEqual(RestChoices.label(135), "2:15")
+    }
+
+    func testFinishSummaryNumbers() {
+        var a = LiveExercise(id: UUID(), name: "Bench", unit: .lb, last: [.init(weight: 185, reps: 8)])
+        a.sets = [LiveSet(weight: 185, unit: .lb, reps: 9, isDone: true), LiveSet(weight: 185, unit: .lb, reps: 6)]
+        let b = LiveExercise(id: UUID(), name: "Row", unit: .lb, last: [.init(weight: 135, reps: 10)],
+                             sets: [LiveSet(weight: 135, unit: .lb, reps: 9, isDone: true)])
+        let w = LiveWorkout(exercises: [a, b], unit: .lb)
+        XCTAssertEqual(w.targetsBeaten.beaten, 1)
+        XCTAssertEqual(w.targetsBeaten.of, 2)
+        XCTAssertEqual(w.beaten.first?.best, SetTarget(weight: 185, reps: 9))
+        XCTAssertEqual(w.unloggedCount, 1)
+        XCTAssertEqual(w.volumeComparison?.today, 185 * 9 + 135 * 9)
+        XCTAssertEqual(w.volumeComparison?.last, 185 * 8 + 135 * 10)
+    }
+}

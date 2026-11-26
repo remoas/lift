@@ -9,11 +9,19 @@ enum WatchFixtures {
         var page = 0
         var adding = false
         var finishing = false
-        var counting = false
+        var restPicker = false
         var countedReps: Int?
+        var restUp = false
+        var newBest: String?
+        var skipToast = false
+        var dimmed = false
+        var unreachable = false
     }
 
-    static let names = ["w01-empty", "w02-exercise", "w03-target-hit", "w04-counting", "w05-rest", "w06-add", "w07-end", "w08-finish"]
+    /// CDO's frames (design/watch/w01–w14).
+    static let names = ["w01-empty", "w02-exercise", "w03-counting", "w04-counting-off", "w05-first-time", "w06-rest",
+                        "w07-rest-up", "w08-target-hit", "w09-add", "w10-finish", "w11-always-on", "w12-unreachable",
+                        "w13-skip-toast", "w14-rest-picker"]
 
     #if DEBUG
     static let requested: Frame? = {
@@ -31,7 +39,7 @@ enum WatchFixtures {
         func ex(_ libID: String, _ fallback: String, last: [SetTarget], rest: Int, sets: [LiveSet] = []) -> LiveExercise {
             let e = lib(libID)
             return LiveExercise(id: e?.rowID ?? UUID(), libraryID: e?.id, name: e.map { WatchText.displayName($0.name, variant: $0.variant) } ?? fallback,
-                                unit: .lb, bodyweight: e?.equipment == .bodyweight, repGoal: 10, restSeconds: rest, last: last, lastDate: monday, sets: sets)
+                                unit: .lb, bodyweight: e?.equipment == .bodyweight, repGoal: 10, restSeconds: rest, last: last, lastDate: last.isEmpty ? nil : monday, sets: sets, equipment: e?.equipment ?? .other)
         }
         let benchLast = [SetTarget(weight: 185, reps: 8), SetTarget(weight: 185, reps: 7), SetTarget(weight: 185, reps: 6)]
         var bench = ex("bench-press", "Bench Press", last: benchLast, rest: 150)
@@ -41,32 +49,52 @@ enum WatchFixtures {
         live.recents = [pull, ex("barbell-squat", "Squat", last: [SetTarget(weight: 225, reps: 5)], rest: 180)]
         live.healthEnabled = true
         let hit = LiveSet(weight: 185, unit: .lb, reps: 9, isDone: true, doneAt: now.addingTimeInterval(-60), source: "watch")
+        let legPress = ex("leg-press", "Leg Press", last: [SetTarget(weight: 320, reps: 9)], rest: 120)
+        let facePull = ex("face-pull", "Face Pull", last: [], rest: 90)
+        func resting(_ w: inout LiveWorkout) {
+            bench.sets = [hit]
+            w.exercises[0] = bench
+            w.rest = RestState(seconds: 150, from: now.addingTimeInterval(-48), setID: hit.id, exercise: bench.name, next: "185 × 9", origin: .watch)
+        }
         switch name {
         case "w01-empty":
             return Frame(live: LiveWorkout(exercises: [], recents: live.recents))
-        case "w03-target-hit":
+        case "w03-counting":
+            return Frame(live: live, countedReps: 6)
+        case "w04-counting-off":
+            live.exercises.insert(legPress, at: 0)
+            return Frame(live: live)
+        case "w05-first-time":
+            live.exercises.insert(facePull, at: 0)
+            return Frame(live: live)
+        case "w06-rest":
+            resting(&live)
+            return Frame(live: live)
+        case "w07-rest-up":
             bench.sets = [hit]
             live.exercises[0] = bench
-            return Frame(live: live)
-        case "w04-counting":
-            return Frame(live: live, counting: true, countedReps: 7)
-        case "w05-rest":
-            bench.sets = [hit]
+            return Frame(live: live, restUp: true)
+        case "w08-target-hit":
+            bench.sets = [LiveSet(weight: 205, unit: .lb, reps: 5, isDone: true, doneAt: now, source: "watch")]
             live.exercises[0] = bench
-            live.rest = RestState(seconds: 150, from: now.addingTimeInterval(-48), setID: hit.id, exercise: bench.name, next: "185 × 9", origin: .watch)
-            return Frame(live: live)
-        case "w06-add":
+            return Frame(live: live, newBest: "205 × 5")
+        case "w09-add":
             return Frame(live: live, adding: true)
-        case "w07-end":
-            bench.sets = [hit, LiveSet(weight: 185, unit: .lb, reps: 8, isDone: true, doneAt: now, source: "watch")]
-            live.exercises[0] = bench
-            live.exercises[1].sets = [LiveSet(weight: 135, unit: .lb, reps: 10, isDone: true, doneAt: now, source: "phone")]
-            return Frame(live: live, page: 2)
-        case "w08-finish":
+        case "w10-finish":
             bench.sets = [hit]
             live.exercises[0] = bench
-            live.exercises[1].sets = [LiveSet(weight: 135, unit: .lb, reps: 10, isDone: true, doneAt: now, source: "phone")]
-            return Frame(live: live, page: 2, finishing: true)
+            live.exercises[1].sets = [LiveSet(weight: 115, unit: .lb, reps: 10, isDone: true, doneAt: now, source: "phone")]
+            live.exercises[1].last = [SetTarget(weight: 115, reps: 9)]
+            return Frame(live: live, finishing: true)
+        case "w11-always-on":
+            resting(&live)
+            return Frame(live: live, dimmed: true)
+        case "w12-unreachable":
+            return Frame(live: live, unreachable: true)
+        case "w13-skip-toast":
+            return Frame(live: live, skipToast: true)
+        case "w14-rest-picker":
+            return Frame(live: live, restPicker: true)
         default:
             return Frame(live: live)
         }

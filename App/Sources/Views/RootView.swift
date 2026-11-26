@@ -73,6 +73,9 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             if phase == .active { refreshLog() }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .liftWatchDiscarded)) { note in
+            if let fresh = note.object as? Workout, finishing == nil, backLog == nil { log = fresh }
+        }
         .onReceive(NotificationCenter.default.publisher(for: .liftWatchFinished)) { note in
             // Finished on the watch: a fresh log here too, with the same toast.
             refreshLog()

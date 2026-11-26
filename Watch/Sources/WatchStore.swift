@@ -16,14 +16,44 @@ final class WatchStore: NSObject {
     private(set) var pending: [LiveEnvelope]
     /// A snapshot has arrived from the phone at least once.
     private(set) var heardFromPhone: Bool
-    /// "Logged 185 × 9 · Undo" (5 s).
-    private(set) var undo: (text: String, setID: UUID, exerciseID: UUID)?
-    private(set) var restUp = false
+    /// The one toast: "Rest skipped · Undo", "Workout discarded · Undo" (5 s).
+    private(set) var toast: WatchToast?
+    /// Rest reached zero for this exercise's page; stays until a log or a tap.
+    private(set) var restUpFor: UUID?
+    /// "New best 205 × 5" for about 2 s, then rest.
+    private(set) var newBest: (exerciseID: UUID, text: String)?
+    /// The phone isn't reachable right now ("On this Watch only.").
+    private(set) var phoneReachable = true
+    /// The workout session couldn't start because Health is off.
+    private(set) var healthOff = false
+    /// The exercise page on screen (drives auto-count).
+    private(set) var pageExerciseID: UUID?
+    /// Auto-count is running for this exercise.
+    private(set) var countingFor: UUID?
+    /// Crown correction on top of the live count.
+    var countOffset = 0
+    /// Always-On preview for the w11 capture.
+    let forceDimmed: Bool
+    /// Motion can count here (screenshot frames act as a real watch).
+    var motionAvailable: Bool { fixture || motion.isAvailable }
+    /// Screenshot frames only: a live count to show.
+    @ObservationIgnored var fixtureCount: Int?
+
+    #if DEBUG
+    /// Screenshot frames: put the store in a state that needs time or motion.
+    func applyFixture(_ f: WatchFixtures.Frame) {
+        fixtureCount = f.countedReps
+        if f.restUp { restUpFor = live.exercises.first?.id }
+        if let b = f.newBest, let id = live.exercises.first?.id { newBest = (id, b) }
+        if f.skipToast { toast = WatchToast(text: "Rest skipped", undo: {}) }
+    }
+    #endif
 
     let workout = WorkoutManager()
     let motion = MotionCounter()
     private let fixture: Bool
-    private var undoTask: Task<Void, Never>?
+    private var toastTask: Task<Void, Never>?
+    private var bestTask: Task<Void, Never>?
     private var restTask: Task<Void, Never>?
     private var staleTask: Task<Void, Never>?
 
@@ -33,8 +63,9 @@ final class WatchStore: NSObject {
 
     private struct Saved: Codable { var live: LiveWorkout; var pending: [LiveEnvelope]; var heard: Bool }
 
-    init(fixture: LiveWorkout? = nil) {
+    init(fixture: LiveWorkout? = nil, dimmed: Bool = false, unreachable: Bool = false) {
         self.fixture = fixture != nil
+        forceDimmed = dimmed
         if let fixture {
             live = fixture; pending = []; heardFromPhone = true
         } else if let data = try? Data(contentsOf: Self.fileURL), let saved = LiveCoding.decode(Saved.self, from: data) {
@@ -44,6 +75,7 @@ final class WatchStore: NSObject {
             pending = []; heardFromPhone = false
         }
         super.init()
+        phoneReachable = !unreachable
         if live.endedAt != nil { startFresh() }
     }
 
@@ -51,6 +83,7 @@ final class WatchStore: NSObject {
         guard !fixture, WCSession.isSupported() else { return }
         WCSession.default.delegate = self
         WCSession.default.activate()
+        phoneReachable = WCSession.default.isReachable
         if let data = WCSession.default.receivedApplicationContext["w"] as? Data { receive(data) }
         scheduleRestAlert()
     }
@@ -95,6 +128,7 @@ final class WatchStore: NSObject {
         heardFromPhone = true
         persist()
         if live.rest != wasRest { scheduleRestAlert() }
+        if countingFor == nil, live.rest == nil { arm() }
     }
 
     // MARK: Actions
@@ -107,7 +141,15 @@ final class WatchStore: NSObject {
         send(.addExercise(live.recents.contains { $0.id == ex.id } ? ex : fromLibrary(ex)))
     }
 
-    /// Logs a set; starts the shared rest. Haptic when this set hits the target.
+    /// What the Log set button saves: the live count when counting, else the reps.
+    func liveCount(for ex: LiveExercise) -> Int? {
+        if let n = fixtureCount, ex.id == pageExerciseID { return n + countOffset }
+        guard countingFor == ex.id, motion.count >= 2 || countOffset != 0 else { return nil }
+        return max(0, motion.count + countOffset)
+    }
+
+    /// Logs a set. Haptics here only (the logging device owns them): log
+    /// click, target hit, new best. Starts the shared rest unless rest is Off.
     func log(exercise: LiveExercise, weight: Double, reps: Int) {
         startSessionIfNeeded()
         let wasHit = exercise.targetHit
@@ -116,33 +158,79 @@ final class WatchStore: NSObject {
         set.reps = reps
         set.doneAt = Date()
         set.source = "watch"
+        let records = exercise.newRecords(weight: weight, reps: reps, workoutID: live.workoutID, setID: set.id)
         send(.logSet(exerciseID: exercise.id, set: set))
+        restUpFor = nil
+        countOffset = 0
+        motion.stop()
+        countingFor = nil
         let updated = live.exercises.first { $0.id == exercise.id }
-        if !wasHit, updated?.targetHit == true { WKInterfaceDevice.current().play(.success) } else { WKInterfaceDevice.current().play(.click) }
+        if !records.isEmpty {
+            WKInterfaceDevice.current().play(.success)
+            showNewBest(exercise.id, text: BeatItText.number(SetTarget(weight: weight, reps: reps), bodyweight: exercise.bodyweight))
+        } else if !wasHit, updated?.targetHit == true {
+            WKInterfaceDevice.current().play(.directionUp)
+        } else {
+            WKInterfaceDevice.current().play(.click)
+        }
         let nextText = updated.map { BeatItText.number($0.prefill, bodyweight: $0.bodyweight) }
         if exercise.restSeconds > 0 {
             send(.rest(RestState(seconds: exercise.restSeconds, setID: set.id, exercise: exercise.name, next: nextText, origin: .watch)))
-            scheduleRestAlert()
+        } else if live.rest != nil {
+            send(.rest(nil))
         }
-        showUndo("Logged \(UnitMath.format(weight)) × \(reps)", setID: set.id, exerciseID: exercise.id)
+        scheduleRestAlert()
+        if live.rest == nil { arm() }
     }
 
-    func undoLast() {
-        guard let u = undo else { return }
-        send(.unlogSet(setID: u.setID))
-        if live.rest?.countdown.setID == u.setID { send(.rest(nil)); scheduleRestAlert() }
-        undo = nil
-        undoTask?.cancel()
-    }
-
-    private func showUndo(_ text: String, setID: UUID, exerciseID: UUID) {
-        undo = (text, setID, exerciseID)
-        undoTask?.cancel()
-        undoTask = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(5))
+    private func showNewBest(_ id: UUID, text: String) {
+        newBest = (id, text)
+        bestTask?.cancel()
+        bestTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
             guard !Task.isCancelled else { return }
-            self?.undo = nil
+            self?.newBest = nil
         }
+    }
+
+    private func showToast(_ t: WatchToast) {
+        toast = t
+        toastTask?.cancel()
+        toastTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled, let self else { return }
+            let done = self.toast
+            self.toast = nil
+            done?.onCommit?()
+        }
+    }
+
+    func undoToast() {
+        toastTask?.cancel()
+        let t = toast
+        toast = nil
+        t?.undo()
+    }
+
+    /// Back to the exercise after "Rest's up".
+    func dismissRestUp() { restUpFor = nil; arm() }
+
+    // MARK: Auto-count
+
+    func showPage(_ ex: LiveExercise?) {
+        pageExerciseID = ex?.id
+        arm()
+    }
+
+    /// Runs the counter on the page on screen when nothing else is going on.
+    func arm() {
+        motion.stop()
+        countingFor = nil
+        countOffset = 0
+        guard !fixture, let id = pageExerciseID, let ex = live.exercises.first(where: { $0.id == id }),
+              ex.countable, motion.isAvailable, live.rest.map({ $0.isOver(at: Date()) }) ?? true else { return }
+        countingFor = id
+        motion.start()
     }
 
     func setRest(_ exercise: LiveExercise, seconds: Int) { send(.setRest(exerciseID: exercise.id, seconds: seconds)) }
@@ -153,10 +241,37 @@ final class WatchStore: NSObject {
         scheduleRestAlert()
     }
 
+    /// Skip with "Rest skipped · Undo" (5 s); Undo puts the remaining time back.
     func skipRest() {
+        guard let r = live.rest else { return }
+        let left = r.remaining(at: Date())
         send(.rest(nil))
-        restUp = false
         scheduleRestAlert()
+        arm()
+        showToast(WatchToast(text: "Rest skipped", undo: { [weak self] in
+            guard let self, left > 1 else { return }
+            var back = r
+            back.countdown.endsAt = Date().addingTimeInterval(left)
+            self.send(.rest(back))
+            self.scheduleRestAlert()
+            self.arm()
+        }))
+    }
+
+    /// Discard from •••: nothing is asked; it happens when the 5 s Undo ends.
+    func discard() {
+        let before = live
+        var shown = live
+        shown.exercises = []
+        shown.rest = nil
+        live = shown
+        showToast(WatchToast(text: "Workout discarded", undo: { [weak self] in self?.live = before }, onCommit: { [weak self] in
+            guard let self else { return }
+            self.live = before
+            self.send(.discard)
+            self.endSession(at: Date(), save: false)
+            self.startFresh()
+        }))
     }
 
     /// Ends the workout: the phone stores it; the watch saves it to Health.
@@ -184,8 +299,11 @@ final class WatchStore: NSObject {
         let id = live.workoutID
         Task {
             if await workout.start(workoutID: id) {
+                healthOff = false
                 send(.watchSession(active: true))
                 watchForStale()
+            } else {
+                healthOff = true
             }
         }
     }
@@ -227,18 +345,16 @@ final class WatchStore: NSObject {
     /// down too); otherwise the phone's notification does (RestAlertPolicy).
     private func scheduleRestAlert() {
         restTask?.cancel()
-        restUp = false
         guard let r = live.rest, !r.isOver(at: Date()) else { return }
         restTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(r.remaining(at: Date())))
             guard !Task.isCancelled, let self, self.live.rest == r else { return }
+            // .notification is the watch's warning-family haptic, distinct from
+            // log (.click), target hit (.directionUp) and new best (.success).
             if self.workout.isRunning || WKApplication.shared().applicationState == .active {
                 WKInterfaceDevice.current().play(.notification)
             }
-            self.restUp = true
-            try? await Task.sleep(for: .seconds(3))
-            guard !Task.isCancelled else { return }
-            self.restUp = false
+            self.restUpFor = self.pageExerciseID ?? self.live.exercises[safe: self.current]?.id
         }
     }
 
@@ -264,7 +380,22 @@ final class WatchStore: NSObject {
     }
 }
 
+struct WatchToast {
+    var text: String
+    var undo: () -> Void
+    var onCommit: (() -> Void)? = nil
+}
+
+extension Array {
+    subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
+}
+
 extension WatchStore: WCSessionDelegate {
+    nonisolated func sessionReachabilityDidChange(_ session: WCSession) {
+        let r = session.isReachable
+        Task { @MainActor in self.phoneReachable = r }
+    }
+
     nonisolated func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
         Task { @MainActor in
             if let data = session.receivedApplicationContext["w"] as? Data { self.receive(data) }

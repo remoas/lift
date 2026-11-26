@@ -63,11 +63,17 @@ public enum RestAlertPolicy {
     }
 }
 
-/// Rest choices (15 s steps to 2 min, then 30 s to 5 min) for phone and watch pickers.
+/// Rest choices for the phone and watch pickers (watch.md §3.10): Off, then
+/// 0:30 to 5:00 in 15 s steps. Off (0) means no countdown after this lift.
 public enum RestChoices {
-    public static let base = [30, 45, 60, 75, 90, 105, 120, 150, 180, 210, 240, 300]
+    public static let off = 0
+    public static let base = [off] + Array(stride(from: 30, through: 300, by: 15))
     public static func all(including current: Int) -> [Int] {
         base.contains(current) ? base : (base + [current]).sorted()
+    }
+    /// "Off", "1:30".
+    public static func label(_ seconds: Int) -> String {
+        seconds <= 0 ? "Off" : RestCountdown.format(TimeInterval(seconds))
     }
 }
 

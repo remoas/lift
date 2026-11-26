@@ -42,12 +42,14 @@ enum LiveBridge {
     static func live(_ ex: Exercise, sets: [SetEntry], workout: Workout?, unit global: WeightUnit, restDefault: Int) -> LiveExercise {
         let unit = ex.unit(global: global)
         let beat = LiftStore.beatIt(for: ex, excluding: workout, unit: unit)
+        let earlier = LiftStore.history(for: ex).filter { $0.workout !== workout }.map(\.snapshot)
         let name = ex.variant.isEmpty || ex.name.localizedCaseInsensitiveContains(ex.variant) ? ex.name : "\(ex.name) (\(ex.variant))"
         return LiveExercise(id: ex.id, libraryID: ex.libraryID, name: name, unit: unit, step: ex.step(for: unit),
                             bodyweight: ex.equipment == .bodyweight, repGoal: ex.repGoal,
                             restSeconds: ex.restSec ?? restDefault, last: beat.last, lastDate: beat.lastDate,
                             sets: sets.map { LiveSet(id: $0.id, weight: $0.weight, unit: $0.unit, reps: $0.reps, kind: $0.kind,
-                                                     isDone: $0.isDone, doneAt: $0.doneAt, source: $0.source) })
+                                                     isDone: $0.isDone, doneAt: $0.doneAt, source: $0.source) },
+                            equipment: ex.equipment, records: RecordFront.front(earlier))
     }
 
     // MARK: Watch → phone
@@ -56,6 +58,7 @@ enum LiveBridge {
         case none
         case rest(RestState?)
         case finished(Workout)
+        case discarded(Workout)
         case watchSession(Bool)
         case healthFailed(Workout)
     }
@@ -107,6 +110,12 @@ enum LiveBridge {
             entry.isDone = true
             entry.doneAt = s.doneAt ?? env.sentAt
             entry.source = "watch"
+            // Prefill rule (Ben 2:16pm): later sets follow the set just logged.
+            if let next = w.allSets.filter({ $0.exercise === ex && !$0.isDone && $0.kind != .warmup }).min(by: { $0.order < $1.order }) {
+                next.weight = s.weight
+                next.unit = s.unit
+                next.reps = s.reps
+            }
             return .none
         case .unlogSet(let sid):
             if let set = try? context.fetch(FetchDescriptor<SetEntry>(predicate: #Predicate { $0.id == sid })).first {
@@ -132,6 +141,8 @@ enum LiveBridge {
             if w.doneSets.isEmpty { return .none }
             LiftStore.finish(w, at: at, context: context)
             return .finished(w)
+        case .discard:
+            return w.isActive ? .discarded(w) : .none
         case .watchSession(let active):
             if active { w.device = "Watch" }
             return .watchSession(active)

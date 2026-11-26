@@ -151,7 +151,7 @@ struct TextActionStyle: ButtonStyle {
     }
 }
 
-/// Rest chips: −15 · +15 · Skip.
+/// Rest chips: +30s · Skip.
 struct ChipStyle: ButtonStyle {
     var accent = false
     func makeBody(configuration: Configuration) -> some View {

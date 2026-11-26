@@ -31,6 +31,10 @@ enum RestNotifications {
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: trigger))
     }
 
+    static func isDenied() async -> Bool {
+        await UNUserNotificationCenter.current().notificationSettings().authorizationStatus == .denied
+    }
+
     static func cancel() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [id])
     }

@@ -16,6 +16,8 @@ final class WorkoutSession {
     private(set) var rest: RestCountdown?
     private(set) var restNextText: String?
     private(set) var restDoneText: String?
+    /// "Turn on notifications…", shown once if they're off.
+    private(set) var restCaption: String?
     private(set) var banner: PRBannerContent?
     private(set) var bannerExercise: Exercise?
     /// SetEntry.id behind the banner (prValue / prBanner shared IDs).
@@ -185,9 +187,26 @@ final class WorkoutSession {
         }
     }
 
+    /// Skip with a 5 s "Rest skipped · Undo" that puts the remaining time back.
+    func skipRest(toasts: ToastCenter) {
+        guard let r = rest else { stopRest(); return }
+        let left = r.remaining(at: Date())
+        let next = restNextText
+        stopRest()
+        toasts.show("Rest skipped") { [weak self] in
+            guard let self, left > 1 else { return }
+            var back = r
+            back.endsAt = Date().addingTimeInterval(left)
+            self.rest = back
+            self.restNextText = next
+            self.scheduleRestEnd()
+        }
+    }
+
     func stopRest() {
         rest = nil
         restDoneText = nil
+        restCaption = nil
         restTask?.cancel()
         if !workout.isBackLog { PhoneSync.shared.setLocalRest(nil) }
     }
@@ -203,11 +222,24 @@ final class WorkoutSession {
         runRestClock(r.countdown)
     }
 
+    private func checkNotificationsOnce() {
+        let key = "lift.rest.deniedCaptionShown"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        Task { [weak self] in
+            guard await RestNotifications.isDenied() else { return }
+            UserDefaults.standard.set(true, forKey: key)
+            self?.restCaption = "Turn on notifications in Settings if you want a banner too."
+        }
+    }
+
     private func scheduleRestEnd() {
         guard let r = rest else { return }
         restTask?.cancel()
         let nextEx = currentSet?.exercise?.name
         if !workout.isBackLog {
+            // Permission is asked at the first rest, never at launch (AC 76).
+            RestNotifications.requestPermissionIfNeeded()
+            checkNotificationsOnce()
             PhoneSync.shared.setLocalRest(RestState(countdown: r, exercise: nextEx, next: restNextText, origin: .phone))
         }
         runRestClock(r)
