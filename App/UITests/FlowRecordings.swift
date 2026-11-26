@@ -80,7 +80,8 @@ final class FlowRecordings: XCTestCase {
         // 2) Bench set 4 (prefilled with what was just logged) + 5 lb: a second best, replaces in place.
         let next = app.descendants(matching: .any)["current-set"].firstMatch
         if next.waitForExistence(timeout: 3) {
-            next.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).tap()
+            // The weight text opens the editor (the row is one AX element; tap the value).
+            next.coordinate(withNormalizedOffset: CGVector(dx: 0.24, dy: 0.5)).tap()
             let more = app.buttons["More weight"]
             if more.waitForExistence(timeout: 3) {
                 more.tap()
