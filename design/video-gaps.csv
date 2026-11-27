@@ -255,8 +255,8 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 254,superman-pulldown,Superman Pulldown,bodyweight,lats|rhomboids,still,still:superman-pulldown,,3,A,vertical-pull,,
 255,dumbbell-lunge,Dumbbell Lunge,dumbbell,quads|glutes,still,still:dumbbell-lunge,,3,A,lunge,,
 256,dumbbell-lunges,Dumbbell Lunges,dumbbell,quads,none,,,3,A,lunge,,
-257,dumbbell-rear-lunge,Dumbbell Rear Lunge,dumbbell,quads,none,,,3,A,lunge,,
-258,dumbbell-reverse-lunge,Dumbbell Reverse Lunge,dumbbell,quads|glutes,still,still:dumbbell-reverse-lunge,,3,A,lunge,,
+257,dumbbell-rear-lunge,Dumbbell Rear Lunge,dumbbell,quads,video,video:dumbbell-reverse-lunge,,3,A,lunge,dumbbell-reverse-lunge,reuse of dumbbell-reverse-lunge
+258,dumbbell-reverse-lunge,Dumbbell Reverse Lunge,dumbbell,quads|glutes,video,video:dumbbell-reverse-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 482063 bytes, CRF 26, MAE 2.61"
 259,dumbbell-step-up,Dumbbell Step Up,dumbbell,quads|glutes,still,still:dumbbell-step-up,,3,A,lunge,,
 260,dumbbell-step-ups,Dumbbell Step Ups,dumbbell,quads,none,,,3,A,lunge,,
 261,arnold-dumbbell-press,Arnold Dumbbell Press,dumbbell,front_delts,none,,,3,A,horizontal-push,,
