@@ -406,7 +406,7 @@ struct ExercisePage: View {
                 .padding(.top, WatchTheme.isLarge ? 2 : 0)
         } else {
             // 3.5 First time: no Last, no bar; Crown sets the weight.
-            firstTimeCaption("First time. Log what you do.", fit: fit)
+            firstTimeCaption("First time. Log what you do.", short: "First time.", fit: fit)
             if weight <= 0 && !exercise.bodyweight && active != .weight {
                 Button { take(.weight) } label: {
                     Text("Add weight").font(WatchTheme.hero(22)).foregroundStyle(WatchTheme.textPrimary)
@@ -415,13 +415,19 @@ struct ExercisePage: View {
             } else {
                 valueRow
             }
-            firstTimeCaption("\(Int(reps)) reps · Crown to set", fit: fit)
+            firstTimeCaption("\(Int(reps)) reps · Crown to set", short: "\(Int(reps)) reps", fit: fit)
         }
     }
 
-    @ViewBuilder private func firstTimeCaption(_ s: String, fit: Int) -> some View {
+    /// Step 5 keeps each caption to one line by falling back to a whole clause
+    /// ("First time.", "10 reps"), never a mid-word ellipsis (CDO watch QA 4, Must 2).
+    @ViewBuilder private func firstTimeCaption(_ s: String, short: String, fit: Int) -> some View {
         if fit >= 5 {
-            Text(s).watchCaption().lineLimit(1).minimumScaleFactor(0.85)
+            ViewThatFits(in: .horizontal) {
+                Text(s).watchCaption().lineLimit(1)
+                Text(short).watchCaption().lineLimit(1)
+            }
+            .accessibilityLabel(s)
         } else {
             Text(s).watchCaption()
         }
