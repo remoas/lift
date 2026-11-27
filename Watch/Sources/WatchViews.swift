@@ -324,7 +324,9 @@ struct ExercisePage: View {
         // The one-time small hint gets the first try; if nothing fits with it,
         // the ladder runs again without it (dropped first when tight).
         if smallHint {
-            for l in 0...Self.maxFit where estimatedHeight(fit: l, width: width, hint: true) <= height - 2 { return (l, true) }
+            // No 2 pt margin here: the hint is the last row, so a miss clips only its own
+            // descenders, never the value; each row's ceil already errs tall (w05 40 mm).
+            for l in 0...Self.maxFit where estimatedHeight(fit: l, width: width, hint: true) <= height { return (l, true) }
         }
         for l in 0..<Self.maxFit where estimatedHeight(fit: l, width: width, hint: false) <= height - 2 { return (l, false) }
         return (Self.maxFit, false)
