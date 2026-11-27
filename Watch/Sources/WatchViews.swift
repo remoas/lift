@@ -334,7 +334,11 @@ struct ExercisePage: View {
             let title = Text(exercise.name).watchTitle(lines: (fit >= 3 || (counting && !WatchTheme.isLarge)) ? 1 : 2)
             if !counting, !showFullLast, fit >= 4, let full = BeatItText.last(exercise.last, date: exercise.lastDate) {
                 // No room for Last: the name opens it, and VoiceOver reads it with the name.
-                Button { showFullLast = true } label: { title }
+                Button { showFullLast = true } label: {
+                    // A 44 pt hit target around the same-size name (QA 4, Must 3): the
+                    // shape reaches past the text; the layout doesn't move.
+                    title.contentShape(Rectangle().inset(by: -14))
+                }
                     .buttonStyle(.plain)
                     .accessibilityLabel(exercise.name)
                     .accessibilityValue(full)
