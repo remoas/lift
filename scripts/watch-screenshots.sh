@@ -14,7 +14,8 @@ mkdir -p "$OUT"
 AVAIL=$(xcrun simctl list devices available | grep -E "Apple Watch" || true)
 echo "$AVAIL"
 pick() { echo "$AVAIL" | grep -E "$1" | tail -1 | sed -E 's/^ *//; s/ \(([0-9A-F-]{36})\).*/|\1/' || true; }
-SMALL=$(pick "\((40|41)mm\)")
+# SE 3 first: on SE 2nd gen the w09 Add frame never got past the launch screen (CDO QA 3, S).
+SMALL=$(pick "SE 3 \(40mm\)"); [ -n "$SMALL" ] || SMALL=$(pick "\((40|41)mm\)")
 # The 41 and 45 mm classes (CDO QA 3): Series 7–9 sims if installed, else Series 10/11
 # at 42 and 46 mm, which take the same layout branch (WatchTheme.isLarge = width ≥ 198).
 MID_S=$(pick "\(41mm\)" | grep -v "^$SMALL$" || true); [ -n "$MID_S" ] || MID_S=$(pick "Series (10|11) \(42mm\)")
@@ -30,7 +31,13 @@ shoot_on() { # "name|udid" suffix
     xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
     xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture "$f" >/dev/null
     # Add loads the whole library; a slow small simulator can still show the launch screen at 15 s.
-    if [ "$f" = w09-add ]; then sleep 30; else sleep 3; fi
+    if [ "$f" = w09-add ]; then
+      # A cold first launch of Add can sit on the launch screen; launch it again warm.
+      sleep 12
+      xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+      xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture "$f" >/dev/null
+      sleep 20
+    else sleep 3; fi
     xcrun simctl io "$UDID" screenshot "$OUT/$f-$2.png" >/dev/null
   done
   xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
