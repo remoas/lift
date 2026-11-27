@@ -133,7 +133,7 @@ struct LiveActivityBehaviour: View {
         await log("11 rest 90s running before Finish (Lift back on screen)")
         await wait(1.5)
         if let w = LiveBridge.currentOpen(container.mainContext) { LiftStore.finish(w, context: container.mainContext) }
-        await log("12 FINISH (LiftStore.finish) → Activity ended .immediate, expect activities=0")
+        await log("12 FINISH (LiftStore.finish) → Activity ended .immediate and fallback notification cancelled, expect activities=0, notification=none")
         // AC 109: the tap target.
         await log("13 widgetURL=\(RestLinks.workout.absoluteString) → RootView.onOpenURL selects the Log tab")
         // The real system Island: a running rest with Lift actually in the background.
