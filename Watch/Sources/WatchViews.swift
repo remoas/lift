@@ -393,6 +393,8 @@ struct ExercisePage: View {
             }
             if showsHint(fit: fit, small: hint) {  // first use: always on 45/49 mm (QA 4), once on 40/41 mm (QA 5)
                 Text("Double tap to log.").watchCaption(WatchTheme.textTertiary)
+                    // 40 mm: up 2 pt into the caption leading so its descenders clear the slot (w05).
+                    .padding(.top, WatchTheme.isLarge ? 0 : -2)
             }
         }
     }
