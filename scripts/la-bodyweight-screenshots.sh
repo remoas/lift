@@ -35,6 +35,7 @@ done
 for f in 01e-log-pullup 01f-log-pullup-belt 01g-pullup-belt-hit \
          05b-set-editor-bodyweight 05c-set-editor-add-weight \
          07b-finish-pullup 08b-exercise-pullup \
+         08c-exercise-bench-range 08d-exercise-pendulum-range \
          10b-history-pullup 10c-history-pullup-belt; do
   shoot "$f" light
   shoot "$f" dark

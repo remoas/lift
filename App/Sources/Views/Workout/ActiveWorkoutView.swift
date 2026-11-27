@@ -458,7 +458,7 @@ struct ActiveWorkoutView: View {
     }
 
     private func discard() {
-        session?.stopRest()
+        session?.stopRest(endActivity: false)
         session?.save()
         onDiscard(workout)
     }

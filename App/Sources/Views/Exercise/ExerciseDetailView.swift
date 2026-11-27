@@ -11,16 +11,9 @@ struct ExerciseDetailView: View {
     @Environment(\.modelContext) private var context
     @State private var range: ChartRange = .threeMonths
     @State private var selected: Date?
-    /// Starts true when media exists (no layout jump); the header reports collapse.
-    @State private var headerShown: Bool
 
     init(exercise: Exercise) {
         self.exercise = exercise
-        var hasMedia = exercise.mediaRef.flatMap(ExerciseMedia.init(key:)) != nil
-        #if DEBUG
-        if Fixtures.mediaMode == .hidden { hasMedia = false }
-        #endif
-        _headerShown = State(initialValue: hasMedia)
     }
 
     private var media: ExerciseMedia? {
@@ -35,6 +28,7 @@ struct ExerciseDetailView: View {
             ForEach(ChartRange.allCases) { Text($0.rawValue).tag($0) }
         }
         .pickerStyle(.segmented)
+        .id("exercise-detail-range")
     }
 
     enum ChartRange: String, CaseIterable, Identifiable {
@@ -60,7 +54,7 @@ struct ExerciseDetailView: View {
         List {
             Section {
                 if let media {
-                    ExerciseMediaHeader(media: media, onVisibilityChange: { headerShown = $0 })
+                    ExerciseMediaHeader(media: media)
                         // insetGrouped insets 16 pt; 4 more each side = 20 pt (353 pt on a 393 pt screen).
                         .listRowInsets(EdgeInsets(top: Theme.Spacing.s2, leading: 4, bottom: 0, trailing: 4))
                         .listRowSeparator(.hidden)
@@ -74,12 +68,11 @@ struct ExerciseDetailView: View {
                 }
                 .listRowSeparator(.hidden)
                 if workoutCount > 0, exercise.loadKind == .loaded {
-                    // With a media header the range sits under the chart, so the
-                    // chart stays above the fold on iPhone 16 (AC 54).
+                    // Range control always sits under the date axis, whether or
+                    // not the exercise has a clip (Pendulum Row and Bench).
                     // Bodyweight / assisted lifts have no meaningful 0 lb e1RM (AC 119).
-                    if !headerShown { rangePicker.listRowSeparator(.hidden) }
                     chart.listRowSeparator(.hidden)
-                    if headerShown { rangePicker.listRowSeparator(.hidden) }
+                    rangePicker.listRowSeparator(.hidden)
                 }
             }
             .listRowBackground(Theme.Colors.bgCanvas)
@@ -132,6 +125,11 @@ struct ExerciseDetailView: View {
         .onAppear {
             // 24a scrolled: last Settings row at the bottom, so CDO can
             // measure the home-indicator clearance (safe area + 16 pt).
+            if Fixtures.requested == "08c-exercise-bench-range" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    proxy.scrollTo("exercise-detail-range", anchor: .bottom)
+                }
+            }
             if Fixtures.requested == "24a-media-video-scrolled" {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     proxy.scrollTo("exercise-detail-settings-end", anchor: .bottom)

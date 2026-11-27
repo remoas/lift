@@ -109,6 +109,7 @@ struct RootView: View {
     private func discard(_ workout: Workout) {
         finishing = nil
         backLog = nil
+        if !workout.isBackLog { RestActivityController.shared.end() }
         if workout.doneSets.isEmpty {
             context.delete(workout)
             _ = LiftStore.save(context)

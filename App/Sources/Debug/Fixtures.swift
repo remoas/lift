@@ -18,7 +18,7 @@ enum Fixtures {
         "25-finish-sets-left", "26-discard-toast",
         "01e-log-pullup", "01f-log-pullup-belt", "01g-pullup-belt-hit",
         "05b-set-editor-bodyweight", "05c-set-editor-add-weight",
-        "07b-finish-pullup", "08b-exercise-pullup",
+        "07b-finish-pullup", "08b-exercise-pullup", "08c-exercise-bench-range", "08d-exercise-pendulum-range",
         "10b-history-pullup", "10c-history-pullup-belt",
     ]
 
@@ -164,6 +164,12 @@ enum Fixtures {
             case "08b-exercise-pullup":
                 b.beltPullUps(daysAgo: 2, reps: 8)
                 exercise = b.exercise("pullups")
+            case "08c-exercise-bench-range":
+                exercise = b.exercise("bench-press")
+            case "08d-exercise-pendulum-range":
+                let cal = Calendar.current
+                for d in [12, 9, 5, 2] { b.session(["pendulum-row"], at: cal.date(byAdding: .day, value: -d, to: Date())!, bump: 0) }
+                exercise = b.exercise("pendulum-row")
             case "10b-history-pullup":
                 workout = b.latestFinished(containing: "pullups")
             case "10c-history-pullup-belt":
@@ -357,7 +363,7 @@ struct FixtureRoot: View {
             if let w = Fixtures.workout { RootView(workout: w) }
         case "07-finish", "07b-finish-pullup", "25-finish-sets-left":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }
-        case "08-exercise", "08b-exercise-pullup", "16-exercise-empty", "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none", "24f-media-video-r18", "24g-media-video-r17":
+        case "08-exercise", "08b-exercise-pullup", "08c-exercise-bench-range", "08d-exercise-pendulum-range", "16-exercise-empty", "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none", "24f-media-video-r18", "24g-media-video-r17":
             // On a push stack, so Back shows as in the real flow (QA 14).
             if let ex = Fixtures.exercise {
                 // Initial path: the detail is already on top, with no push
