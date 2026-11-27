@@ -128,10 +128,21 @@ final class LiveWorkoutTests: XCTestCase {
         let line = BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7)], date: nil, calendar: cal)
         XCTAssertEqual(line, "Last · 185×8, 185×7")
         XCTAssertNil(BeatItText.last([], date: nil))
-        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)], date: nil, compact: true), "Last · 185×8, 185×7, 185×6")
+        // CDO watch QA 3, decision 1: one weight is written once; differing weights stay whole.
+        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)], date: nil, compact: true), "Last · 185×8, 7, 6")
         XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8), .init(weight: 190, reps: 5)], date: nil, compact: true), "Last · 185×8, 190×5")
+        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8)], date: nil, compact: true), "Last · 185×8")
+        let same = BeatItText.lastOneLine([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)], date: nil)
+        XCTAssertEqual(same, ["Last · 185×8, 7, 6", "Last · 185×8, 7…", "Last · 185×8…"])
+        let mixed = BeatItText.lastOneLine([.init(weight: 185, reps: 8), .init(weight: 175, reps: 7), .init(weight: 175, reps: 6)], date: nil)
+        XCTAssertEqual(mixed, ["Last · 185×8, 175×7, 175×6", "Last · 185×8, 175×7…", "Last · 185×8…"])
+        XCTAssertEqual(BeatItText.lastOneLine([], date: nil), [])
+        let dated = BeatItText.lastOneLine([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)],
+                                           date: Date(timeIntervalSince1970: 0), now: Date(timeIntervalSince1970: 86_400), calendar: cal)
+        XCTAssertEqual(dated.count, 4)
+        XCTAssertEqual(dated[1], "Last · 185×8, 7, 6")
+        XCTAssertTrue(dated[0].hasSuffix(" · 185×8, 7, 6") && dated[0] != dated[1], dated[0])
         let now = Date()
-        XCTAssertEqual(BeatItText.last([.init(weight: 185, reps: 8)], date: now.addingTimeInterval(-86_400), now: now, compact: true), "Last · 185×8")
         XCTAssertEqual(BeatItText.number(.init(weight: 0, reps: 12), bodyweight: true), "12 reps")
         XCTAssertEqual(BeatItText.number(.init(weight: 102.5, reps: 8), bodyweight: false), "102.5 × 8")
     }
