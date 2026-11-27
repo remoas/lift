@@ -134,6 +134,13 @@ struct ExerciseDetailView: View {
             if Fixtures.requested == "24a-media-video-scrolled" {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                     proxy.scrollTo("exercise-detail-settings-end", anchor: .bottom)
+                    // Scrolling can reset the system back link to Ember;
+                    // re-apply the same textPrimary tint as the regular 24a frames.
+                    let color = UIColor(named: "textPrimary") ?? .label
+                    UIApplication.shared.connectedScenes
+                        .compactMap { $0 as? UIWindowScene }
+                        .flatMap(\.windows)
+                        .forEach { $0.liftDescendantNavigationBar()?.tintColor = color }
                 }
             }
         }
@@ -320,7 +327,13 @@ private struct NavigationBarTint: UIViewRepresentable {
 
     func updateUIView(_ view: UIView, context: Context) {
         context.coordinator.restore = restore
-        DispatchQueue.main.async { view.liftNavigationBar()?.tintColor = color }
+        let apply = { view.liftNavigationBar()?.tintColor = color }
+        DispatchQueue.main.async(execute: apply)
+        // List scrolling can reset the system bar to the app accent
+        // (the 24a scrolled fixture showed Friday in Ember after scrollTo).
+        // Re-apply after the next layouts; screenshots wait 2.5s.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: apply)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0, execute: apply)
     }
 
     static func dismantleUIView(_ view: UIView, coordinator: Coordinator) {
