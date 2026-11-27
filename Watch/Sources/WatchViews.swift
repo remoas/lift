@@ -486,7 +486,11 @@ struct ExercisePage: View {
         if !store.phoneReachable {
             Text("On this Watch only.").watchCaption()
         } else if store.healthOff {
-            Text("Apple Health is off. Your sets are safe in Lift.").watchCaption()
+            // 40/41 mm: the short form, so a three-line wrap can't push the value
+            // off the page (CDO watch QA 4, Must 1). VoiceOver reads it in full.
+            Text(WatchTheme.isLarge ? "Apple Health is off. Your sets are safe in Lift." : "Health is off. Sets are safe in Lift.")
+                .watchCaption()
+                .accessibilityLabel("Apple Health is off. Your sets are safe in Lift.")
         }
     }
 
