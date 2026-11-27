@@ -24,7 +24,7 @@ concurrency:
 jobs:
   build:
     runs-on: macos-15
-    timeout-minutes: 100
+    timeout-minutes: 130
     steps:
       - uses: actions/checkout@v4
       - name: Select Xcode 16
@@ -89,6 +89,7 @@ jobs:
       - name: Live Activity behaviour (recording + log)
         if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         continue-on-error: true
+        timeout-minutes: 10
         run: scripts/liveactivity-behaviour.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review/liveactivity/behaviour
       - name: Screenshots
         if: ${{ !cancelled() && inputs.screenshots && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
