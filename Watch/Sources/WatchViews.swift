@@ -67,7 +67,7 @@ struct WatchRoot: View {
 private struct DimmedKey: EnvironmentKey { static let defaultValue = false }
 /// The log page's overflow past its clipped area, with the ladder step it was measured at.
 struct FitPreference: PreferenceKey {
-    struct Value: Equatable { var overflow: CGFloat = 0; var level = -1 }
+    struct Value: Equatable { var overflow: CGFloat = 0; var level = -1; var generation = 0 }
     static let defaultValue = Value()
     static func reduce(value: inout Value, nextValue: () -> Value) { value = nextValue() }
 }
@@ -221,6 +221,7 @@ struct ExercisePage: View {
     @State private var idle: Task<Void, Never>?
     /// Fit ladder step (see logView) and the tapped-open Last list.
     @State private var fit = 0
+    @State private var fitGeneration = 0
     @State private var showFullLast = false
 
     private var dimmed: Bool { aod || previewDimmed }
@@ -297,15 +298,16 @@ struct ExercisePage: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(GeometryReader { g in
                         Color.clear.preference(key: FitPreference.self,
-                                               value: FitPreference.Value(overflow: g.size.height - geo.size.height, level: fit))
+                                               value: FitPreference.Value(overflow: g.size.height - geo.size.height, level: fit, generation: fitGeneration))
                     })
+                    // Read inside the ScrollView: watchOS doesn't pass preferences out of it.
+                    .onPreferenceChange(FitPreference.self) { v in
+                        if v.overflow > 0.5 && fit < Self.maxFit { fit += 1 }
+                    }
             }
             .scrollDisabled(fit < Self.maxFit)
         }
-        .onPreferenceChange(FitPreference.self) { v in
-            if v.overflow > 0.5 && fit < Self.maxFit { fit += 1 }
-        }
-        .onChange(of: fitKey) { _, _ in fit = 0 }
+        .onChange(of: fitKey) { _, _ in fit = 0; fitGeneration += 1 }
         .pinnedBottom(pager: true) {
             VStack(alignment: .leading, spacing: 6) {
                 // Above Log set, never in its inset (QA 2, item 3 and P); the page
@@ -454,10 +456,10 @@ struct ExercisePage: View {
             Text("\(UnitMath.format(weight)) \(exercise.unit.symbol) · Beat \(target)").watchCaption()
             // numeralHero 56 / 64 pt; the frame trims the line box to the digits so
             // "of 9 · Crown to correct" stays above Log set on 40 mm (QA 2, item 3).
-            // 40/41 mm: 42 pt still holds the 35.5 pt cap with the descender room the bar needs (QA 3, decision 3).
+            // 40/41 mm: 40 pt still holds the 35.5 pt cap with the descender room the bar needs (QA 3, decision 3).
             Text("\(count)")
                 .font(.system(size: WatchTheme.isLarge ? 64 : 56, weight: .semibold, design: .rounded).monospacedDigit())
-                .frame(height: WatchTheme.isLarge ? 54 : 42)
+                .frame(height: WatchTheme.isLarge ? 54 : 40)
                 .foregroundStyle(WatchTheme.textPrimary)
                 .contentTransition(.numericText())
                 .focusable(true)
@@ -469,6 +471,7 @@ struct ExercisePage: View {
                 .theBar(dimmed: dimmed)
                 .accessibilityLabel("\(count) reps counted, an estimate")
             Text("of \(target) · Crown to correct").watchCaption()
+                .lineLimit(WatchTheme.isLarge ? nil : 1).minimumScaleFactor(WatchTheme.isLarge ? 1 : 0.85)
         }
     }
 
@@ -836,15 +839,16 @@ struct FinishView: View {
             // The last line scrolls fully clear of Done.
             .padding(.bottom, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
+            // Whole entries only at Done's edge (QA 3, item 2): a lift or line that
+            // would be cut there waits, hidden, until a scroll brings all of it up.
+            // Read inside the ScrollView: watchOS doesn't pass preferences out of it.
+            .onPreferenceChange(WholeAtBottom.Key.self) { rects in
+                let h = geo.size.height
+                let next = Set(rects.filter { $0.value.maxY > h + 0.5 && $0.value.minY < h }.keys)
+                if next != cut { withAnimation(.easeOut(duration: 0.15)) { cut = next } }
+            }
         }
         .coordinateSpace(name: WholeAtBottom.space)
-        // Whole entries only at Done's edge (QA 3, item 2): a lift or line that
-        // would be cut there waits, hidden, until a scroll brings all of it up.
-        .onPreferenceChange(WholeAtBottom.Key.self) { rects in
-            let h = geo.size.height
-            let next = Set(rects.filter { $0.value.maxY > h + 0.5 && $0.value.minY < h }.keys)
-            if next != cut { withAnimation(.easeOut(duration: 0.15)) { cut = next } }
-        }
         // The w18 still shows the end of the list: sets-left copy and Back to workout (QA 2, item 2).
         .onAppear { if store.isFixture && w.unloggedCount > 0 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo("back", anchor: .bottom) } } }
         }
