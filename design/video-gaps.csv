@@ -224,7 +224,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 223,rope-straight-arm-pulldown,Rope Straight-Arm Pulldown,cable,lats,video,video:rope-straight-arm-pulldown,,3,A,vertical-pull,,"pass-pending-cdo-qa; official a1, 479255 bytes, MAE 2.73"
 224,underhand-cable-pulldowns,Underhand Cable Pulldowns,cable,lats,video,video:reverse-grip-lat-pulldown,,3,A,vertical-pull,reverse-grip-lat-pulldown,reuse of reverse-grip-lat-pulldown
 225,v-bar-pulldown,V-Bar Pulldown,cable,lats,still,still:v-bar-pulldown,,3,A,vertical-pull,,
-226,dumbbell-one-arm-upright-row,Dumbbell One-Arm Upright Row,dumbbell,side_delts,none,,,3,A,shoulder-iso,,
+226,dumbbell-one-arm-upright-row,Dumbbell One-Arm Upright Row,dumbbell,side_delts,video,video:dumbbell-one-arm-upright-row,,3,A,shoulder-iso,,"pass-pending-cdo-qa; official a1, 445928 bytes, MAE 2.78"
 227,dumbbell-upright-row,Dumbbell Upright Row,dumbbell,side_delts|traps,still,still:dumbbell-upright-row,,3,A,shoulder-iso,,
 228,smith-single-leg-split-squat,Smith Single-Leg Split Squat,smith_machine,quads,none,,,3,A,lunge,,
 229,standing-dumbbell-upright-row,Standing Dumbbell Upright Row,dumbbell,traps,none,,,3,A,shoulder-iso,,
