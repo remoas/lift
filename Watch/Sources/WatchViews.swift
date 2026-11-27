@@ -197,6 +197,10 @@ struct ExercisePage: View {
     @State private var idle: Task<Void, Never>?
     /// The tapped-open Last list.
     @State private var showFullLast = false
+    /// 40/41 mm: "Double tap to log." once, on the first first-time page the user
+    /// sees, until they log a set or leave that page (CDO watch QA 5, Should 1).
+    @AppStorage("watch.doubleTapHintSeen") private var hintSeen = false
+    @State private var smallHint = false
 
     private var dimmed: Bool { aod || previewDimmed }
     private var resting: RestState? {
@@ -239,7 +243,10 @@ struct ExercisePage: View {
         .onAppear {
             load()
             if store.fixtureFocusWeight && isCurrent { take(.weight) }
+            claimSmallHint()
         }
+        .onChange(of: isCurrent) { _, now in if now { claimSmallHint() } else { endSmallHint() } }
+        .onDisappear { endSmallHint() }
         .onChange(of: draftKey) { _, _ in load() }
         .onChange(of: focus) { _, f in
             // Focus lost elsewhere (a swipe, a sheet): hand the Crown back.
@@ -267,9 +274,10 @@ struct ExercisePage: View {
     private var logView: some View {
         GeometryReader { geo in
             let width = geo.size.width - WatchTheme.inset - WatchTheme.trailingInset
-            let fit = fitLevel(height: geo.size.height, width: width)
+            let level = fitLevel(height: geo.size.height, width: width)
+            let fit = level.0
             ScrollView {
-                logContent(fit: fit)
+                logContent(fit: fit, hint: level.1)
                     .padding(.leading, WatchTheme.inset)
                     .padding(.trailing, WatchTheme.trailingInset)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -290,15 +298,40 @@ struct ExercisePage: View {
     }
 
     static let maxFit = 5
+
+    /// The small-size hint is taken by the first current first-time page and
+    /// marked seen at once, so it shows for this one view only. Fixtures read
+    /// the flag but never write it, so every reshoot starts as first use.
+    private func claimSmallHint() {
+        guard !WatchTheme.isLarge, isCurrent, !hintSeen, exercise.target == nil,
+              store.liveCount(for: exercise) == nil else { return }
+        smallHint = true
+        if !store.isFixture { hintSeen = true }
+    }
+    private func endSmallHint() { smallHint = false }
+
+    /// "Double tap to log." on this page: always on first use on 45/49 mm (QA 4),
+    /// once on 40/41 mm (QA 5); on large it's the ladder's first thing dropped.
+    private func showsHint(fit: Int, small: Bool) -> Bool {
+        let counting = store.liveCount(for: exercise) != nil
+        if counting { return false }
+        if WatchTheme.isLarge { return fit < 1 || exercise.target == nil }
+        return small
+    }
     private var hasStatus: Bool { !store.phoneReachable || store.healthOff }
     /// The first ladder step whose estimated height fits (see logView).
-    private func fitLevel(height: CGFloat, width: CGFloat) -> Int {
-        for l in 0..<Self.maxFit where estimatedHeight(fit: l, width: width) <= height - 2 { return l }
-        return Self.maxFit
+    private func fitLevel(height: CGFloat, width: CGFloat) -> (Int, Bool) {
+        // The one-time small hint gets the first try; if nothing fits with it,
+        // the ladder runs again without it (dropped first when tight).
+        if smallHint {
+            for l in 0...Self.maxFit where estimatedHeight(fit: l, width: width, hint: true) <= height - 2 { return (l, true) }
+        }
+        for l in 0..<Self.maxFit where estimatedHeight(fit: l, width: width, hint: false) <= height - 2 { return (l, false) }
+        return (Self.maxFit, false)
     }
 
     /// logContent's height at a ladder step, from the same fonts and texts.
-    private func estimatedHeight(fit: Int, width: CGFloat) -> CGFloat {
+    private func estimatedHeight(fit: Int, width: CGFloat, hint: Bool) -> CGFloat {
         let large = WatchTheme.isLarge
         let counting = store.liveCount(for: exercise) != nil
         var rows: [CGFloat] = []
@@ -322,11 +355,11 @@ struct ExercisePage: View {
                 rows.append(cap("\(Int(reps)) reps · Crown to set"))
             }
         }
-        if large && !counting && (fit < 1 || exercise.target == nil) { rows.append(WatchFit.line(WatchFit.caption2)) }
+        if showsHint(fit: fit, small: hint) { rows.append(WatchFit.line(WatchFit.caption2)) }
         return rows.reduce(0, +) + CGFloat(max(rows.count - 1, 0)) * (large ? 3 : 1)
     }
 
-    @ViewBuilder private func logContent(fit: Int) -> some View {
+    @ViewBuilder private func logContent(fit: Int, hint: Bool) -> some View {
         let counting = store.liveCount(for: exercise) != nil
         VStack(alignment: .leading, spacing: WatchTheme.isLarge ? 3 : 1) {
             // 40/41 mm counting: one line so the 56 pt count, its bar and
@@ -355,7 +388,7 @@ struct ExercisePage: View {
                 }
                 targetBlock(fit: fit)
             }
-            if WatchTheme.isLarge && !counting && (fit < 1 || exercise.target == nil) {  // always on first use (QA 4, Should 2)
+            if showsHint(fit: fit, small: hint) {  // first use: always on 45/49 mm (QA 4), once on 40/41 mm (QA 5)
                 Text("Double tap to log.").watchCaption(WatchTheme.textTertiary)
             }
         }
@@ -527,6 +560,8 @@ struct ExercisePage: View {
     private func log() {
         let r = store.liveCount(for: exercise) ?? Int(reps)
         store.log(exercise: exercise, weight: weight, reps: max(r, 1))
+        if !store.isFixture { hintSeen = true }
+        smallHint = false
         release()
     }
 
