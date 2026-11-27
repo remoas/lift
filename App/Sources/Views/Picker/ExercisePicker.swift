@@ -630,6 +630,8 @@ private struct DetailAtWords: View {
 
     static func candidates(_ parts: [String]) -> [String] {
         let sep = Self.sep
+        // "200 × 8" stays on one line.
+        let parts = parts.map { $0.replacingOccurrences(of: " × ", with: "\u{00A0}×\u{00A0}") }
         var out = [parts.joined(separator: sep)]
         var p = parts
         while p.count > 1 {
