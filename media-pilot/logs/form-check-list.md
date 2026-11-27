@@ -343,3 +343,18 @@ All six unique PASS. Unique CDO-final count is now 104. Aliases `bent-over-two-d
 - **front-squats-with-two-kettlebells:** none.
 - **kettlebell-pistol-squat:** free leg high at the stands; depth about parallel; more chest shows; rep 2 pauses at the bottom.
 
+## CDO QA Round 15 official Shoulds (about 5:04am Atlantic/Bermuda, 27 Nov 2026)
+
+All ten unique PASS. Unique CDO-final count is now 114. Alias `machine-high-row` → `leverage-high-row` was verified. Parked `kneeling-squat`, `dumbbell-hip-thrust`, `machine-row` and `shotgun-row` were not reviewed and stay out of the unique-done and vendoring counts. Out-of-scope pending `single-arm-cable-row`, `upright-cable-row` (with the `cable-upright-row` alias) and `one-arm-lat-pulldown` were listed, not QAd.
+
+- **kettlebell-turkish-get-up-squat-style:** elevated 3/4 camera pulled back; posting arm close to the hip rather than a wide T; compact sit-to-squat instead of a forearm post; a briefly ghosted free arm at 1.00s; lockout a touch soft on the final sit-back.
+- **one-arm-overhead-kettlebell-squats:** a little more of the chest visible at both bottoms; a slight forward torso lean at the bottoms; the free arm is out for balance; both bottoms hold a brief pause.
+- **renegade-row:** elevated 3/4 camera pulled back; the head looks down; the feet are fairly close together; the second peak holds a brief pause.
+- **seal-row:** feet overlap the left machine (occluded, not interpenetrating); the head rests on the pad rather than hanging off the end; the far DB is partly occluded at the hangs; the second peak holds a brief pause.
+- **smith-machine-pistol-squat:** 3/4 camera; the Smith hides the usual left machine and right bench; the free leg is held quite high at the stands and passes in front of the far rod with no clipping; supporting-leg depth is about parallel; both bottoms pause, the second a beat longer.
+- **smith-machine-squat:** 3/4 camera; the Smith hides the usual machines; the stance is a little narrower than shoulder-width; a little more of the chest is visible at both bottoms; the second bottom holds a brief pause.
+- **leverage-high-row:** a seat back is present; elbows are slightly bent at the stretch rather than a fully extended reach; the arms are slightly asymmetric at the peaks; the second peak holds a brief pause.
+- **leverage-iso-row:** a seat back is present; the peak is short of the ribs rather than a fully tucked contraction.
+- **lying-t-bar-row:** the head looks down; plates overlap the left machine at the peaks (occluded, not interpenetrating); the second peak holds a brief pause.
+- **barbell-rear-delt-row:** slight 3/4 camera; torso short of parallel; the head looks down; the bar stops at the lower chest rather than the upper chest; the elbows are not fully flared into a T.
+
