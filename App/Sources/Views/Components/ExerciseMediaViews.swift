@@ -2,7 +2,7 @@ import SwiftUI
 import AVKit
 import LiftCore
 
-/// Loads vendored CC0 media from the app bundle (ExerciseMedia/…). Never the network.
+/// Loads vendored media from the app bundle (ExerciseMedia/…). Never the network.
 enum MediaStore {
     private static let cache = NSCache<NSString, UIImage>()
 

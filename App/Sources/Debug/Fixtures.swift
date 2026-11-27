@@ -123,11 +123,17 @@ enum Fixtures {
                 break
             case "24a-media-video", "24c-media-reduce-motion":
                 // Reduce Motion matters for video: End still, "▶ Play" pill, no autoplay.
-                exercise = b.exercise("barbell-shoulder-press")
-            case "24b-media-stills", "24d-media-loading":
+                // bench-press has a bundled looping clip (barbell-shoulder-press is also a video).
                 exercise = b.exercise("bench-press")
+            case "24b-media-stills", "24d-media-loading":
+                // Keep a stills-only library row so these frames do not pick up a video.
+                // dips is already in the push history fixture (and is not a bundled video).
+                exercise = b.exercise("dips")
             case "24e-media-none":
-                exercise = b.exercise("triceps-pushdown")
+                // No mediaRef: header collapses. triceps-pushdown now has a video.
+                let cal = Calendar.current
+                for d in [12, 9, 5, 2] { b.session(["pendulum-row"], at: cal.date(byAdding: .day, value: -d, to: Date())!, bump: 0) }
+                exercise = b.exercise("pendulum-row")
             case "08-exercise":
                 exercise = b.exercise("bench-press")
             case "16-exercise-empty":
@@ -155,6 +161,7 @@ enum Fixtures {
             "side-lateral-raise": (20, 12), "triceps-pushdown": (50, 10),
             "deadlift": (315, 5), "pullups": (0, 9), "bent-over-row": (155, 8), "face-pull": (40, 12), "barbell-curl": (70, 9),
             "barbell-squat": (245, 6), "romanian-deadlift": (205, 8), "leg-press": (360, 10), "leg-curl": (90, 10), "calf-raises": (180, 12), "seated-dumbbell-press": (50, 10),
+            "pendulum-row": (180, 10),
         ]
 
         func exercise(_ id: String) -> Exercise? {

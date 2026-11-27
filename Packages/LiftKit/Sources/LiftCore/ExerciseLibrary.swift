@@ -176,13 +176,13 @@ public struct LibraryExercise: Codable, Hashable, Sendable, Identifiable {
 }
 
 /// Vendored media for a library entry. Files live in the app bundle under
-/// ExerciseMedia/ (never hot-linked). Licences: THIRD_PARTY_MEDIA.md.
+/// ExerciseMedia/ (never hot-linked). Third-party licences: THIRD_PARTY_MEDIA.md.
 public enum ExerciseMedia: Hashable, Sendable {
     /// Start and end stills (open-exercise-illustrations, CC0); crossfade start → end.
     case stills(start: String, end: String)
     /// One held-position still (open-exercise-illustrations, CC0).
     case hold(String)
-    /// Looping 720p MP4 (workout-free-videos v2.0.0, CC0).
+    /// Looping 720p MP4, vendored under ExerciseMedia/video/.
     case video(String)
 
     public init?(key: String) {

@@ -19,7 +19,7 @@ final class Exercise {
     /// Comma-separated search aliases ("RDL").
     var aliasesRaw: String = ""
     var isCustom: Bool = false
-    /// Vendored CC0 media key (see ExerciseMedia); nil = placeholder tile. Customs stay nil.
+    /// Vendored media key (see ExerciseMedia); nil = placeholder tile. Customs stay nil.
     var mediaRef: String?
     /// nil = follow the global unit.
     var unitOverrideRaw: String?
