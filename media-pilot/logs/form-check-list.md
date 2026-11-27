@@ -315,6 +315,8 @@ The earlier internal Shoulds on kneeling-squat ("sit-back is modest, not a full 
 
 - smith-machine-bent-over-row: two complete hang-to-lower-rib-to-hang Smith-machine bent-over rows, hinged at the hips, the Smith bar stays on the rails, house gym locked. Official encode 448,467 bytes, CRF 28, MAE 3.24. Shoulds: the carriage housings are thinner than on the official high-bar smith squat; the bar sits a little in front of a tight hip tuck at the peaks; the upper back is slightly rounded. Start is v4 only (v1–v3 were a free barbell in front of the Smith and were not used as refs).
 
+- two-arm-kettlebell-row: two complete hang-to-hip-to-hang two-arm kettlebell rows, hinged at the hips, a matching kettlebell stays in each hand, house gym locked. Official encode 491,701 bytes, CRF 26, MAE 2.65. Shoulds: slight 3/4 so both bells stay visible; the far kettlebell is partly occluded behind the near one; the bells sit a little below a tight hip tuck at the peaks. Start is v2 only (v1 hid the far bell).
+
 ## CDO QA Round 12 official Shoulds (about 12:00am Atlantic/Bermuda, 27 Nov 2026)
 
 All eight PASS. Unique CDO-final count is now 90. Aliases `t-bar-row-with-handle` → `t-bar-row` and `bodyweight-mid-row` → `inverted-row` were verified. Parked `kneeling-squat` and `dumbbell-hip-thrust` were not reviewed and stay out of the unique-done and vendoring counts.
