@@ -234,7 +234,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 233,dumbbell-hip-thrust,Dumbbell Hip Thrust,dumbbell,glutes,still,still:dumbbell-hip-thrust,,3,A,hinge,, needs-retry-or-manual. CDO Round 10 FAIL regen parked 2026-11-26 ~10:40pm Atlantic/Bermuda after 4 start stills failed to put the hips near the floor (v1 mid-height; v2 copied the accepted lockout peak; v3 lying along the bench; v4 mid-height copy of the official start). Accepted peak kept at media-pilot/starts/dumbbell-hip-thrust-peak-regen.jpg.
 234,kettlebell-row,Kettlebell Row,kettlebell,rhomboids|lats,video,video:kettlebell-row,,3,A,horizontal-pull,,"pass-pending-cdo-qa; official a1, 499369 bytes, MAE 3.08"
 235,one-arm-kettlebell-row,One-Arm Kettlebell Row,kettlebell,rhomboids,video,video:kettlebell-row,,3,A,horizontal-pull,kettlebell-row,reuse of kettlebell-row
-236,smith-machine-bent-over-row,Smith Machine Bent Over Row,smith_machine,rhomboids,still,still:smith-machine-bent-over-row,,3,A,horizontal-pull,,
+236,smith-machine-bent-over-row,Smith Machine Bent Over Row,smith_machine,rhomboids,video,video:smith-machine-bent-over-row,,3,A,horizontal-pull,,"pass-pending-cdo-qa; official a1, 448467 bytes, CRF 28, MAE 3.24"
 237,two-arm-kettlebell-row,Two-Arm Kettlebell Row,kettlebell,rhomboids,none,,,3,A,horizontal-pull,,
 238,barbell-lunge,Barbell Lunge,barbell,quads,still,still:barbell-lunge,,3,A,lunge,,
 239,barbell-reverse-lunge,Barbell Reverse Lunge,barbell,quads|glutes,still,still:barbell-reverse-lunge,,3,A,lunge,,
