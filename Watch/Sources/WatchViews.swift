@@ -322,7 +322,7 @@ struct ExercisePage: View {
                 rows.append(cap("\(Int(reps)) reps · Crown to set"))
             }
         }
-        if large && !counting && fit < 1 { rows.append(WatchFit.line(WatchFit.caption2)) }
+        if large && !counting && (fit < 1 || exercise.target == nil) { rows.append(WatchFit.line(WatchFit.caption2)) }
         return rows.reduce(0, +) + CGFloat(max(rows.count - 1, 0)) * (large ? 3 : 1)
     }
 
@@ -355,7 +355,7 @@ struct ExercisePage: View {
                 }
                 targetBlock(fit: fit)
             }
-            if WatchTheme.isLarge && !counting && fit < 1 {
+            if WatchTheme.isLarge && !counting && (fit < 1 || exercise.target == nil) {  // always on first use (QA 4, Should 2)
                 Text("Double tap to log.").watchCaption(WatchTheme.textTertiary)
             }
         }
