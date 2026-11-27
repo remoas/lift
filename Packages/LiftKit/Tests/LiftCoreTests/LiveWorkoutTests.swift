@@ -137,6 +137,11 @@ final class LiveWorkoutTests: XCTestCase {
         let mixed = BeatItText.lastOneLine([.init(weight: 185, reps: 8), .init(weight: 175, reps: 7), .init(weight: 175, reps: 6)], date: nil)
         XCTAssertEqual(mixed, ["Last · 185×8, 175×7, 175×6", "Last · 185×8, 175×7…", "Last · 185×8…"])
         XCTAssertEqual(BeatItText.lastOneLine([], date: nil), [])
+        let dated = BeatItText.lastOneLine([.init(weight: 185, reps: 8), .init(weight: 185, reps: 7), .init(weight: 185, reps: 6)],
+                                           date: Date(timeIntervalSince1970: 0), now: Date(timeIntervalSince1970: 86_400), calendar: cal)
+        XCTAssertEqual(dated.count, 4)
+        XCTAssertEqual(dated[1], "Last · 185×8, 7, 6")
+        XCTAssertTrue(dated[0].hasSuffix(" · 185×8, 7, 6") && dated[0] != dated[1], dated[0])
         let now = Date()
         XCTAssertEqual(BeatItText.number(.init(weight: 0, reps: 12), bodyweight: true), "12 reps")
         XCTAssertEqual(BeatItText.number(.init(weight: 102.5, reps: 8), bodyweight: false), "102.5 × 8")

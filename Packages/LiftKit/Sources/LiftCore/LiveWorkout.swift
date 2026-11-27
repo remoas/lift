@@ -353,12 +353,15 @@ public enum BeatItText {
     /// The one-line Last for 40/41 mm (CDO watch QA 3, decision 1), longest first:
     /// "Last · Tue · 185×8, 7, 6" when every set shares a weight, else
     /// "Last · Tue · 185×8, 175×7, 175×6", then cut at whole entries,
-    /// "Last · Tue · 185×8, 175×7…", never mid-number. The view shows the first that fits.
+    /// "Last · Tue · 185×8, 175×7…", never mid-number; the day goes before any set does.
+    /// The view shows the first that fits.
     public static func lastOneLine(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current) -> [String] {
         guard !sets.isEmpty else { return [] }
         let e = entries(sets, compact: true)
         let d = day(date, now: now, calendar: calendar)
         var out = [line(e, day: d)]
+        // Every set before the day (CDO watch QA 4): "Last · 185×8, 7, 6" beats "Last · Tue · 185×8…".
+        if d != nil { out.append(line(e, day: nil)) }
         for n in stride(from: e.count - 1, through: 1, by: -1) { out.append(line(Array(e.prefix(n)), day: d) + "…") }
         return out
     }
