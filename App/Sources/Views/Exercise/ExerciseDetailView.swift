@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import Charts
+import UIKit
 import LiftCore
 
 /// §3.8 Exercise detail: e1RM chart, bests, note, history and settings.
@@ -88,27 +89,40 @@ struct ExerciseDetailView: View {
                 } else {
                     bests
                 }
-            } header: { Text("Bests").textCase(nil) }
+            } header: { Text("Bests").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
             // Plain rows with hairlines in light and dark (QA quick-log 14).
             .listRowBackground(Theme.Colors.bgCanvas)
 
             Section {
                 TextField("A cue for next time", text: $exercise.note, axis: .vertical)
                     .onSubmit { _ = LiftStore.save(context) }
-            } header: { Text("Note").textCase(nil) }
+            } header: { Text("Note").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
 
             if !logged.isEmpty {
-                Section { history } header: { Text("History").textCase(nil) }
+                Section { history } header: { Text("History").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
             }
 
-            Section { settingsRows } header: { Text("Settings for this exercise").textCase(nil) }
+            Section { settingsRows } header: { Text("Settings for this exercise").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
         }
         .listStyle(.insetGrouped)
         .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .background(Theme.Colors.bgCanvas)
+        // Safe-area inset plus 16 pt so the last Bests row sits above the
+        // home indicator (CDO Round 13 24a Should).
+        .safeAreaPadding(.bottom, Theme.Spacing.s4)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        // A view-level .tint does not recolor the system back link — the
+        // bar inherits the app accent from LiftApp. Set the bar tint while
+        // this screen is visible; Ember stays on the chart's latest-point
+        // dot, which uses Theme.Colors.accent explicitly.
+        .background {
+            NavigationBarTint(
+                color: UIColor(named: "textPrimary") ?? .label,
+                restore: UIColor(named: "accent") ?? .systemOrange
+            )
+        }
         .toolbar(.hidden, for: .tabBar)
         .onDisappear { _ = LiftStore.save(context) }
     }
@@ -184,6 +198,7 @@ struct ExerciseDetailView: View {
                     if let d = v.as(Date.self) {
                         Text(v.index == 0 ? d.formatted(.dateTime.month(.abbreviated)) : "Today")
                             .font(Theme.Fonts.caption)
+                            .foregroundStyle(Theme.Colors.textTertiary)
                     }
                 }
             }
@@ -269,5 +284,56 @@ struct ExerciseDetailView: View {
             Text("Use default (\(settings.unit.symbol))").tag(WeightUnit?.none)
             ForEach(WeightUnit.allCases) { Text($0.symbol).tag(WeightUnit?.some($0)) }
         }
+    }
+}
+
+/// Recolors the system back link on this screen only, then restores the app accent.
+/// A SwiftUI `.tint` on the destination does not reach the bar, so this walks
+/// up to the `UINavigationBar` in the host window.
+private struct NavigationBarTint: UIViewRepresentable {
+    var color: UIColor
+    var restore: UIColor
+
+    func makeCoordinator() -> Coordinator { Coordinator(restore: restore) }
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {
+        context.coordinator.restore = restore
+        DispatchQueue.main.async { view.liftNavigationBar()?.tintColor = color }
+    }
+
+    static func dismantleUIView(_ view: UIView, coordinator: Coordinator) {
+        view.liftNavigationBar()?.tintColor = coordinator.restore
+    }
+
+    final class Coordinator {
+        var restore: UIColor
+        init(restore: UIColor) { self.restore = restore }
+    }
+}
+
+private extension UIView {
+    func liftNavigationBar() -> UINavigationBar? {
+        var current: UIView? = self
+        while let view = current {
+            if let bar = view as? UINavigationBar { return bar }
+            if let nav = view.next as? UINavigationController { return nav.navigationBar }
+            current = view.superview
+        }
+        return window?.liftDescendantNavigationBar()
+    }
+
+    func liftDescendantNavigationBar() -> UINavigationBar? {
+        if let bar = self as? UINavigationBar { return bar }
+        for sub in subviews {
+            if let bar = sub.liftDescendantNavigationBar() { return bar }
+        }
+        return nil
     }
 }

@@ -63,10 +63,19 @@ final class RemoveExerciseTests: XCTestCase {
         XCTAssertTrue(add.waitForExistence(timeout: 15))
         add.tap()
         let search = app.searchFields.firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        XCTAssertTrue(search.waitForExistence(timeout: 8))
         search.tap()
-        search.typeText(name + "\n")   // Return adds the top result
-        XCTAssertTrue(app.buttons["\(name) options"].waitForExistence(timeout: 5))
+        // Type the name only, then tap the exact result. Return-on-top can
+        // fire before the list settles once search rows load video posters
+        // (RemoveExerciseTests failed that way on media-vendor: the first
+        // add succeeded, the second never showed the options button).
+        search.typeText(name)
+        let result = app.descendants(matching: .any).matching(
+            NSPredicate(format: "label == %@ OR label BEGINSWITH %@", name, name + ", ")
+        ).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10), "search result for \(name)")
+        result.tap()
+        XCTAssertTrue(app.buttons["\(name) options"].waitForExistence(timeout: 15))
     }
 
     func testRemovedExerciseStaysGoneAfterRelaunch() {

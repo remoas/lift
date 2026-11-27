@@ -15,6 +15,7 @@ SRC = ROOT / "research/exercises.json"
 OUT = ROOT / "Packages/LiftKit/Sources/LiftCore/Resources/exercise-library.json"
 REPORT = ROOT / "research/VALIDATION.md"
 MEDIA = ROOT / "App/Resources/ExerciseMedia"
+GENERATED_MAP = ROOT / "tools/generated-media-map.json"
 
 MUSCLES = {"upper_chest","mid_chest","lower_chest","front_delts","side_delts","rear_delts","lats","traps",
            "rhomboids","lower_back","biceps","triceps","forearms","quads","hamstrings","glutes","adductors",
@@ -45,12 +46,21 @@ COMMON = {
              "bulgarian-split-squat"],
 }
 
+def generated_media_map():
+    """Exercise id -> bundled video stem. Aliases share the target file."""
+    if not hasattr(generated_media_map, "_cache"):
+        generated_media_map._cache = json.loads(GENERATED_MAP.read_text()) if GENERATED_MAP.is_file() else {}
+    return generated_media_map._cache
+
 def local_media(e):
-    """Map the remote CC0 URL to the vendored file key. Returns (key, files)."""
+    """Map a research mediaRef, or a generated-media-map entry, to the vendored file key. Returns (key, files)."""
+    i = e["id"]
+    mapped = generated_media_map().get(i)
+    if mapped:
+        return f"video:{mapped}", [f"video/{mapped}.mp4"]
     r = e.get("mediaRef")
     if not r:
         return None, []
-    i = e["id"]
     if r.endswith(".mp4") and "namnq/workout-free-videos@v2.0.0" in r:
         return f"video:{i}", [f"video/{i}.mp4"]
     if "hitmanrepo/open-exercise-illustrations" in r and r.endswith("/start.webp"):
@@ -81,7 +91,7 @@ def main():
         overlap = set(r.get("primaryMuscles") or []) & set(r.get("secondaryMuscles") or [])
         if overlap: warnings.append(f"`{i}`: muscle in both primary and secondary {sorted(overlap)}")
         key, files = local_media(r)
-        if key == "INVALID": errors.append(f"`{i}`: mediaRef is not from a cleared CC0 source: {r['mediaRef']}")
+        if key == "INVALID": errors.append(f"`{i}`: mediaRef is not a known bundled source: {r['mediaRef']}")
         for fp in files:
             if not (MEDIA / fp).is_file(): errors.append(f"`{i}`: vendored media missing {fp}")
         nk = (r.get("name","").lower(), (r.get("variant") or "").lower())
