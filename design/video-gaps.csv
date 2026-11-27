@@ -237,7 +237,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 236,smith-machine-bent-over-row,Smith Machine Bent Over Row,smith_machine,rhomboids,video,video:smith-machine-bent-over-row,,3,A,horizontal-pull,,"pass-pending-cdo-qa; official a1, 448467 bytes, CRF 28, MAE 3.24"
 237,two-arm-kettlebell-row,Two-Arm Kettlebell Row,kettlebell,rhomboids,video,video:two-arm-kettlebell-row,,3,A,horizontal-pull,,"pass-pending-cdo-qa; official a1, 491701 bytes, CRF 26, MAE 2.65"
 238,barbell-lunge,Barbell Lunge,barbell,quads,video,video:barbell-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 482013 bytes, CRF 26, MAE 2.58"
-239,barbell-reverse-lunge,Barbell Reverse Lunge,barbell,quads|glutes,still,still:barbell-reverse-lunge,,3,A,lunge,,
+239,barbell-reverse-lunge,Barbell Reverse Lunge,barbell,quads,video,video:barbell-reverse-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 492033 bytes, CRF 26, MAE 2.64"
 240,barbell-step-ups,Barbell Step Ups,barbell,quads,none,,,3,A,lunge,,
 241,barbell-step-up,Barbell Step-Up,barbell,quads|glutes,still,still:barbell-step-up,,3,A,lunge,,
 242,barbell-walking-lunge,Barbell Walking Lunge,barbell,quads,none,,,3,A,lunge,,

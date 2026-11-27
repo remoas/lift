@@ -319,6 +319,8 @@ The earlier internal Shoulds on kneeling-squat ("sit-back is modest, not a full 
 
 - barbell-lunge: two complete stand-to-forward-lunge-to-stand reps, the near leg actually steps forward and returns, the barbell stays on the upper traps, house gym locked. Official encode 482,013 bytes, CRF 26, MAE 2.58. Shoulds: the rear knee stays well above the floor at both bottoms rather than close to it. Start is v2 only (v1 turned him toward the camera and was not used as a ref).
 
+- barbell-reverse-lunge: two complete stand-to-reverse-lunge-to-stand reps, the rear leg actually steps back and returns while the front foot stays near the start, the barbell stays on the upper traps, house gym locked. Official encode 492,033 bytes, CRF 26, MAE 2.64. Start is the same standing still as barbell-lunge.
+
 ## CDO QA Round 12 official Shoulds (about 12:00am Atlantic/Bermuda, 27 Nov 2026)
 
 All eight PASS. Unique CDO-final count is now 90. Aliases `t-bar-row-with-handle` → `t-bar-row` and `bodyweight-mid-row` → `inverted-row` were verified. Parked `kneeling-squat` and `dumbbell-hip-thrust` were not reviewed and stay out of the unique-done and vendoring counts.
