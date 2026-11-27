@@ -226,19 +226,19 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 225,v-bar-pulldown,V-Bar Pulldown,cable,lats,still,still:v-bar-pulldown,,3,A,vertical-pull,,
 226,dumbbell-one-arm-upright-row,Dumbbell One-Arm Upright Row,dumbbell,side_delts,video,video:dumbbell-one-arm-upright-row,,3,A,shoulder-iso,,"CDO-final Round 17 part 1; official a1, 445928 bytes, MAE 2.78"
 227,dumbbell-upright-row,Dumbbell Upright Row,dumbbell,side_delts|traps,video,video:dumbbell-upright-row,,3,A,shoulder-iso,,"CDO-final Round 17 part 1; official a1, 559512 bytes, MAE 2.98"
-228,smith-single-leg-split-squat,Smith Single-Leg Split Squat,smith_machine,quads,video,video:smith-single-leg-split-squat,,3,A,lunge,,"pass-pending-cdo-qa; a1 CDO R17p1 FAIL loop hop moved to rejected/video/smith-single-leg-split-squat.r17-fail.mp4; official a2, 476922 bytes, CRF 28, MAE 3.26"
+228,smith-single-leg-split-squat,Smith Single-Leg Split Squat,smith_machine,quads,video,video:smith-single-leg-split-squat,,3,A,lunge,,"CDO-final R17p2; official a2, 476922 bytes, CRF 28, MAE 3.26; a1 CDO R17p1 FAIL loop hop remains in rejected/video/smith-single-leg-split-squat.r17-fail.mp4"
 229,standing-dumbbell-upright-row,Standing Dumbbell Upright Row,dumbbell,traps,video,video:dumbbell-upright-row,,3,A,shoulder-iso,dumbbell-upright-row,reuse of dumbbell-upright-row; CDO-verified Round 17 part 1
-230,alternating-kettlebell-row,Alternating Kettlebell Row,kettlebell,rhomboids,none,,,3,A,horizontal-pull,,"in progress: start v3 and near-peak v1 accepted; far-peak v1–v3 and videos a1–a2 rowed the near arm again; a3 left unspent until a far-arm still exists"
-231,alternating-renegade-row,Alternating Renegade Row,kettlebell,rhomboids,none,,,3,A,horizontal-pull,,"in progress: start v1 and near-peak v1 accepted; far-peak v1–v3 all rowed the near arm again; v4 and all video attempts left unspent"
+230,alternating-kettlebell-row,Alternating Kettlebell Row,kettlebell,rhomboids,none,,,3,A,horizontal-pull,,in progress: start v3 and near-peak v1 accepted; far-peak v1–v3 and videos a1–a2 rowed the near arm again; a3 left unspent until a far-arm still exists
+231,alternating-renegade-row,Alternating Renegade Row,kettlebell,rhomboids,none,,,3,A,horizontal-pull,,in progress: start v1 and near-peak v1 accepted; far-peak v1–v3 all rowed the near arm again; v4 and all video attempts left unspent
 232,bodyweight-mid-row,Bodyweight Mid Row,bodyweight,rhomboids,none,,,3,A,horizontal-pull,,
 233,dumbbell-hip-thrust,Dumbbell Hip Thrust,dumbbell,glutes,still,still:dumbbell-hip-thrust,,3,A,hinge,, needs-retry-or-manual. CDO Round 10 FAIL regen parked 2026-11-26 ~10:40pm Atlantic/Bermuda after 4 start stills failed to put the hips near the floor (v1 mid-height; v2 copied the accepted lockout peak; v3 lying along the bench; v4 mid-height copy of the official start). Accepted peak kept at media-pilot/starts/dumbbell-hip-thrust-peak-regen.jpg.
-234,kettlebell-row,Kettlebell Row,kettlebell,rhomboids|lats,video,video:kettlebell-row,,3,A,horizontal-pull,,"pass-pending-cdo-qa; official a1, 499369 bytes, MAE 3.08"
-235,one-arm-kettlebell-row,One-Arm Kettlebell Row,kettlebell,rhomboids,video,video:kettlebell-row,,3,A,horizontal-pull,kettlebell-row,reuse of kettlebell-row
-236,smith-machine-bent-over-row,Smith Machine Bent Over Row,smith_machine,rhomboids,video,video:smith-machine-bent-over-row,,3,A,horizontal-pull,,"pass-pending-cdo-qa; official a1, 448467 bytes, CRF 28, MAE 3.24"
-237,two-arm-kettlebell-row,Two-Arm Kettlebell Row,kettlebell,rhomboids,video,video:two-arm-kettlebell-row,,3,A,horizontal-pull,,"pass-pending-cdo-qa; official a1, 491701 bytes, CRF 26, MAE 2.65"
+234,kettlebell-row,Kettlebell Row,kettlebell,rhomboids|lats,video,video:kettlebell-row,,3,A,horizontal-pull,,"CDO-final R17p2; official a1, 499369 bytes, MAE 3.08"
+235,one-arm-kettlebell-row,One-Arm Kettlebell Row,kettlebell,rhomboids,video,video:kettlebell-row,,3,A,horizontal-pull,kettlebell-row,reuse of kettlebell-row; CDO-verified R17p2
+236,smith-machine-bent-over-row,Smith Machine Bent Over Row,smith_machine,rhomboids,video,video:smith-machine-bent-over-row,,3,A,horizontal-pull,,"CDO-final R17p2; official a1, 448467 bytes, CRF 28, MAE 3.24"
+237,two-arm-kettlebell-row,Two-Arm Kettlebell Row,kettlebell,rhomboids,video,video:two-arm-kettlebell-row,,3,A,horizontal-pull,,"CDO-final R17p2; official a1, 491701 bytes, MAE 2.65"
 238,barbell-lunge,Barbell Lunge,barbell,quads,video,video:barbell-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 482013 bytes, CRF 26, MAE 2.58"
 239,barbell-reverse-lunge,Barbell Reverse Lunge,barbell,quads,video,video:barbell-reverse-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 492033 bytes, CRF 26, MAE 2.64"
-240,barbell-step-ups,Barbell Step Ups,barbell,quads,none,,,3,A,lunge,,
+240,barbell-step-ups,Barbell Step Ups,barbell,quads,none,,,3,A,lunge,,"in progress: start v1 accepted (box in front, bar on traps); mid v1–v3 all drifted the box under the original stance; v4 and video left unspent"
 241,barbell-step-up,Barbell Step-Up,barbell,quads|glutes,still,still:barbell-step-up,,3,A,lunge,,
 242,barbell-walking-lunge,Barbell Walking Lunge,barbell,quads,none,,,3,A,lunge,,
 243,cable-upright-row,Cable Upright Row,cable,side_delts|traps,video,video:upright-cable-row,,3,A,shoulder-iso,upright-cable-row,reuse of upright-cable-row

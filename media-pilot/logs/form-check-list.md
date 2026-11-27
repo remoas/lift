@@ -393,3 +393,12 @@ a2 regen of `smith-single-leg-split-squat` (same start and bottom stills; second
 - **dumbbell-one-arm-upright-row:** the DB sits a little in front of the torso; the elbow is about level with the DB rather than clearly above it.
 - **dumbbell-upright-row:** slight 3/4 camera; elbows about level with the DBs rather than clearly leading; DBs a little high at the upper chest; far elbow a little more tucked; mid-path the far DB runs a little ahead of the near one.
 
+
+## CDO QA Round 17 part 2 official Shoulds (about 7:00am Atlantic/Bermuda, 27 Nov 2026)
+
+Four unique PASS. Unique CDO-final count is now 125. Alias `one-arm-kettlebell-row` → `kettlebell-row` was verified. a2 regen of `smith-single-leg-split-squat` PASS.
+
+- **kettlebell-row:** free hand leaves the thigh at the peaks and is hidden on the far side; kettlebell a little below a tight hip tuck; at the mid-rep hang the far shoe peeks out behind the kettlebell and can briefly read like a second bell.
+- **smith-machine-bent-over-row:** carriage housings thinner than on the official high-bar smith squat; bar a little in front of a tight hip tuck at the peaks; upper back slightly rounded.
+- **two-arm-kettlebell-row:** slight 3/4 so both bells stay visible; far kettlebell partly occluded behind the near one; bells a little below a tight hip tuck at the peaks.
+- **smith-single-leg-split-squat:** front knee already somewhat bent at the start; near upright occludes the rear thigh; rear knee comes very close to the floor at the bottoms; mid-rep stand at about 4.0s is a little taller than the start.
