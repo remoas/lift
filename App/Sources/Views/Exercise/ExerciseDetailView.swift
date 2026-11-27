@@ -88,27 +88,33 @@ struct ExerciseDetailView: View {
                 } else {
                     bests
                 }
-            } header: { Text("Bests").textCase(nil) }
+            } header: { Text("Bests").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
             // Plain rows with hairlines in light and dark (QA quick-log 14).
             .listRowBackground(Theme.Colors.bgCanvas)
 
             Section {
                 TextField("A cue for next time", text: $exercise.note, axis: .vertical)
                     .onSubmit { _ = LiftStore.save(context) }
-            } header: { Text("Note").textCase(nil) }
+            } header: { Text("Note").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
 
             if !logged.isEmpty {
-                Section { history } header: { Text("History").textCase(nil) }
+                Section { history } header: { Text("History").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
             }
 
-            Section { settingsRows } header: { Text("Settings for this exercise").textCase(nil) }
+            Section { settingsRows } header: { Text("Settings for this exercise").textCase(nil).foregroundStyle(Theme.Colors.textTertiary) }
         }
         .listStyle(.insetGrouped)
         .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .background(Theme.Colors.bgCanvas)
+        // Safe-area inset plus 16 pt so the last Bests row sits above the
+        // home indicator (CDO Round 13 24a Should).
+        .safeAreaPadding(.bottom, Theme.Spacing.s4)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        // Ember is for primary actions and selection (chart latest-point
+        // dot stays accent below). The back link uses label colour.
+        .tint(Theme.Colors.textPrimary)
         .toolbar(.hidden, for: .tabBar)
         .onDisappear { _ = LiftStore.save(context) }
     }
@@ -184,6 +190,7 @@ struct ExerciseDetailView: View {
                     if let d = v.as(Date.self) {
                         Text(v.index == 0 ? d.formatted(.dateTime.month(.abbreviated)) : "Today")
                             .font(Theme.Fonts.caption)
+                            .foregroundStyle(Theme.Colors.textTertiary)
                     }
                 }
             }
