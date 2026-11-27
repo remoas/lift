@@ -166,7 +166,8 @@ enum LiftStore {
         let sets = lastSessionSets(for: exercise, excluding: workout).filter { $0.kind != .warmup }
         let step = exercise.step(for: unit)
         let last = sets.map { SetTarget(weight: UnitMath.convertLoadable($0.weight, from: $0.unit, to: unit, step: step), reps: $0.reps) }
-        let target = Target.next(lastSets: last, repGoal: exercise.repGoal, step: step, bodyweight: exercise.equipment == .bodyweight)
+        let kind = exercise.loadKind
+        let target = Target.next(lastSets: last, repGoal: exercise.repGoal, step: step, bodyweight: kind == .bodyweight, assisted: kind == .assisted)
         let top = Target.topSet(last)
         return BeatIt(last: last, lastDate: sets.first?.workout?.startedAt,
                       target: target, topIndex: top.flatMap { t in last.firstIndex(of: t) })
@@ -194,7 +195,7 @@ enum LiftStore {
         guard let t = beatIt(for: exercise, excluding: workout, unit: u).target else { return false }
         return workout.doneSets.contains { s in
             s.exercise === exercise && s.kind != .warmup &&
-            Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t)
+            Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t, assisted: exercise.loadKind == .assisted)
         }
     }
 
@@ -240,6 +241,9 @@ enum LiftStore {
         let order = (workout.allSets.map(\.exerciseOrder).max() ?? -1) + 1
         insertPrefilledSets(for: exercise, rest: exercise.restSec ?? restDefault, exerciseOrder: order, into: workout, globalUnit: globalUnit, context: context)
         _ = save(context)
+        if !workout.isBackLog, workout.endedAt == nil {
+            RestActivityController.shared.sync()
+        }
     }
 
     /// Swaps in place, keeping the slot's set count, rep range and rest. Ticked

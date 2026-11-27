@@ -19,11 +19,17 @@ struct SetEditorSheet: View {
     @Environment(\.dynamicTypeSize) private var typeSize
     @State private var weightText = ""
     @State private var repsText = ""
+    @State private var addingWeight = false
 
     enum Field { case weight, reps }
 
     private var exercise: Exercise? { entry.exercise }
     private var step: Double { exercise?.step(for: entry.unit) ?? entry.unit.defaultStep }
+    private var loadKind: LoadKind { exercise?.loadKind ?? .loaded }
+    private var isBodyweightLike: Bool { loadKind != .loaded }
+    private var showWeightField: Bool { !isBodyweightLike || addingWeight || entry.weight > 0 }
+    private var addWeightLabel: String { loadKind == .assisted ? "+ Add assistance" : "+ Add weight" }
+
 
     var body: some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.s4) {
@@ -57,28 +63,54 @@ struct SetEditorSheet: View {
                 .accessibilityLabel("Unit for \(exercise?.name ?? "this exercise")")
             }
 
-            HStack {
-                StepperCircle(symbol: "minus", label: "Less weight") { adjustWeight(-step) }
-                Spacer()
-                HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.s1) {
-                    TextField("0", text: $weightText)
-                        .keyboardType(.decimalPad)
-                        .focused($focus, equals: .weight)
-                        .font(Theme.Fonts.numeralHero(heroSize))
-                        .multilineTextAlignment(.center)
-                        .fixedSize()
-                        .theBar()
-                        .onChange(of: weightText) { _, new in
-                            if let v = Double(new.replacingOccurrences(of: ",", with: ".")), v >= 0 { entry.weight = v }
-                        }
-                    Text(entry.unit.symbol).font(.title3).foregroundStyle(Theme.Colors.textSecondary)
+            if showWeightField {
+                HStack {
+                    StepperCircle(symbol: "minus", label: loadKind == .assisted ? "Less assistance" : "Less weight") { adjustWeight(-step) }
+                    Spacer()
+                    HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.s1) {
+                        TextField("0", text: $weightText)
+                            .keyboardType(.decimalPad)
+                            .focused($focus, equals: .weight)
+                            .font(Theme.Fonts.numeralHero(heroSize))
+                            .multilineTextAlignment(.center)
+                            .fixedSize()
+                            .theBar()
+                            .onChange(of: weightText) { _, new in
+                                if let v = Double(new.replacingOccurrences(of: ",", with: ".")), v >= 0 {
+                                    entry.weight = v
+                                    if v == 0, isBodyweightLike { addingWeight = false }
+                                }
+                            }
+                        Text(entry.unit.symbol).font(.title3).foregroundStyle(Theme.Colors.textSecondary)
+                    }
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(LoadText.voiceOver(weight: entry.weight, unit: entry.unit, reps: entry.reps, kind: loadKind))
+                    .accessibilityAdjustableAction { dir in adjustWeight(dir == .increment ? step : -step) }
+                    Spacer()
+                    StepperCircle(symbol: "plus", label: loadKind == .assisted ? "More assistance" : "More weight") { adjustWeight(step) }
                 }
-                .foregroundStyle(Theme.Colors.textPrimary)
-                .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Weight, \(UnitMath.format(entry.weight)) \(entry.unit == .lb ? "pounds" : "kilograms")")
-                .accessibilityAdjustableAction { dir in adjustWeight(dir == .increment ? step : -step) }
-                Spacer()
-                StepperCircle(symbol: "plus", label: "More weight") { adjustWeight(step) }
+                if isBodyweightLike, entry.weight > 0 {
+                    Text(LoadText.pair(weight: entry.weight, unit: entry.unit, reps: entry.reps, kind: loadKind))
+                        .font(Theme.Fonts.secondary)
+                        .foregroundStyle(Theme.Colors.textSecondary)
+                        .frame(maxWidth: .infinity)
+                        .monospacedDigit()
+                }
+            } else {
+                Text("Bodyweight")
+                    .font(Theme.Fonts.numeralHero(heroSize))
+                    .foregroundStyle(Theme.Colors.textPrimary)
+                    .frame(maxWidth: .infinity)
+                    .accessibilityLabel("Bodyweight")
+                Button(addWeightLabel) {
+                    addingWeight = true
+                    focus = .weight
+                }
+                .font(.body)
+                .foregroundStyle(Theme.Colors.textSecondary)
+                .frame(maxWidth: .infinity, minHeight: Theme.Size.hit)
+                .accessibilityLabel(addWeightLabel)
             }
 
             if exercise?.equipment.usesPlates == true, entry.weight > 0 {
@@ -139,6 +171,7 @@ struct SetEditorSheet: View {
         .presentationDragIndicator(.visible)
         .presentationBackground(Theme.Colors.bgRaised)
         .onAppear {
+            addingWeight = isBodyweightLike && entry.weight > 0
             syncTexts()
             if entry.needsWeight { focus = .weight }
         }
@@ -177,6 +210,10 @@ struct SetEditorSheet: View {
     private func adjustWeight(_ delta: Double) {
         Haptics.step()
         entry.weight = max(0, UnitMath.round(entry.weight + delta, toStep: min(step, abs(delta))))
+        if isBodyweightLike {
+            addingWeight = entry.weight > 0 || delta > 0
+            if entry.weight == 0 { addingWeight = false }
+        }
         syncTexts()
     }
 

@@ -73,7 +73,8 @@ final class WorkoutSession {
         return SetRowModel(id: set.id, number: number, kind: set.kind,
                            lastTime: nil,
                            weightText: set.needsWeight ? nil : UnitMath.format(set.weight),
-                           unit: unit, reps: set.reps, secondary: secondary, state: state)
+                           unit: unit, reps: set.reps, secondary: secondary, state: state,
+                           loadKind: set.exercise?.loadKind ?? .loaded, weight: set.weight)
     }
 
     // MARK: Logging
@@ -140,12 +141,28 @@ final class WorkoutSession {
         if !workout.isBackLog, settings.autoStartRest { startRest(after: set) }
     }
 
+    /// Log set from the Lock Screen or Island: same path as an in-app tick.
+    func logFromActivity(_ set: SetEntry) {
+        guard !set.isDone else { absorbActivityLog(set); return }
+        if set.needsWeight { return }
+        log(set)
+    }
+
+    /// The set was already written (fallback path); refresh banners and rest.
+    func absorbActivityLog(_ set: SetEntry) {
+        lastLoggedExercise = set.exercise
+        detectRecords(set)
+        if let ex = set.exercise { LiftStore.prefill(ex, in: workout, globalUnit: settings.unit); _ = LiftStore.save(context) }
+        if !workout.isBackLog, settings.autoStartRest, rest == nil { startRest(after: set) }
+        else if !workout.isBackLog, rest == nil { RestActivityController.shared.presentReady() }
+    }
+
     private func detectRecords(_ set: SetEntry) {
         let kinds = LiftStore.newRecords(for: set, in: workout)
         bestIDs = LiftStore.bestSetIDs(in: workout)
         if let ex = set.exercise, !kinds.isEmpty {
             let history = LiftStore.history(for: ex, including: workout).filter { $0 !== set }.map(\.snapshot)
-            if let content = PRBannerContent.make(kinds: kinds, exercise: ex.name, set: set.snapshot, history: history, unit: set.unit) {
+            if let content = PRBannerContent.make(kinds: kinds, exercise: ex.name, set: set.snapshot, history: history, unit: set.unit, loadKind: ex.loadKind) {
                 showBanner(content, exercise: ex, setID: set.id)
             }
         }
@@ -183,8 +200,8 @@ final class WorkoutSession {
     func startRest(after set: SetEntry) {
         let seconds = set.kind == .warmup ? settings.warmupRestSeconds : set.restSeconds
         guard seconds > 0 else {
-            // Rest Off on this lift: the Activity from the last break goes now.
-            if !workout.isBackLog { RestActivityController.shared.end() }
+            // Rest Off: stay on the Activity in Ready so the next set can be logged.
+            if !workout.isBackLog { RestActivityController.shared.presentReady() }
             return
         }
         rest = RestCountdown(seconds: seconds, setID: set.id)
@@ -194,11 +211,9 @@ final class WorkoutSession {
             // the target and name it ("Shoulder Press · 110 × 9").
             let other = nextEx !== set.exercise
             if other { LiftStore.prefill(nextEx, in: workout, globalUnit: settings.unit) }
-            let bodyweight = nextEx.equipment == .bodyweight
             let pair: String
-            if next.needsWeight { pair = "Add weight × \(next.reps)" }
-            else if bodyweight { pair = next.weight <= 0 ? "\(next.reps) reps" : "BW + \(UnitMath.format(next.weight)) × \(next.reps)" }
-            else { pair = "\(UnitMath.format(next.weight)) × \(next.reps)" }
+            if next.needsWeight { pair = "Add weight in Lift" }
+            else { pair = LoadText.pair(weight: next.weight, unit: next.unit, reps: next.reps, kind: nextEx.loadKind) }
             restNextText = other ? "\(nextEx.name) · \(pair)" : pair
         } else {
             restNextText = nil
@@ -242,7 +257,7 @@ final class WorkoutSession {
         restTask?.cancel()
         if !workout.isBackLog {
             PhoneSync.shared.setLocalRest(nil)
-            if endActivity { RestActivityController.shared.end() }
+            if endActivity { RestActivityController.shared.presentReady() }
         }
     }
 
@@ -272,7 +287,7 @@ final class WorkoutSession {
         restTask?.cancel()
         let nextEx = currentSet?.exercise?.name
         let unitNext = currentSet.map { s in
-            RestActivityText.load(weight: s.weight, unit: s.unit, reps: s.reps, bodyweight: s.exercise?.equipment == .bodyweight)
+            RestActivityText.load(weight: s.weight, unit: s.unit, reps: s.reps, kind: s.exercise?.loadKind ?? .loaded)
         }
         if !workout.isBackLog {
             // Permission is asked at the first rest, never at launch (AC 76).

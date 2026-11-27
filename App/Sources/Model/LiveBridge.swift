@@ -45,7 +45,7 @@ enum LiveBridge {
         let earlier = LiftStore.history(for: ex).filter { $0.workout !== workout }.map(\.snapshot)
         let name = ex.variant.isEmpty || ex.name.localizedCaseInsensitiveContains(ex.variant) ? ex.name : "\(ex.name) (\(ex.variant))"
         return LiveExercise(id: ex.id, libraryID: ex.libraryID, name: name, unit: unit, step: ex.step(for: unit),
-                            bodyweight: ex.equipment == .bodyweight, repGoal: ex.repGoal,
+                            bodyweight: ex.loadKind == .bodyweight, repGoal: ex.repGoal,
                             restSeconds: ex.restSec ?? restDefault, last: beat.last, lastDate: beat.lastDate,
                             sets: sets.map { LiveSet(id: $0.id, weight: $0.weight, unit: $0.unit, reps: $0.reps, kind: $0.kind,
                                                      isDone: $0.isDone, doneAt: $0.doneAt, source: $0.source) },

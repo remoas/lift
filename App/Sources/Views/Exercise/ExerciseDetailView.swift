@@ -73,9 +73,10 @@ struct ExerciseDetailView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 .listRowSeparator(.hidden)
-                if workoutCount > 0 {
+                if workoutCount > 0, exercise.loadKind == .loaded {
                     // With a media header the range sits under the chart, so the
                     // chart stays above the fold on iPhone 16 (AC 54).
+                    // Bodyweight / assisted lifts have no meaningful 0 lb e1RM (AC 119).
                     if !headerShown { rangePicker.listRowSeparator(.hidden) }
                     chart.listRowSeparator(.hidden)
                     if headerShown { rangePicker.listRowSeparator(.hidden) }
@@ -200,7 +201,7 @@ struct ExerciseDetailView: View {
                 RuleMark(x: .value("Date", s.date))
                     .foregroundStyle(Theme.Colors.separator)
                     .annotation(position: .top, overflowResolution: .init(x: .fit, y: .disabled)) {
-                        Text("\(s.date.formatted(.dateTime.day().month(.abbreviated))) · \(weight(s.e1RMKg)) from \(WeightText.pair(s.set, in: unit, step: unit.defaultStep / 2))")
+                        Text("\(s.date.formatted(.dateTime.day().month(.abbreviated))) · \(weight(s.e1RMKg)) from \(WeightText.pair(s.set, in: unit, step: unit.defaultStep / 2, kind: exercise.loadKind))")
                             .font(Theme.Fonts.caption)
                             .foregroundStyle(Theme.Colors.textPrimary)
                             .padding(Theme.Spacing.s1)
@@ -243,20 +244,25 @@ struct ExerciseDetailView: View {
     // MARK: Bests
 
     @ViewBuilder private var bests: some View {
+        let kind = exercise.loadKind
         let working = logged.filter { $0.snapshot.kind.countsForRecords }.map(\.snapshot)
-        if let heaviest = working.max(by: { $0.weightKg < $1.weightKg }) {
-            bestRow("Heaviest", "\(UnitMath.format(heaviest.weight)) × \(heaviest.reps)", heaviest.date)
+        let heaviest = kind == .assisted
+            ? working.min(by: { $0.weightKg < $1.weightKg })
+            : working.max(by: { $0.weightKg < $1.weightKg })
+        if let heaviest {
+            bestRow("Heaviest", LoadText.pair(weight: heaviest.weight, unit: heaviest.unit, reps: heaviest.reps, kind: kind), heaviest.date)
         }
-        if let e = working.filter({ $0.e1RMKg != nil }).max(by: { $0.e1RMKg! < $1.e1RMKg! }) {
+        if kind == .loaded, let e = working.filter({ $0.e1RMKg != nil }).max(by: { $0.e1RMKg! < $1.e1RMKg! }) {
             bestRow("Estimated max", weight(e.e1RMKg!), e.date)
         }
-        if let top = working.max(by: { $0.weightKg < $1.weightKg }) {
-            let atTop = working.filter { $0.weightKg >= top.weightKg - PRDetector.toleranceKg }
+        if let top = heaviest {
+            let atTop = working.filter { abs($0.weightKg - top.weightKg) <= PRDetector.toleranceKg }
             if let most = atTop.max(by: { $0.reps < $1.reps }) {
-                bestRow("Most reps at \(UnitMath.format(top.weight))", "\(most.reps)", most.date)
+                let label = kind == .loaded ? "Most reps at \(UnitMath.format(top.weight))" : "Most reps at \(LoadText.pair(weight: top.weight, unit: top.unit, reps: top.reps, kind: kind).replacingOccurrences(of: " × \(top.reps)", with: ""))"
+                bestRow(label, "\(most.reps)", most.date)
             }
         }
-        if let v = working.max(by: { $0.volumeKg < $1.volumeKg }) {
+        if kind == .loaded, let v = working.max(by: { $0.volumeKg < $1.volumeKg }) {
             bestRow("Biggest set", "\(Int(value(v.volumeKg).rounded()).formatted()) \(unit.symbol)", v.date)
         }
     }
@@ -282,7 +288,7 @@ struct ExerciseDetailView: View {
             let sets = (byWorkout[w.id] ?? []).sorted { $0.order < $1.order }
             VStack(alignment: .leading, spacing: 2) {
                 Text(w.startedAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))).font(.body).foregroundStyle(Theme.Colors.textPrimary)
-                Text(sets.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", "))
+                Text(sets.map { LoadText.pair(weight: $0.weight, unit: $0.unit, reps: $0.reps, kind: exercise.loadKind, style: exercise.loadKind == .loaded ? .tightest : .full) }.joined(separator: ", "))
                     .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
             }
             .frame(minHeight: Theme.Size.groupedRow, alignment: .leading)

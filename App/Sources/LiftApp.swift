@@ -27,7 +27,7 @@ struct LiftApp: App {
         LiftStore.mergeLibrary(context: context)
         LiftStore.dedupe(context)
         PhoneSync.shared.start(container: container, settings: settings)
-        RestActivityController.shared.start(container: container)
+        RestActivityController.shared.start(container: container, settings: settings)
     }
 
     var body: some Scene {
@@ -45,7 +45,10 @@ struct LiftApp: App {
         .onChange(of: scenePhase) { _, phase in
             // Pending discards/deletes become final rather than lingering.
             if phase == .background { toasts.flush() }
-            if phase == .active { RestActivityController.shared.sweep() }
+            if phase == .active {
+                RestActivityController.shared.sweep()
+                RestActivityController.shared.sync()
+            }
         }
     }
 

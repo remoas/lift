@@ -144,7 +144,7 @@ final class LiveWorkoutTests: XCTestCase {
         XCTAssertTrue(dated[0].hasSuffix(" · 185×8, 7, 6") && dated[0] != dated[1], dated[0])
         let now = Date()
         XCTAssertEqual(BeatItText.number(.init(weight: 0, reps: 12), bodyweight: true), "12 reps")
-        XCTAssertEqual(BeatItText.number(.init(weight: 102.5, reps: 8), bodyweight: false), "102.5 × 8")
+        XCTAssertEqual(BeatItText.number(.init(weight: 102.5, reps: 8), bodyweight: false), "102.5 lb × 8")
     }
 }
 

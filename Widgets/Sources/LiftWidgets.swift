@@ -27,11 +27,11 @@ struct RestLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) { RestExpandedTrailing(model: model) }
                 DynamicIslandExpandedRegion(.bottom) { RestExpandedBottom(model: model) }
             } compactLeading: {
-                MiniRing(model: model)
+                RestCompactLeading(model: model)
             } compactTrailing: {
                 RestCompactTrailing(model: model)
             } minimal: {
-                MiniRing(model: model, size: 22, line: 2.5)
+                RestMinimal(model: model)
             }
             .widgetURL(RestLinks.workout)
             .keylineTint(RestTokens.emberDark)
@@ -50,4 +50,6 @@ enum RestDynamic {
 enum RestIntentHandler {
     static func addThirty() async {}
     static func skip() async {}
+    static func adjustReps(_ delta: Int) async {}
+    static func logSet() async {}
 }

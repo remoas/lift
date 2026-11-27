@@ -123,9 +123,9 @@ final class PresentationTests: XCTestCase {
         let hist = [SetSnapshot(workoutID: w, weight: 200, unit: .lb, reps: 5, date: Date())]
         let set = SetSnapshot(workoutID: UUID(), weight: 205, unit: .lb, reps: 5, date: Date())
         let b = PRBannerContent.make(kinds: [.heaviestWeight, .bestE1RM], exercise: "Bench Press", set: set, history: hist, unit: .lb)!
-        XCTAssertEqual(b.headline, "205 × 5")
+        XCTAssertEqual(b.headline, "205 lb × 5")
         XCTAssertEqual(b.why, "Heaviest yet, up 5 lb from 200. Estimated max is now 239 lb.")
-        XCTAssertEqual(b.accessibility, "New best, Bench Press, 205 by 5")
+        XCTAssertEqual(b.accessibility, "New best, Bench Press, 205 pounds by 5")
     }
 
     func testPlateLine() {

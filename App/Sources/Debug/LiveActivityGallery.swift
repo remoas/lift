@@ -12,23 +12,58 @@ struct LiveActivityGallery: View {
 
     static let names = ["la-lock-running", "la-lock-after-miss", "la-lock-long-name", "la-lock-rest-over-highlight",
                         "la-lock-settled", "la-lock-aod", "la-island-compact", "la-island-minimal",
-                        "la-island-expanded", "la-island-rest-over", "la-standby"]
+                        "la-island-expanded", "la-island-rest-over", "la-standby",
+                        "la-lock-resting-loaded", "la-lock-resting-bw", "la-lock-rest-over-loaded", "la-lock-rest-over-bw",
+                        "la-lock-ready-loaded", "la-lock-ready-bw", "la-lock-ready-belt", "la-lock-ready-assist",
+                        "la-island-compact-resting", "la-island-compact-ready", "la-island-minimal-resting",
+                        "la-island-minimal-ready", "la-island-expanded-resting", "la-island-expanded-ready",
+                        "la-island-expanded-ready-bw", "la-island-compact-ready-belt"]
 
     private func state(name: String = "Barbell Bench Press", set: Int? = 3, weight: Double = 185, reps: Int = 9,
-                       over: Bool = false, highlight: Bool = false) -> RestActivityAttributes.ContentState {
+                       kind: LoadKind = .loaded, over: Bool = false, highlight: Bool = false,
+                       phase: RestActivityPhase = .resting,
+                       targetWeight: Double? = 185, targetReps: Int? = 9,
+                       needsWeight: Bool = false) -> RestActivityAttributes.ContentState {
         let now = Date()
-        return .init(exercise: name, setNumber: set, weight: weight, unit: .lb, reps: reps, bodyweight: false,
-                     start: now.addingTimeInterval(-48), end: over ? now : now.addingTimeInterval(102),
-                     over: over, highlight: highlight)
+        let end: Date
+        switch phase {
+        case .resting: end = over ? now : now.addingTimeInterval(102)
+        case .restOver: end = now
+        case .ready: end = now
+        }
+        return .init(exercise: name, setNumber: set, weight: weight, unit: .lb, reps: reps,
+                     bodyweight: kind == .bodyweight, kind: kind,
+                     start: now.addingTimeInterval(-48), end: end,
+                     over: over || phase == .restOver, highlight: highlight, phase: phase,
+                     targetWeight: targetWeight, targetReps: targetReps, needsWeight: needsWeight)
     }
 
     private var model: RestActivityModel {
         switch frame {
-        case "la-lock-after-miss": return .init(state: state(reps: 7), isStale: false)
-        case "la-lock-long-name": return .init(state: state(name: "Single-Arm Dumbbell Incline Bench Press (Neutral Grip)", set: 12, weight: 102.5), isStale: false)
-        case "la-lock-rest-over-highlight": return .init(state: state(over: true, highlight: true), isStale: false)
-        case "la-lock-settled", "la-island-rest-over": return .init(state: state(over: true), isStale: false)
-        default: return .init(state: state(), isStale: false)
+        case "la-lock-after-miss":
+            return .init(state: state(reps: 7, targetWeight: 185, targetReps: 9), isStale: false)
+        case "la-lock-long-name":
+            return .init(state: state(name: "Single-Arm Dumbbell Incline Bench Press (Neutral Grip)", set: 12, weight: 102.5, targetWeight: 102.5, targetReps: 8), isStale: false)
+        case "la-lock-rest-over-highlight":
+            return .init(state: state(over: true, highlight: true, phase: .restOver), isStale: false)
+        case "la-lock-settled", "la-island-rest-over", "la-lock-rest-over-loaded":
+            return .init(state: state(over: true, phase: .restOver), isStale: false)
+        case "la-lock-resting-loaded", "la-island-compact-resting", "la-island-minimal-resting", "la-island-expanded-resting":
+            return .init(state: state(), isStale: false)
+        case "la-lock-resting-bw":
+            return .init(state: state(name: "Pull-Up", weight: 0, reps: 12, kind: .bodyweight, targetWeight: 0, targetReps: 13), isStale: false)
+        case "la-lock-rest-over-bw":
+            return .init(state: state(name: "Pull-Up", weight: 0, reps: 12, kind: .bodyweight, over: true, phase: .restOver, targetWeight: 0, targetReps: 13), isStale: false)
+        case "la-lock-ready-loaded", "la-island-compact-ready", "la-island-minimal-ready", "la-island-expanded-ready":
+            return .init(state: state(phase: .ready), isStale: false)
+        case "la-lock-ready-bw", "la-island-expanded-ready-bw":
+            return .init(state: state(name: "Pull-Up", weight: 0, reps: 12, kind: .bodyweight, phase: .ready, targetWeight: 0, targetReps: 13), isStale: false)
+        case "la-lock-ready-belt", "la-island-compact-ready-belt":
+            return .init(state: state(name: "Pull-Up", weight: 25, reps: 8, kind: .bodyweight, phase: .ready, targetWeight: 25, targetReps: 9), isStale: false)
+        case "la-lock-ready-assist":
+            return .init(state: state(name: "Assisted Pull-Up", weight: 40, reps: 8, kind: .assisted, phase: .ready, targetWeight: 40, targetReps: 9), isStale: false)
+        default:
+            return .init(state: state(), isStale: false)
         }
     }
 
@@ -105,19 +140,19 @@ struct LiveActivityGallery: View {
             Color(hex: scheme == .dark ? 0x0B0B0C : 0xF4F3F1).ignoresSafeArea()
             VStack(spacing: 24) {
                 switch frame {
-                case "la-island-compact":
+                case "la-island-compact", "la-island-compact-resting", "la-island-compact-ready", "la-island-compact-ready-belt":
                     HStack {
-                        MiniRing(model: model)
+                        RestCompactLeading(model: model)
                         Spacer()
                         RestCompactTrailing(model: model)
                     }
                     .padding(.horizontal, 14)
                     .frame(width: 250, height: 37)
                     .background(.black, in: Capsule())
-                case "la-island-minimal":
+                case "la-island-minimal", "la-island-minimal-resting", "la-island-minimal-ready":
                     HStack(spacing: 8) {
                         Capsule().fill(.black).frame(width: 126, height: 37)
-                        MiniRing(model: model, size: 22).frame(width: 37, height: 37).background(.black, in: Circle())
+                        RestMinimal(model: model).frame(width: 37, height: 37).background(.black, in: Circle())
                     }
                 default:
                     VStack(spacing: 10) {

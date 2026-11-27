@@ -15,16 +15,19 @@ final class RestActivityTests: XCTestCase {
         XCTAssertEqual(RestActivityText.load(weight: 80, unit: .kg, reps: 8, bodyweight: false), "80 kg × 8")
     }
 
-    func testBodyweightReadsReps() {
-        XCTAssertEqual(RestActivityText.load(weight: 0, unit: .lb, reps: 9, bodyweight: true), "9 reps")
+    func testBodyweightReadsBodyweightWord() {
+        XCTAssertEqual(RestActivityText.load(weight: 0, unit: .lb, reps: 9, bodyweight: true), "Bodyweight × 9")
         XCTAssertEqual(RestActivityText.load(weight: 25, unit: .lb, reps: 9, bodyweight: true), "BW + 25 lb × 9")
+        XCTAssertEqual(RestActivityText.load(weight: 40, unit: .lb, reps: 8, kind: .assisted), "BW − 40 lb × 8")
     }
 
     func testLadderDropsSetFirstThenCompacts() {
         XCTAssertEqual(RestActivityText.ladder(setNumber: 3, weight: 185, unit: .lb, reps: 9, bodyweight: false),
                        ["Set 3 · 185 lb × 9", "185 lb × 9", "185×9"])
         XCTAssertEqual(RestActivityText.ladder(setNumber: 3, weight: 0, unit: .lb, reps: 9, bodyweight: true),
-                       ["Set 3 · 9 reps", "9 reps"])
+                       ["Set 3 · Bodyweight × 9", "Bodyweight × 9", "9 reps"])
+        XCTAssertEqual(RestActivityText.ladder(setNumber: 3, weight: 25, unit: .lb, reps: 8, kind: .bodyweight),
+                       ["Set 3 · BW + 25 lb × 8", "BW + 25 lb × 8", "BW+25×8"])
         XCTAssertEqual(RestActivityText.ladder(setNumber: nil, weight: 185, unit: .lb, reps: 7, bodyweight: false),
                        ["185 lb × 7", "185×7"])
     }

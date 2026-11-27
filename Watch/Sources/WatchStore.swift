@@ -174,13 +174,13 @@ final class WatchStore: NSObject {
         let updated = live.exercises.first { $0.id == exercise.id }
         if !records.isEmpty {
             WKInterfaceDevice.current().play(.success)
-            showNewBest(exercise.id, text: BeatItText.number(SetTarget(weight: weight, reps: reps), bodyweight: exercise.bodyweight))
+            showNewBest(exercise.id, text: BeatItText.number(SetTarget(weight: weight, reps: reps), bodyweight: exercise.bodyweight, kind: exercise.loadKind, unit: exercise.unit))
         } else if !wasHit, updated?.targetHit == true {
             WKInterfaceDevice.current().play(.directionUp)
         } else {
             WKInterfaceDevice.current().play(.click)
         }
-        let nextText = updated.map { BeatItText.number($0.prefill, bodyweight: $0.bodyweight) }
+        let nextText = updated.map { BeatItText.number($0.prefill, bodyweight: $0.bodyweight, kind: $0.loadKind, unit: $0.unit) }
         if exercise.restSeconds > 0 {
             send(.rest(RestState(seconds: exercise.restSeconds, setID: set.id, exercise: exercise.name, next: nextText, origin: .watch)))
         } else if live.rest != nil {

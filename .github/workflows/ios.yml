@@ -87,6 +87,10 @@ jobs:
         if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         continue-on-error: true
         run: scripts/liveactivity-screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review/liveactivity
+      - name: Live Activity log-from-lock and bodyweight screenshots
+        if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
+        continue-on-error: true
+        run: scripts/la-bodyweight-screenshots.sh build/dd/Build/Products/Debug-iphonesimulator/Lift.app screenshots-review/la-bodyweight
       - name: Live Activity behaviour (recording + log)
         if: ${{ !cancelled() && hashFiles('build/dd/Build/Products/Debug-iphonesimulator/Lift.app/Info.plist') != '' }}
         continue-on-error: true

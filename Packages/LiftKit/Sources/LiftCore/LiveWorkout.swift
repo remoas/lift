@@ -53,19 +53,27 @@ public struct LiveExercise: Codable, Hashable, Sendable, Identifiable {
 
     /// A library entry the phone has never seen used: no history, no target.
     public init(library e: LibraryExercise, unit: WeightUnit, restDefault: Int) {
-        self.init(id: e.rowID, libraryID: e.id, name: e.name, unit: unit, bodyweight: e.equipment == .bodyweight,
+        self.init(id: e.rowID, libraryID: e.id, name: e.name, unit: unit, bodyweight: e.equipment == .bodyweight || e.equipment == .band,
                   restSeconds: e.restSeconds ?? restDefault, equipment: e.equipment)
     }
 
+    public var loadKind: LoadKind {
+        let resolved = LoadKind.resolve(equipment: equipment, id: libraryID ?? "", name: name)
+        if resolved != .loaded { return resolved }
+        return bodyweight ? .bodyweight : .loaded
+    }
+
     /// Beat it (the same rule as the phone's Target line and prefill).
-    public var target: SetTarget? { Target.next(lastSets: last, repGoal: repGoal, step: step, bodyweight: bodyweight) }
+    public var target: SetTarget? {
+        Target.next(lastSets: last, repGoal: repGoal, step: step, bodyweight: loadKind == .bodyweight, assisted: loadKind == .assisted)
+    }
 
     public var doneSets: [LiveSet] { sets.filter(\.isDone) }
 
     /// A logged working set met or beat the target.
     public var targetHit: Bool {
         guard let t = target else { return false }
-        return doneSets.contains { $0.kind != .warmup && Target.isHit(weight: UnitMath.convert($0.weight, from: $0.unit, to: unit), reps: $0.reps, target: t) }
+        return doneSets.contains { $0.kind != .warmup && Target.isHit(weight: UnitMath.convert($0.weight, from: $0.unit, to: unit), reps: $0.reps, target: t, assisted: loadKind == .assisted) }
     }
 
     /// The set to log next: the first unlogged one (keeping its id, so the
@@ -150,8 +158,11 @@ public struct LiveWorkout: Codable, Equatable, Sendable {
             guard let t = ex.target else { return nil }
             let hits = ex.doneSets.filter { $0.kind != .warmup }
                 .map { SetTarget(weight: UnitMath.convert($0.weight, from: $0.unit, to: ex.unit), reps: $0.reps) }
-                .filter { Target.isHit(weight: $0.weight, reps: $0.reps, target: t) }
-            guard let best = hits.max(by: { ($0.weight, $0.reps) < ($1.weight, $1.reps) }) else { return nil }
+                .filter { Target.isHit(weight: $0.weight, reps: $0.reps, target: t, assisted: ex.loadKind == .assisted) }
+            guard let best = hits.max(by: {
+                if ex.loadKind == .assisted { return ($0.weight, -$0.reps) > ($1.weight, -$1.reps) }
+                return ($0.weight, $0.reps) < ($1.weight, $1.reps)
+            }) else { return nil }
             return (ex, best)
         }
     }
@@ -345,9 +356,9 @@ public enum BeatItText {
     /// "Last · Mon · 185×8, 185×7, 185×6", every set in full (45/49 mm, VoiceOver, the tap-to-expand list).
     /// Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
     /// `compact`: one weight shared by every set is written once, "185×8, 7, 6".
-    public static func last(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current, compact: Bool = false) -> String? {
+    public static func last(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current, compact: Bool = false, kind: LoadKind = .loaded, unit: WeightUnit = .lb) -> String? {
         guard !sets.isEmpty else { return nil }
-        return line(entries(sets, compact: compact), day: day(date, now: now, calendar: calendar))
+        return line(entries(sets, compact: compact, kind: kind, unit: unit), day: day(date, now: now, calendar: calendar))
     }
 
     /// The one-line Last for 40/41 mm (CDO watch QA 3, decision 1), longest first:
@@ -355,9 +366,9 @@ public enum BeatItText {
     /// "Last · Tue · 185×8, 175×7, 175×6", then cut at whole entries,
     /// "Last · Tue · 185×8, 175×7…", never mid-number; the day goes before any set does.
     /// The view shows the first that fits.
-    public static func lastOneLine(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current) -> [String] {
+    public static func lastOneLine(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current, kind: LoadKind = .loaded, unit: WeightUnit = .lb) -> [String] {
         guard !sets.isEmpty else { return [] }
-        let e = entries(sets, compact: true)
+        let e = entries(sets, compact: true, kind: kind, unit: unit)
         let d = day(date, now: now, calendar: calendar)
         var out = [line(e, day: d)]
         // Every set before the day (CDO watch QA 4): "Last · 185×8, 7, 6" beats "Last · Tue · 185×8…".
@@ -366,10 +377,14 @@ public enum BeatItText {
         return out
     }
 
-    static func entries(_ sets: [SetTarget], compact: Bool) -> [String] {
+    static func entries(_ sets: [SetTarget], compact: Bool, kind: LoadKind = .loaded, unit: WeightUnit = .lb) -> [String] {
         let shared = compact && sets.count > 1 && Set(sets.map(\.weight)).count == 1
         return sets.enumerated().map { i, s in
-            shared && i > 0 ? "\(s.reps)" : "\(UnitMath.format(s.weight))×\(s.reps)"
+            if shared && i > 0 { return "\(s.reps)" }
+            if kind != .loaded {
+                return LoadText.pair(weight: s.weight, unit: unit, reps: s.reps, kind: kind, style: .full)
+            }
+            return "\(UnitMath.format(s.weight))×\(s.reps)"
         }
     }
 
@@ -385,8 +400,10 @@ public enum BeatItText {
         (["Last", day].compactMap { $0 } + [entries.joined(separator: ", ")]).joined(separator: " · ")
     }
 
-    /// "185 × 9", or "12 reps" for bodyweight with no load.
-    public static func number(_ t: SetTarget, bodyweight: Bool) -> String {
-        bodyweight && t.weight <= 0 ? "\(t.reps) reps" : "\(UnitMath.format(t.weight)) × \(t.reps)"
+    /// The Beat-it number: "12 reps", "BW + 25 lb × 8", "185 lb × 9".
+    public static func number(_ t: SetTarget, bodyweight: Bool, kind: LoadKind? = nil, unit: WeightUnit = .lb) -> String {
+        let k = kind ?? (bodyweight ? .bodyweight : .loaded)
+        let style: LoadText.Style = (k != .loaded && t.weight <= 0) ? .tightest : .full
+        return LoadText.pair(weight: t.weight, unit: unit, reps: t.reps, kind: k, style: style)
     }
 }

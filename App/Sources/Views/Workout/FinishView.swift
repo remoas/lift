@@ -217,14 +217,15 @@ struct FinishView: View {
             guard let t = LiftStore.beatIt(for: g.exercise, excluding: workout, unit: u).target else { continue }
             count += 1
             let hits = g.sets.filter { s in
-                s.kind != .warmup && Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t)
+                s.kind != .warmup && Target.isHit(weight: UnitMath.convert(s.weight, from: s.unit, to: u), reps: s.reps, target: t, assisted: g.exercise.loadKind == .assisted)
             }
             guard let best = hits.max(by: { ($0.snapshot.weightKg, $0.reps) < ($1.snapshot.weightKg, $1.reps) }) else { continue }
             let beat = LiftStore.beatIt(for: g.exercise, excluding: workout, unit: u)
             let top = beat.topIndex.map { beat.last[$0] }
+            let kind = g.exercise.loadKind
             out.append(Beaten(id: best.id, exercise: g.exercise,
-                              best: "\(UnitMath.format(best.weight)) × \(best.reps)",
-                              lastTop: top.map { "\(UnitMath.format($0.weight)) × \($0.reps)" },
+                              best: LoadText.pair(weight: best.weight, unit: best.unit, reps: best.reps, kind: kind),
+                              lastTop: top.map { LoadText.pair(weight: $0.weight, unit: u, reps: $0.reps, kind: kind) },
                               isAllTimeBest: bestIDs.contains(best.id)))
         }
         beaten = out

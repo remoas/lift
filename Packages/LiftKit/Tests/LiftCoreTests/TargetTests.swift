@@ -19,8 +19,31 @@ final class TargetTests: XCTestCase {
         XCTAssertEqual(Target.next(lastSets: [t(60, 12)], repGoal: 10, step: 2.5, bodyweight: false), t(62.5, 8))
     }
 
-    func testBodyweightAlwaysAddsRep() {
+    func testUnloadedBodyweightAlwaysAddsRep() {
         XCTAssertEqual(Target.next(lastSets: [t(0, 15)], repGoal: 10, step: 5, bodyweight: true), t(0, 16))
+    }
+
+    func testAddedLoadFollowsTheOrdinaryWeightRule() {
+        // Below the goal: same added load × (reps + 1).
+        XCTAssertEqual(Target.next(lastSets: [t(25, 8)], repGoal: 10, step: 5, bodyweight: true), t(25, 9))
+        // At the goal: next plate step × (goal − 2). 25 lb × 10 at a goal of 10 → BW + 30 lb × 8.
+        XCTAssertEqual(Target.next(lastSets: [t(25, 10)], repGoal: 10, step: 5, bodyweight: true), t(30, 8))
+    }
+
+    func testAssistanceDecreasesAfterAHit() {
+        XCTAssertEqual(Target.next(lastSets: [t(40, 8)], repGoal: 10, step: 5, bodyweight: false, assisted: true), t(40, 9))
+        XCTAssertEqual(Target.next(lastSets: [t(40, 10)], repGoal: 10, step: 5, bodyweight: false, assisted: true), t(35, 8))
+        // Assistance that reaches 0 becomes unloaded Bodyweight (reps at goal − 2).
+        XCTAssertEqual(Target.next(lastSets: [t(5, 10)], repGoal: 10, step: 5, bodyweight: false, assisted: true), t(0, 8))
+        // From unloaded, the bodyweight rule applies: reps + 1.
+        XCTAssertEqual(Target.next(lastSets: [t(0, 12)], repGoal: 10, step: 5, bodyweight: false, assisted: true), t(0, 13))
+    }
+
+    func testAssistedHitPrefersLessAssistance() {
+        XCTAssertTrue(Target.isHit(weight: 40, reps: 8, target: t(40, 8), assisted: true))
+        XCTAssertTrue(Target.isHit(weight: 35, reps: 8, target: t(40, 8), assisted: true))
+        XCTAssertFalse(Target.isHit(weight: 45, reps: 8, target: t(40, 8), assisted: true))
+        XCTAssertFalse(Target.isHit(weight: 40, reps: 7, target: t(40, 8), assisted: true))
     }
 
     func testTinyGoalNeverZeroReps() {

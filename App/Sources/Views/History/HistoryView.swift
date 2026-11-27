@@ -185,7 +185,7 @@ struct WorkoutDetailView: View {
                         Button { editing = s } label: {
                             HStack {
                                 Text("\(i + 1)").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textTertiary).frame(width: 24, alignment: .leading)
-                                Text("\(UnitMath.format(s.weight)) \(s.unit.symbol) × \(s.reps)").font(Theme.Fonts.setValue).foregroundStyle(Theme.Colors.textPrimary)
+                                Text(LoadText.pair(weight: s.weight, unit: s.unit, reps: s.reps, kind: s.exercise?.loadKind ?? .loaded)).font(Theme.Fonts.setValue).foregroundStyle(Theme.Colors.textPrimary).monospacedDigit()
                                 if s.kind != .working { Text(s.kind.label).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary) }
                                 Spacer()
                                 if bests.contains(s.id) { Text("Best").font(.footnote.weight(.semibold)).foregroundStyle(Theme.Colors.accent) }

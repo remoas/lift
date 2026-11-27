@@ -16,6 +16,10 @@ enum Fixtures {
         "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none",
         "24f-media-video-r18", "24g-media-video-r17",
         "25-finish-sets-left", "26-discard-toast",
+        "01e-log-pullup", "01f-log-pullup-belt", "01g-pullup-belt-hit",
+        "05b-set-editor-bodyweight", "05c-set-editor-add-weight",
+        "07b-finish-pullup", "08b-exercise-pullup",
+        "10b-history-pullup", "10c-history-pullup-belt",
     ]
 
     /// Screen-recording starts (AC 61), not design frames.
@@ -146,6 +150,24 @@ enum Fixtures {
             case "16-exercise-empty":
                 exercise = b.exercise("side-lateral-raise")
                 exercise.map { b.clearHistory($0) }
+            case "01e-log-pullup", "05b-set-editor-bodyweight":
+                workout = b.active(["pullups", "bent-over-row"], doneSets: 0)
+            case "01f-log-pullup-belt", "05c-set-editor-add-weight":
+                b.beltPullUps(daysAgo: 3)
+                workout = b.active(["pullups", "bent-over-row"], doneSets: 0)
+            case "01g-pullup-belt-hit":
+                // Last was 25 lb × 10 at a goal of 10, so Beat it is BW + 30 lb × 8.
+                b.beltPullUps(daysAgo: 3, reps: 10)
+                workout = b.active(["pullups"], doneSets: 0)
+            case "07b-finish-pullup":
+                workout = b.finishedPullUps()
+            case "08b-exercise-pullup":
+                b.beltPullUps(daysAgo: 2, reps: 8)
+                exercise = b.exercise("pullups")
+            case "10b-history-pullup":
+                workout = b.latestFinished(containing: "pullups")
+            case "10c-history-pullup-belt":
+                workout = b.beltPullUps(daysAgo: 2, reps: 8)
             default: break
             }
         }
@@ -168,7 +190,7 @@ enum Fixtures {
             "side-lateral-raise": (20, 12), "triceps-pushdown": (50, 10),
             "deadlift": (315, 5), "pullups": (0, 9), "bent-over-row": (155, 8), "face-pull": (40, 12), "barbell-curl": (70, 9),
             "barbell-squat": (245, 6), "romanian-deadlift": (205, 8), "leg-press": (360, 10), "leg-curl": (90, 10), "calf-raises": (180, 12), "seated-dumbbell-press": (50, 10),
-            "pendulum-row": (180, 10),
+            "pendulum-row": (180, 10), "assisted-pull-up": (40, 8),
         ]
 
         func exercise(_ id: String) -> Exercise? {
@@ -245,6 +267,42 @@ enum Fixtures {
             return w
         }
 
+
+        /// A finished pull-up session with a belt / vest (added load).
+        @discardableResult
+        func beltPullUps(daysAgo: Int, reps: Int = 8) -> Workout {
+            let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: Date())!.addingTimeInterval(3 * 3600)
+            let w = session(["pullups"], at: date, bump: 0)
+            for (i, s) in w.allSets.enumerated() {
+                s.weight = 25
+                s.reps = max(reps - i, 1)
+            }
+            return w
+        }
+
+        func latestFinished(containing id: String) -> Workout? {
+            let all = (try? context.fetch(FetchDescriptor<Workout>())) ?? []
+            return all.filter { $0.endedAt != nil && $0.allSets.contains { $0.exercise?.libraryID == id } }
+                .max(by: { $0.startedAt < $1.startedAt })
+        }
+
+        /// Today's pull-ups, all logged at Bodyweight, hitting the target, left open for Finish.
+        func finishedPullUps() -> Workout {
+            let w = active(["pullups", "bent-over-row"], doneSets: 0, asLastTime: false)
+            if let g = w.groups.first(where: { $0.exercise.libraryID == "pullups" }) {
+                for s in g.sets {
+                    s.weight = 0
+                    s.reps = max(s.reps, 12)
+                    s.isDone = true
+                    s.doneAt = w.startedAt.addingTimeInterval(120)
+                }
+            }
+            if let g = w.groups.first(where: { $0.exercise.libraryID == "bent-over-row" }) {
+                for s in g.sets { s.isDone = true; s.doneAt = w.startedAt.addingTimeInterval(400) }
+            }
+            return w
+        }
+
         /// Today's push, all logged, top bench set beating its target; left open
         /// so the summary shows before Done, like the real flow.
         func finishedToday(topSet: (Double, Int)?) -> Workout {
@@ -295,11 +353,11 @@ struct FixtureRoot: View {
 
     @ViewBuilder private var content: some View {
         switch frame {
-        case "01b-log-active", "01c-target-hit", "03-workout", "04-rest", "05-set-editor", "06-pr-banner", "13-first-workout", "19-reorder", "rec-pr":
+        case "01b-log-active", "01c-target-hit", "03-workout", "04-rest", "05-set-editor", "05b-set-editor-bodyweight", "05c-set-editor-add-weight", "06-pr-banner", "13-first-workout", "19-reorder", "rec-pr", "01e-log-pullup", "01f-log-pullup-belt", "01g-pullup-belt-hit":
             if let w = Fixtures.workout { RootView(workout: w) }
-        case "07-finish", "25-finish-sets-left":
+        case "07-finish", "07b-finish-pullup", "25-finish-sets-left":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }
-        case "08-exercise", "16-exercise-empty", "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none", "24f-media-video-r18", "24g-media-video-r17":
+        case "08-exercise", "08b-exercise-pullup", "16-exercise-empty", "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none", "24f-media-video-r18", "24g-media-video-r17":
             // On a push stack, so Back shows as in the real flow (QA 14).
             if let ex = Fixtures.exercise {
                 // Initial path: the detail is already on top, with no push
@@ -311,6 +369,11 @@ struct FixtureRoot: View {
                 }
             }
         case "10-history", "12-history-empty": RootView(initialTab: .history)
+        case "10b-history-pullup", "10c-history-pullup-belt":
+            if let w = Fixtures.workout {
+                NavigationStack { WorkoutDetailView(workout: w) }
+            }
+
         case "11-settings": SettingsView()
         case _ where Fixtures.isPicker: ExercisePicker(mode: .add) { _ in }
         default: RootView()

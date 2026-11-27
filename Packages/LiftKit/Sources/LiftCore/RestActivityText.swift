@@ -3,27 +3,35 @@ import Foundation
 /// Copy and rules for the rest-timer Live Activity (design/live-activity.md).
 /// Pure, so the phone app, the widget extension and the tests share it.
 public enum RestActivityText {
-    /// "185 lb × 9", "80 kg × 8", "9 reps" (bodyweight, no load), "BW + 25 lb × 9".
-    /// Units follow the exercise; the other unit is never shown.
+    /// Full load copy. Unloaded bodyweight / band is "Bodyweight × 12".
+    public static func load(weight: Double, unit: WeightUnit, reps: Int, kind: LoadKind, style: LoadText.Style = .full) -> String {
+        LoadText.pair(weight: weight, unit: unit, reps: reps, kind: kind, style: style)
+    }
+
+    /// Compatibility: `bodyweight: true` is the unloaded / added-load kind.
     public static func load(weight: Double, unit: WeightUnit, reps: Int, bodyweight: Bool) -> String {
-        if bodyweight {
-            return weight > 0 ? "BW + \(UnitMath.format(weight)) \(unit.symbol) × \(reps)" : "\(reps) reps"
-        }
-        return "\(UnitMath.format(weight)) \(unit.symbol) × \(reps)"
+        load(weight: weight, unit: unit, reps: reps, kind: bodyweight ? .bodyweight : .loaded)
     }
 
     /// §8 ladder, widest first: "Set 3 · 185 lb × 9" → "185 lb × 9" → "185×9".
+    /// Bodyweight: "Set 3 · Bodyweight × 9" → "Bodyweight × 9" → "9 reps".
     /// Never cut mid-number; the view picks the first that fits.
-    public static func ladder(setNumber: Int?, weight: Double, unit: WeightUnit, reps: Int, bodyweight: Bool) -> [String] {
-        let full = load(weight: weight, unit: unit, reps: reps, bodyweight: bodyweight)
-        let tight = bodyweight && weight <= 0 ? full
-            : bodyweight ? "BW+\(UnitMath.format(weight))×\(reps)"
-            : "\(UnitMath.format(weight))×\(reps)"
+    public static func ladder(setNumber: Int?, weight: Double, unit: WeightUnit, reps: Int, kind: LoadKind) -> [String] {
+        let full = load(weight: weight, unit: unit, reps: reps, kind: kind, style: .full)
+        let tightest = load(weight: weight, unit: unit, reps: reps, kind: kind, style: .tightest)
         var out: [String] = []
         if let n = setNumber { out.append("Set \(n) · \(full)") }
         out.append(full)
-        if tight != full { out.append(tight) }
+        if tightest != full { out.append(tightest) }
         return out
+    }
+
+    public static func ladder(setNumber: Int?, weight: Double, unit: WeightUnit, reps: Int, bodyweight: Bool) -> [String] {
+        ladder(setNumber: setNumber, weight: weight, unit: unit, reps: reps, kind: bodyweight ? .bodyweight : .loaded)
+    }
+
+    public static func beat(weight: Double, unit: WeightUnit, reps: Int, kind: LoadKind) -> String {
+        LoadText.beat(weight: weight, unit: unit, reps: reps, kind: kind)
     }
 
     /// §8 / AC 111, widest first: the full name, then word-boundary tails

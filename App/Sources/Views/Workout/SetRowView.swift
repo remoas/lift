@@ -64,17 +64,17 @@ struct SetRowView: View {
         Button(action: onValue) {
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: Theme.Spacing.s1) {
-                    if model.weightText == "0" {
-                        // Bodyweight/band at 0: "10 reps", never "0 lb × 10" (QA quick-log 25).
-                        // A 0 weight only reaches here when the equipment allows it.
-                        Text("\(model.reps) reps").font(Theme.Fonts.setValue)
+                    if model.weightText == nil {
+                        Text("Add weight").font(.body.weight(.semibold))
+                            .foregroundStyle(model.state == .current ? Theme.Colors.accent : Theme.Colors.textSecondary)
+                        Text("× \(model.reps)").font(Theme.Fonts.setValue)
+                    } else if model.loadKind != .loaded {
+                        // "Bodyweight × 12" or "BW + 25 lb × 8", never "0 lb × 12".
+                        Text(LoadText.pair(weight: model.weight, unit: model.unit, reps: model.reps, kind: model.loadKind))
+                            .font(Theme.Fonts.setValue)
                     } else if let w = model.weightText {
                         Text(w).font(Theme.Fonts.setValue)
                         Text(model.unit.symbol).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-                        Text("× \(model.reps)").font(Theme.Fonts.setValue)
-                    } else {
-                        Text("Add weight").font(.body.weight(.semibold))
-                            .foregroundStyle(model.state == .current ? Theme.Colors.accent : Theme.Colors.textSecondary)
                         Text("× \(model.reps)").font(Theme.Fonts.setValue)
                     }
                     if model.state == .best {

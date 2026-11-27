@@ -26,3 +26,33 @@ struct SkipRestIntent: LiveActivityIntent {
         return .result()
     }
 }
+
+/// Step the reps that will be logged, without writing the set (AC 116).
+struct AdjustRepsIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Adjust reps"
+    static var description = IntentDescription("Changes the reps that will be logged.")
+    static var isDiscoverable = false
+
+    @Parameter(title: "Delta")
+    var delta: Int
+
+    init() { delta = 1 }
+    init(delta: Int) { self.delta = delta }
+
+    func perform() async throws -> some IntentResult {
+        await RestIntentHandler.adjustReps(delta)
+        return .result()
+    }
+}
+
+/// Log the displayed load and the stepper reps, same as an in-app tick.
+struct LogSetIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Log set"
+    static var description = IntentDescription("Logs this set with the reps on the stepper.")
+    static var isDiscoverable = false
+
+    func perform() async throws -> some IntentResult {
+        await RestIntentHandler.logSet()
+        return .result()
+    }
+}

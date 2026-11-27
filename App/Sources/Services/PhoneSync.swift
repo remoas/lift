@@ -141,7 +141,7 @@ final class PhoneSync: NSObject {
             } else if wasRunning {
                 RestActivityController.shared.skipped()
             } else {
-                RestActivityController.shared.end()
+                RestActivityController.shared.presentReady()
             }
         case .finished(let w):
             RestActivityController.shared.end()

@@ -5,8 +5,9 @@ import WidgetKit
 import LiftCore
 
 // Lock Screen, StandBy and Dynamic Island views for the rest Live Activity
-// (design/live-activity.md §3–9). Ember only on the ring / draining line and
-// on Skip; tabular numerals; no bar, no "Beat it".
+// (design/live-activity.md §3–9 and delta-live-activity-bodyweight.md).
+// Ember only on the Resting ring / draining line, Skip, and Log set; tabular
+// numerals; no bar.
 
 enum RestTokens {
     static let emberDark = Color(red: 1.0, green: 0x8A / 255, blue: 0x3D / 255)        // #FF8A3D
@@ -36,8 +37,16 @@ struct RestActivityModel {
     var state: RestActivityAttributes.ContentState
     var isStale: Bool
 
-    var over: Bool { state.over || isStale }
+    var phase: RestActivityPhase {
+        if state.phase == .ready { return .ready }
+        if state.phase == .restOver || state.over || isStale { return .restOver }
+        return .resting
+    }
+    var over: Bool { phase == .restOver }
+    var isReady: Bool { phase == .ready }
+    var isResting: Bool { phase == .resting }
     var interval: ClosedRange<Date> { state.start...max(state.end, state.start.addingTimeInterval(1)) }
+    var beat: String? { state.beat }
 }
 
 enum RestRender {
@@ -174,6 +183,74 @@ struct RestChips: View {
     }
 }
 
+
+/// − / value / + for Rest over and Ready (AC 116).
+struct RepsStepper: View {
+    let reps: Int
+    var height: CGFloat = 44
+    var minWidth: CGFloat = 56
+    var primary: Color
+    var sunken: Color
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(intent: AdjustRepsIntent(delta: -1)) {
+                Text("−").font(.body.weight(.medium))
+                    .foregroundStyle(primary)
+                    .frame(minWidth: minWidth, minHeight: height)
+                    .background(sunken, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Fewer reps")
+            Text("\(reps)")
+                .font(.system(.title, design: .default).weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(primary)
+                .frame(minWidth: 44, minHeight: height)
+                .lineLimit(1)
+                .accessibilityLabel("\(reps) reps")
+            Button(intent: AdjustRepsIntent(delta: 1)) {
+                Text("+").font(.body.weight(.medium))
+                    .foregroundStyle(primary)
+                    .frame(minWidth: minWidth, minHeight: height)
+                    .background(sunken, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("More reps")
+        }
+    }
+}
+
+struct LogSetChip: View {
+    var height: CGFloat = 44
+    var minWidth: CGFloat = 56
+    var ember: Color
+    var sunken: Color
+
+    var body: some View {
+        Button(intent: LogSetIntent()) {
+            Text("Log set").font(.body.weight(.semibold))
+                .foregroundStyle(ember)
+                .frame(minWidth: minWidth, minHeight: height)
+                .frame(maxWidth: .infinity)
+                .background(sunken, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Log set")
+    }
+}
+
+struct BeatLine: View {
+    let model: RestActivityModel
+    var color: Color
+    var font: Font = .subheadline
+    var body: some View {
+        if let beat = model.beat {
+            Text(beat).font(font).foregroundStyle(color).lineLimit(1).monospacedDigit()
+        }
+    }
+}
+
 /// Lock Screen (and StandBy, scaled by the system).
 struct RestLockScreenView: View {
     let model: RestActivityModel
@@ -182,36 +259,54 @@ struct RestLockScreenView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            DrainingLine(model: model)
+            if model.isResting || model.over {
+                DrainingLine(model: model)
+            }
             HStack(alignment: .firstTextBaseline, spacing: 10) {
                 VStack(alignment: .leading, spacing: 2) {
-                    if model.over {
-                        Text(RestActivityText.restOver(setNumber: model.state.setNumber))
-                            .font(.subheadline.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
-                            .lineLimit(1)
-                    }
+                    lead
                     ExerciseName(name: model.state.exercise)
                         .font(.body.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
-                    Group {
-                        if model.over { Text(model.state.load).monospacedDigit().lineLimit(1) } else { NextLine(model: model) }
-                    }
-                    .font(.subheadline).foregroundStyle(RestTokens.secondary(scheme))
+                    BeatLine(model: model, color: RestTokens.secondary(scheme))
+                    Text(model.state.needsWeight ? "Add weight in Lift" : model.state.load)
+                        .font(.subheadline).foregroundStyle(RestTokens.secondary(scheme))
+                        .monospacedDigit().lineLimit(1)
                 }
                 .layoutPriority(1)
                 Spacer(minLength: 4)
-                RestTime(model: model)
-                    .font(.system(.largeTitle, design: .default).weight(.semibold))
-                    .foregroundStyle(RestTokens.primary(scheme))
-                    .layoutPriority(2)
+                if model.isResting || model.over {
+                    RestTime(model: model)
+                        .font(.system(.largeTitle, design: .default).weight(.semibold))
+                        .foregroundStyle(RestTokens.primary(scheme))
+                        .layoutPriority(2)
+                }
             }
-            if !model.over && !aod {
+            if model.isResting && !aod {
                 RestChips(primary: RestTokens.primary(scheme), skip: RestTokens.ember(scheme), sunken: RestTokens.sunken(scheme))
+            } else if !model.isResting && !aod && !model.state.needsWeight {
+                VStack(spacing: 8) {
+                    RepsStepper(reps: model.state.reps, primary: RestTokens.primary(scheme), sunken: RestTokens.sunken(scheme))
+                        .frame(maxWidth: .infinity)
+                    LogSetChip(ember: RestTokens.ember(scheme), sunken: RestTokens.sunken(scheme))
+                }
             }
         }
         .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 14)
-        .animation(.easeInOut(duration: 0.15), value: model.over)
+        .animation(.easeInOut(duration: 0.15), value: model.phase)
+    }
+
+    @ViewBuilder private var lead: some View {
+        if model.over {
+            Text(RestActivityText.restOver(setNumber: model.state.setNumber))
+                .font(.subheadline.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
+                .lineLimit(1)
+        } else if model.isReady, let n = model.state.setNumber {
+            Text("Set \(n)")
+                .font(.subheadline.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
+                .lineLimit(1)
+        }
     }
 
     static func background(_ model: RestActivityModel, _ scheme: ColorScheme) -> Color {
@@ -227,13 +322,25 @@ struct RestExpandedLeading: View {
             if model.over {
                 Text(RestActivityText.restOver(setNumber: model.state.setNumber))
                     .font(.footnote.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary).lineLimit(1)
+            } else if model.isReady, let n = model.state.setNumber {
+                Text("Set \(n) · \(model.state.load)")
+                    .font(.footnote.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary)
+                    .lineLimit(1).monospacedDigit()
             }
             ExerciseName(name: model.state.exercise)
                 .font(.body.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary)
-            Group {
-                if model.over { Text(model.state.load).monospacedDigit().lineLimit(1) } else { NextLine(model: model) }
+            BeatLine(model: model, color: RestTokens.islandSecondary, font: .footnote)
+            if !model.isReady {
+                Group {
+                    if model.over { Text(model.state.needsWeight ? "Add weight in Lift" : model.state.load).monospacedDigit().lineLimit(1) }
+                    else { NextLine(model: model) }
+                }
+                .font(.footnote).foregroundStyle(RestTokens.islandSecondary)
+            } else if model.state.needsWeight {
+                Text("Add weight in Lift").font(.footnote).foregroundStyle(RestTokens.islandSecondary)
+            } else {
+                Text(model.state.load).font(.footnote).foregroundStyle(RestTokens.islandSecondary).monospacedDigit().lineLimit(1)
             }
-            .font(.footnote).foregroundStyle(RestTokens.islandSecondary)
         }
         .padding(.leading, 6)
     }
@@ -242,23 +349,45 @@ struct RestExpandedLeading: View {
 struct RestExpandedTrailing: View {
     let model: RestActivityModel
     var body: some View {
-        HStack(spacing: 8) {
-            MiniRing(model: model, size: 34, line: 3)
-            RestTime(model: model)
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(RestTokens.islandPrimary)
-                .frame(minWidth: 64, alignment: .trailing)
+        if model.isResting {
+            HStack(spacing: 8) {
+                MiniRing(model: model, size: 34, line: 3)
+                RestTime(model: model)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(RestTokens.islandPrimary)
+                    .frame(minWidth: 64, alignment: .trailing)
+            }
+            .padding(.trailing, 6)
         }
-        .padding(.trailing, 6)
     }
 }
 
 struct RestExpandedBottom: View {
     let model: RestActivityModel
     var body: some View {
-        if !model.over {
-            RestChips(height: 40, minWidth: 56, primary: RestTokens.islandPrimary, skip: RestTokens.emberDark, sunken: RestTokens.islandSunken)
+        if model.isResting {
+            RestChips(height: 44, minWidth: 56, primary: RestTokens.islandPrimary, skip: RestTokens.emberDark, sunken: RestTokens.islandSunken)
                 .padding(.horizontal, 6)
+        } else if !model.state.needsWeight {
+            VStack(spacing: 8) {
+                RepsStepper(reps: model.state.reps, height: 44, minWidth: 44, primary: RestTokens.islandPrimary, sunken: RestTokens.islandSunken)
+                LogSetChip(height: 44, minWidth: 56, ember: RestTokens.emberDark, sunken: RestTokens.islandSunken)
+            }
+            .padding(.horizontal, 6)
+        }
+    }
+}
+
+struct RestCompactLeading: View {
+    let model: RestActivityModel
+    var body: some View {
+        if model.isResting {
+            MiniRing(model: model)
+        } else if let n = model.state.setNumber {
+            Text("\(n)")
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(RestTokens.islandPrimary)
+                .monospacedDigit()
         }
     }
 }
@@ -266,9 +395,33 @@ struct RestExpandedBottom: View {
 struct RestCompactTrailing: View {
     let model: RestActivityModel
     var body: some View {
-        RestTime(model: model)
-            .font(.callout.weight(.semibold))
-            .foregroundStyle(RestTokens.islandPrimary)
-            .frame(maxWidth: 52)
+        if model.isResting {
+            RestTime(model: model)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(RestTokens.islandPrimary)
+                .frame(maxWidth: 52)
+        } else {
+            Text(model.state.compactTrailing)
+                .font(.callout.weight(.semibold))
+                .foregroundStyle(RestTokens.islandPrimary)
+                .monospacedDigit()
+                .lineLimit(1)
+                .frame(maxWidth: 64)
+        }
+    }
+}
+
+struct RestMinimal: View {
+    let model: RestActivityModel
+    var size: CGFloat = 22
+    var body: some View {
+        if model.isResting {
+            MiniRing(model: model, size: size, line: 2.5)
+        } else if let n = model.state.setNumber {
+            Text("\(n)")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(RestTokens.islandPrimary)
+                .monospacedDigit()
+        }
     }
 }

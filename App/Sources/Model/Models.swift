@@ -88,6 +88,10 @@ final class Exercise {
         set { equipmentRaw = newValue.rawValue }
     }
 
+    var loadKind: LoadKind {
+        LoadKind.resolve(equipment: equipment, id: libraryID ?? "", name: name, variant: variant)
+    }
+
     var searchEntry: SearchEntry {
         SearchEntry(id: id, name: name, variant: variant, aliases: aliases, primary: primaryMuscles, secondary: secondaryMuscles, equipment: equipment)
     }

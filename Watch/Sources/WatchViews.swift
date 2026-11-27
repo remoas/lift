@@ -343,7 +343,7 @@ struct ExercisePage: View {
         if counting {
             rows.append(WatchFit.line(WatchFit.caption2) + (large ? 54 : 40) + 7 + WatchFit.line(WatchFit.caption2))
         } else {
-            if let full = BeatItText.last(exercise.last, date: exercise.lastDate), showFullLast || fit < 4 {
+            if let full = BeatItText.last(exercise.last, date: exercise.lastDate, kind: exercise.loadKind, unit: exercise.unit), showFullLast || fit < 4 {
                 let wrapFull = showFullLast || (fit <= 1 && large && !hasStatus)
                 rows.append(wrapFull ? WatchFit.height(full.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}"), WatchFit.caption2, width: width) : WatchFit.line(WatchFit.caption2))
             }
@@ -368,7 +368,7 @@ struct ExercisePage: View {
             // 40/41 mm counting: one line so the 56 pt count, its bar and
             // "of 9 · Crown to correct" fit (QA 3, decision 3).
             let title = Text(exercise.name).watchTitle(lines: (fit >= 3 || (counting && !WatchTheme.isLarge)) ? 1 : 2)
-            if !counting, !showFullLast, fit >= 4, let full = BeatItText.last(exercise.last, date: exercise.lastDate) {
+            if !counting, !showFullLast, fit >= 4, let full = BeatItText.last(exercise.last, date: exercise.lastDate, kind: exercise.loadKind, unit: exercise.unit) {
                 // No room for Last: the name opens it, and VoiceOver reads it with the name.
                 Button { showFullLast = true } label: {
                     // A 44 pt hit target around the same-size name (QA 4, Must 3): the
@@ -402,13 +402,13 @@ struct ExercisePage: View {
     /// One line on 40/41 mm, "Last · Tue · 185×8, 7, 6" or "185×8, 175×7…" cut at
     /// a whole entry. Tap for every set in full; VoiceOver always reads them all.
     @ViewBuilder private func lastLine(fit: Int) -> some View {
-        if let full = BeatItText.last(exercise.last, date: exercise.lastDate), showFullLast || fit < 4 {
+        if let full = BeatItText.last(exercise.last, date: exercise.lastDate, kind: exercise.loadKind, unit: exercise.unit), showFullLast || fit < 4 {
             let wrapFull = showFullLast || (fit <= 1 && WatchTheme.isLarge && !hasStatus)
             Button { showFullLast.toggle() } label: {
                 if wrapFull {
                     lastText(full)
                 } else {
-                    let options = BeatItText.lastOneLine(exercise.last, date: exercise.lastDate)
+                    let options = BeatItText.lastOneLine(exercise.last, date: exercise.lastDate, kind: exercise.loadKind, unit: exercise.unit)
                     ViewThatFits(in: .horizontal) {
                         ForEach(options, id: \.self) { lastText($0).lineLimit(1) }
                         lastText(options.last ?? full).lineLimit(1)
@@ -439,7 +439,7 @@ struct ExercisePage: View {
                 } else {
                     Text("Beat it").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
                 }
-                Text(BeatItText.number(target, bodyweight: exercise.bodyweight))
+                Text(BeatItText.number(target, bodyweight: exercise.bodyweight, kind: exercise.loadKind, unit: exercise.unit))
                     .font(.footnote.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary)
                     .theBar(dimmed: dimmed)
             }
@@ -685,7 +685,7 @@ struct RestUpView: View {
             .frame(width: ring, height: ring)
             .onTapGesture { store.dismissRestUp() }
             Text("Next").font(.caption2).foregroundStyle(WatchTheme.textSecondary)
-            Text(BeatItText.number(exercise.prefill, bodyweight: exercise.bodyweight))
+            Text(BeatItText.number(exercise.prefill, bodyweight: exercise.bodyweight, kind: exercise.loadKind, unit: exercise.unit))
                 .font(.body.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary).theBar()
         }
         .padding(.top, 14)
@@ -879,7 +879,7 @@ struct FinishView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         Text(b.exercise.name).font(.footnote).foregroundStyle(WatchTheme.textPrimary)
                             .lineLimit(2).minimumScaleFactor(0.9)
-                        Text(BeatItText.number(b.best, bodyweight: b.exercise.bodyweight))
+                        Text(BeatItText.number(b.best, bodyweight: b.exercise.bodyweight, kind: b.exercise.loadKind, unit: b.exercise.unit))
                             .font(.footnote.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary)
                             .theBar(i == 0)
                     }

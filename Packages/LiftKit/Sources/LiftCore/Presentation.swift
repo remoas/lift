@@ -14,14 +14,16 @@ public struct SetRowModel: Equatable, Sendable, Identifiable {
     public var id: UUID
     public var number: Int
     public var kind: SetKind
-    public var lastTime: String?      // "185 × 8", nil = never done
+    public var lastTime: String?      // "185 lb × 8", nil = never done
     public var weightText: String?    // "185", nil = "Add weight"
     public var unit: WeightUnit
     public var reps: Int
     public var secondary: String?     // "84 kg" when the other unit is shown
     public var state: SetRowState
+    public var loadKind: LoadKind
+    public var weight: Double
 
-    public init(id: UUID, number: Int, kind: SetKind, lastTime: String?, weightText: String?, unit: WeightUnit, reps: Int, secondary: String?, state: SetRowState) {
+    public init(id: UUID, number: Int, kind: SetKind, lastTime: String?, weightText: String?, unit: WeightUnit, reps: Int, secondary: String?, state: SetRowState, loadKind: LoadKind = .loaded, weight: Double = 0) {
         self.id = id
         self.number = number
         self.kind = kind
@@ -31,26 +33,32 @@ public struct SetRowModel: Equatable, Sendable, Identifiable {
         self.reps = reps
         self.secondary = secondary
         self.state = state
+        self.loadKind = loadKind
+        self.weight = weight
     }
 
     public var isDone: Bool { state == .done || state == .best }
 
     public var accessibilityLabel: String {
-        let last = lastTime.map { "last time \($0.replacingOccurrences(of: " × ", with: " by "))" } ?? "first time"
-        let unitWord = unit == .lb ? "pounds" : "kilograms"
-        let today = weightText.map { "today \($0) \(unitWord) by \(reps)" } ?? "no weight yet, \(reps) reps"
+        let last = lastTime.map { "last time \($0.replacingOccurrences(of: " × ", with: " by ").replacingOccurrences(of: "Bodyweight", with: "bodyweight"))" } ?? "first time"
+        let today: String
+        if weightText == nil {
+            today = "no weight yet, \(reps) reps"
+        } else if loadKind != .loaded {
+            today = "today \(LoadText.voiceOver(weight: weight, unit: unit, reps: reps, kind: loadKind))"
+        } else {
+            let unitWord = unit == .lb ? "pounds" : "kilograms"
+            today = "today \(weightText ?? "") \(unitWord) by \(reps)"
+        }
         let status = state == .best ? "Done, new best." : (isDone ? "Done." : "Not done.")
         return "Set \(number), \(last), \(today). \(status)"
     }
 }
 
 public enum WeightText {
-    /// "185 × 8" in `unit`, converting and snapping if needed.
-    /// "185 × 8". Bodyweight: "9 reps", or "BW + 25 × 9" with added load (never "0 × 9").
-    public static func pair(_ set: SetSnapshot, in unit: WeightUnit, step: Double, bodyweight: Bool = false) -> String {
-        let w = UnitMath.convertLoadable(set.weight, from: set.unit, to: unit, step: step)
-        if bodyweight { return w <= 0 ? "\(set.reps) reps" : "BW + \(UnitMath.format(w)) × \(set.reps)" }
-        return "\(UnitMath.format(w)) × \(set.reps)"
+    /// Delegates to `LoadText` so every surface shares one formatter.
+    public static func pair(_ set: SetSnapshot, in unit: WeightUnit, step: Double, bodyweight: Bool = false, kind: LoadKind? = nil, style: LoadText.Style = .full) -> String {
+        LoadText.pair(set, in: unit, step: step, kind: kind ?? (bodyweight ? .bodyweight : .loaded), style: style)
     }
 
     public static func weight(_ kg: Double, in unit: WeightUnit) -> String {
@@ -71,7 +79,7 @@ public enum WeightText {
 public struct PRBannerContent: Equatable, Sendable {
     public var kind: RecordKind
     public var exercise: String
-    public var headline: String   // "205 × 5"
+    public var headline: String   // "205 lb × 5"
     public var why: String
     public var accessibility: String
 
@@ -80,11 +88,12 @@ public struct PRBannerContent: Equatable, Sendable {
         RecordKind.allCases.first(where: kinds.contains)
     }
 
-    public static func make(kinds: [RecordKind], exercise: String, set: SetSnapshot, history: [SetSnapshot], unit: WeightUnit) -> PRBannerContent? {
+    public static func make(kinds: [RecordKind], exercise: String, set: SetSnapshot, history: [SetSnapshot], unit: WeightUnit, loadKind: LoadKind = .loaded) -> PRBannerContent? {
+        // Don't invent a 0 lb estimated 1RM for bodyweight / band / assisted lifts.
+        let kinds = loadKind == .loaded ? kinds : kinds.filter { $0 != .bestE1RM }
         guard let kind = top(kinds) else { return nil }
         let book = PRDetector.book(from: history)
-        let w = UnitMath.format(set.weight)
-        let headline = "\(w) × \(set.reps)"
+        let headline = LoadText.pair(weight: set.weight, unit: set.unit == unit ? set.unit : unit, reps: set.reps, kind: loadKind)
         func inUnit(_ kg: Double) -> String { UnitMath.format(UnitMath.convert(kg, from: .kg, to: unit).rounded()) }
         let newE1 = set.e1RMKg.map { inUnit($0) + " " + unit.symbol }
         let why: String
@@ -92,7 +101,7 @@ public struct PRBannerContent: Equatable, Sendable {
         case .heaviestWeight:
             let delta = UnitMath.convert(set.weightKg - book.heaviestKg, from: .kg, to: unit)
             var s = "Heaviest yet, up \(UnitMath.format((delta * 2).rounded() / 2)) \(unit.symbol) from \(inUnit(book.heaviestKg))."
-            if let newE1 { s += " Estimated max is now \(newE1)." }
+            if let newE1, loadKind == .loaded { s += " Estimated max is now \(newE1)." }
             why = s
         case .bestE1RM:
             let delta = UnitMath.convert((set.e1RMKg ?? 0) - book.bestE1RMKg, from: .kg, to: unit)
@@ -100,12 +109,14 @@ public struct PRBannerContent: Equatable, Sendable {
         case .mostReps:
             let prev = book.mostReps(atOrAboveKg: set.weightKg) ?? 0
             let d = set.reps - prev
-            why = "\(set.reps) reps at \(w), \(d) more than ever."
+            let load = LoadText.pair(weight: set.weight, unit: unit, reps: set.reps, kind: loadKind)
+            let at = load.replacingOccurrences(of: " × \(set.reps)", with: "")
+            why = "\(set.reps) reps at \(at), \(d) more than ever."
         case .bestVolume:
             why = "Your biggest set of \(exercise), \(UnitMath.format(UnitMath.convert(set.volumeKg, from: .kg, to: unit).rounded())) \(unit.symbol)."
         }
         return PRBannerContent(kind: kind, exercise: exercise, headline: headline, why: why,
-                               accessibility: "New best, \(exercise), \(w) by \(set.reps)")
+                               accessibility: "New best, \(exercise), \(LoadText.voiceOver(weight: set.weight, unit: unit, reps: set.reps, kind: loadKind))")
     }
 }
 

@@ -15,7 +15,10 @@ public struct SetTarget: Codable, Hashable, Sendable {
 /// Top set = the heaviest weight, and the most reps at that weight.
 /// Reps below the rep goal → same weight × (reps + 1).
 /// Reps at or above the goal → next weight step × (goal − 2).
-/// Bodyweight → always reps + 1.
+/// Unloaded bodyweight / band → always reps + 1.
+/// Added load on a bodyweight lift follows the ordinary weight rule.
+/// Assistance decreases by the plate step after a hit, then becomes
+/// unloaded Bodyweight at 0.
 ///
 /// The prefill and the target line both come from `next(lastSets:…)`.
 public enum Target {
@@ -29,17 +32,27 @@ public enum Target {
         }
     }
 
-    public static func next(after top: SetTarget, repGoal: Int, step: Double, bodyweight: Bool) -> SetTarget {
+    public static func next(after top: SetTarget, repGoal: Int, step: Double, bodyweight: Bool, assisted: Bool = false) -> SetTarget {
         let goal = max(repGoal, 1)
-        if bodyweight || top.reps < goal {
+        // Unloaded bodyweight, band, or assistance that has reached 0: always reps + 1.
+        if (bodyweight || assisted) && top.weight <= 0 {
+            return SetTarget(weight: 0, reps: top.reps + 1)
+        }
+        if assisted {
+            if top.reps < goal {
+                return SetTarget(weight: top.weight, reps: top.reps + 1)
+            }
+            return SetTarget(weight: max(top.weight - step, 0), reps: max(goal - 2, 1))
+        }
+        if top.reps < goal {
             return SetTarget(weight: top.weight, reps: top.reps + 1)
         }
         return SetTarget(weight: top.weight + step, reps: max(goal - 2, 1))
     }
 
     /// Target from last session's sets (already in the display unit); nil the first time.
-    public static func next(lastSets: [SetTarget], repGoal: Int, step: Double, bodyweight: Bool) -> SetTarget? {
-        topSet(lastSets).map { next(after: $0, repGoal: repGoal, step: step, bodyweight: bodyweight) }
+    public static func next(lastSets: [SetTarget], repGoal: Int, step: Double, bodyweight: Bool, assisted: Bool = false) -> SetTarget? {
+        topSet(lastSets).map { next(after: $0, repGoal: repGoal, step: step, bodyweight: bodyweight, assisted: assisted) }
     }
 
     /// Prefill for an unlogged set (Ben, 2:16 pm: "Prefill the next set with
@@ -50,7 +63,10 @@ public enum Target {
     }
 
     /// Meeting or beating: at least the target weight and at least the target reps.
-    public static func isHit(weight: Double, reps: Int, target: SetTarget) -> Bool {
-        weight >= target.weight - 0.0001 && reps >= target.reps
+    public static func isHit(weight: Double, reps: Int, target: SetTarget, assisted: Bool = false) -> Bool {
+        if assisted {
+            return weight <= target.weight + 0.0001 && reps >= target.reps
+        }
+        return weight >= target.weight - 0.0001 && reps >= target.reps
     }
 }

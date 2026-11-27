@@ -53,6 +53,10 @@ struct ActiveWorkoutView: View {
         }
         .onAppear {
             if session == nil { session = WorkoutSession(workout: workout, context: context, settings: settings) }
+            if let session {
+                RestActivityController.shared.logHandler = { session.logFromActivity($0) }
+                RestActivityController.shared.sync()
+            }
             #if DEBUG
             applyFixture()
             // UI test hook (RemoveExerciseTests): run the real Remove path, toast included.
@@ -75,7 +79,7 @@ struct ActiveWorkoutView: View {
             }
         }) { set in
             if let session {
-                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.previous(for: set).map { WeightText.pair($0.snapshot, in: set.unit, step: set.exercise?.step(for: set.unit) ?? set.unit.defaultStep, bodyweight: set.exercise?.equipment == .bodyweight) }, noLastText: noLastText(set, session)) {
+                SetEditorSheet(entry: set, title: editorTitle(set, session), lastTime: session.previous(for: set).map { WeightText.pair($0.snapshot, in: set.unit, step: set.exercise?.step(for: set.unit) ?? set.unit.defaultStep, kind: set.exercise?.loadKind ?? .loaded) }, noLastText: noLastText(set, session)) {
                     if set.isDone { session.saveEdited(set) } else { session.log(set) }
                 }
             }
@@ -101,6 +105,7 @@ struct ActiveWorkoutView: View {
         switch frame {
         case "04-rest": if let lastDone { session.startRest(after: lastDone) }
         case "05-set-editor": editing = session.currentSet
+        case "05b-set-editor-bodyweight", "05c-set-editor-add-weight": editing = session.currentSet
         case "06-pr-banner": if let lastDone { session.refreshBests(); session.debugShowBanner(for: lastDone) }
         case "19-reorder": showEditToday = true
         default: break
@@ -267,7 +272,7 @@ struct ActiveWorkoutView: View {
                 .accessibilityLabel("\(ex.name) options")
             }
             if !beat.last.isEmpty {
-                Text(lastLine(beat, unit: session.unit(for: ex), bodyweight: ex.equipment == .bodyweight))
+                Text(lastLine(beat, unit: session.unit(for: ex), kind: ex.loadKind))
                     .font(.subheadline).foregroundStyle(Theme.Colors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -285,26 +290,16 @@ struct ActiveWorkoutView: View {
         .listRowBackground(Theme.Colors.bgCanvas)
     }
 
-    /// "Last · Mon · 185×8, 185×7, 185×6"
-    private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit, bodyweight: Bool = false) -> String {
-        // Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
-        let day = beat.lastDate.map { d in
-            Date().timeIntervalSince(d) > 6 * 86_400 ? d.formatted(.dateTime.day().month(.abbreviated)) : d.formatted(.dateTime.weekday(.abbreviated))
-        }
-        // Bodyweight: "9, 8, 7 reps" or "BW+25×9", never "0×9" (qa-search Must 5).
-        let sets: String
-        if bodyweight, beat.last.allSatisfy({ $0.weight <= 0 }) {
-            sets = beat.last.map { "\($0.reps)" }.joined(separator: ", ") + " reps"
-        } else {
-            sets = beat.last.map { bodyweight ? ($0.weight <= 0 ? "\($0.reps) reps" : "BW+\(UnitMath.format($0.weight))×\($0.reps)") : "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
-        }
-        return (["Last", day].compactMap { $0 } + [sets]).joined(separator: " · ")
+    /// "Last · Mon · 185×8, 185×7, 185×6" or "Last · Mon · Bodyweight × 12, 10, 9"
+    private func lastLine(_ beat: LiftStore.BeatIt, unit: WeightUnit, bodyweight: Bool = false, kind: LoadKind = .loaded) -> String {
+        let k: LoadKind = kind != .loaded ? kind : (bodyweight ? .bodyweight : .loaded)
+        return BeatItText.last(beat.last, date: beat.lastDate, kind: k, unit: unit) ?? "Last"
     }
 
     @ViewBuilder
     private func targetLine(_ beat: LiftStore.BeatIt, ex: Exercise, unit: WeightUnit, isCurrent: Bool, hit: Bool) -> some View {
         if let t = beat.target {
-            let number = BeatItText.number(t, bodyweight: ex.equipment == .bodyweight)
+            let number = BeatItText.number(t, bodyweight: ex.loadKind == .bodyweight, kind: ex.loadKind, unit: unit)
             let layout = typeSize.isAccessibilitySize
                 ? AnyLayout(VStackLayout(alignment: .leading, spacing: Theme.Spacing.s1))
                 : AnyLayout(HStackLayout(spacing: 0))

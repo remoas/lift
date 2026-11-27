@@ -97,7 +97,7 @@ struct LiveActivityBehaviour: View {
 
         // AC 107: Skip, no alert, dismisses after 5 s; Undo restores.
         await RestIntentHandler.skip()
-        await log("4 SKIP via the intent handler → Rest over, ended with dismissal .after(now+5s), no alert, notification cancelled")
+        await log("4 SKIP via the intent handler → Ready (rest dismissed), no alert, Activity stays up, notification cancelled")
         await wait(1.5)
         startRest(100)
         await log("5 UNDO (in-app toast path re-shows the rest) → one Activity again")
@@ -112,7 +112,7 @@ struct LiveActivityBehaviour: View {
         restEnds()
         await log("7 REST END, phone winner, Lift not on screen (simulated) → alert-style update (hl=true), fallback notification cancelled")
         await wait(RestActivityPolicy.highlightSeconds + 1)
-        await log("8 after the ~2 s highlight → settled Rest over, ended with dismissal .after(end+5m), stale end+2m")
+        await log("8 after the ~2 s highlight → settled Rest over, Activity stays up (stepper + Log set), no dismissal")
         await wait(1.5)
 
         // AC 106: watch winner, Lift suspended at rest-end → no phone notification at all.
