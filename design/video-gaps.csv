@@ -226,7 +226,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 225,v-bar-pulldown,V-Bar Pulldown,cable,lats,still,still:v-bar-pulldown,,3,A,vertical-pull,,
 226,dumbbell-one-arm-upright-row,Dumbbell One-Arm Upright Row,dumbbell,side_delts,video,video:dumbbell-one-arm-upright-row,,3,A,shoulder-iso,,"pass-pending-cdo-qa; official a1, 445928 bytes, MAE 2.78"
 227,dumbbell-upright-row,Dumbbell Upright Row,dumbbell,side_delts|traps,video,video:dumbbell-upright-row,,3,A,shoulder-iso,,"pass-pending-cdo-qa; official a1, 559512 bytes, MAE 2.98"
-228,smith-single-leg-split-squat,Smith Single-Leg Split Squat,smith_machine,quads,none,,,3,A,lunge,,
+228,smith-single-leg-split-squat,Smith Single-Leg Split Squat,smith_machine,quads,video,video:smith-single-leg-split-squat,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 476768 bytes, CRF 28, MAE 3.69"
 229,standing-dumbbell-upright-row,Standing Dumbbell Upright Row,dumbbell,traps,video,video:dumbbell-upright-row,,3,A,shoulder-iso,dumbbell-upright-row,reuse of dumbbell-upright-row
 230,alternating-kettlebell-row,Alternating Kettlebell Row,kettlebell,rhomboids,none,,,3,A,horizontal-pull,,
 231,alternating-renegade-row,Alternating Renegade Row,kettlebell,rhomboids,none,,,3,A,horizontal-pull,,
