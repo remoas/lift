@@ -282,8 +282,9 @@ struct ExercisePage: View {
                 // above ends at this slot and is clipped there (QA 3, decision 2).
                 statusLine
                 if store.toast != nil { ToastBar() }
-                // 40/41 mm: the toast takes Log set's place while it's up.
-                if store.toast == nil || WatchTheme.isLarge { logButton }
+                // The toast takes Log set's place while it's up, on every size: on 45/49 mm
+                // a toast stacked above Log set left no room for the value (QA 3).
+                if store.toast == nil { logButton }
             }
         }
     }
