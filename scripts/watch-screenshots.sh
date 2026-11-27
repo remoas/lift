@@ -13,7 +13,7 @@ mkdir -p "$OUT"
 # pick one with no runtime).
 AVAIL=$(xcrun simctl list devices available | grep -E "Apple Watch" || true)
 echo "$AVAIL"
-pick() { echo "$AVAIL" | grep -E "$1" | tail -1 | sed -E 's/^ *//; s/ \(([0-9A-F-]{36})\).*/|\1/'; }
+pick() { echo "$AVAIL" | grep -E "$1" | tail -1 | sed -E 's/^ *//; s/ \(([0-9A-F-]{36})\).*/|\1/' || true; }
 SMALL=$(pick "\((40|41)mm\)")
 # The 41 and 45 mm classes (CDO QA 3): Series 7–9 sims if installed, else Series 10/11
 # at 42 and 46 mm, which take the same layout branch (WatchTheme.isLarge = width ≥ 198).
