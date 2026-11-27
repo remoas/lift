@@ -331,7 +331,17 @@ struct ExercisePage: View {
         VStack(alignment: .leading, spacing: WatchTheme.isLarge ? 3 : 1) {
             // 40/41 mm counting: one line so the 56 pt count, its bar and
             // "of 9 · Crown to correct" fit (QA 3, decision 3).
-            Text(exercise.name).watchTitle(lines: (fit >= 3 || (counting && !WatchTheme.isLarge)) ? 1 : 2)
+            let title = Text(exercise.name).watchTitle(lines: (fit >= 3 || (counting && !WatchTheme.isLarge)) ? 1 : 2)
+            if !counting, !showFullLast, fit >= 4, let full = BeatItText.last(exercise.last, date: exercise.lastDate) {
+                // No room for Last: the name opens it, and VoiceOver reads it with the name.
+                Button { showFullLast = true } label: { title }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(exercise.name)
+                    .accessibilityValue(full)
+                    .accessibilityHint("Shows every set")
+            } else {
+                title
+            }
             if let count = store.liveCount(for: exercise) {
                 countingBody(count)
             } else {
