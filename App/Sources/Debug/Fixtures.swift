@@ -14,6 +14,7 @@ enum Fixtures {
         "16-exercise-empty", "18a-picker-empty", "18a2-picker-empty-scrolled", "18a3-picker-empty-all", "18b-picker-bench", "18c-picker-rdl", "18d-picker-zzqx", "18e-picker-press",
         "18f-picker-squat", "18g-picker-deadlift", "18h-picker-pull-up", "18i-picker-db-incline", "18j-picker-benhc", "18k-picker-pull-ups", "19-reorder",
         "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none",
+        "24f-media-video-r18", "24g-media-video-r17",
         "25-finish-sets-left", "26-discard-toast",
     ]
 
@@ -125,6 +126,12 @@ enum Fixtures {
                 // Reduce Motion matters for video: End still, "▶ Play" pill, no autoplay.
                 // bench-press has a bundled looping clip (barbell-shoulder-press is also a video).
                 exercise = b.exercise("bench-press")
+            case "24f-media-video-r18":
+                // Build 4 QA: a Round 18 CDO-final clip (Upright Cable Row).
+                exercise = b.exercise("upright-cable-row")
+            case "24g-media-video-r17":
+                // Build 4 QA: a Round 17 CDO-final clip (Dumbbell Upright Row).
+                exercise = b.exercise("dumbbell-upright-row")
             case "24b-media-stills", "24d-media-loading":
                 // Keep a stills-only library row so these frames do not pick up a video.
                 // dips is already in the push history fixture (and is not a bundled video).
@@ -292,7 +299,7 @@ struct FixtureRoot: View {
             if let w = Fixtures.workout { RootView(workout: w) }
         case "07-finish", "25-finish-sets-left":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }
-        case "08-exercise", "16-exercise-empty", "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none":
+        case "08-exercise", "16-exercise-empty", "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none", "24f-media-video-r18", "24g-media-video-r17":
             // On a push stack, so Back shows as in the real flow (QA 14).
             if let ex = Fixtures.exercise {
                 // Initial path: the detail is already on top, with no push

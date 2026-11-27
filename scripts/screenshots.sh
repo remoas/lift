@@ -9,7 +9,7 @@ FRAMES=(01-log-empty 01b-log-active 01c-target-hit 01d-stale-saved-toast 03-work
   10-history 11-settings 12-history-empty 13-first-workout 14-health-error 15-restoring 16-exercise-empty
   18a-picker-empty 18a2-picker-empty-scrolled 18a3-picker-empty-all 18b-picker-bench 18c-picker-rdl 18d-picker-zzqx 18e-picker-press 18f-picker-squat
   18g-picker-deadlift 18h-picker-pull-up 18i-picker-db-incline 18j-picker-benhc 18k-picker-pull-ups 19-reorder 24a-media-video 24a-media-video-scrolled 24b-media-stills 24c-media-reduce-motion 24d-media-loading
-  24e-media-none 25-finish-sets-left 26-discard-toast)
+  24e-media-none 24f-media-video-r18 24g-media-video-r17 25-finish-sets-left 26-discard-toast)
 mkdir -p "$OUT"
 UDID=$(xcrun simctl create lift-shots "iPhone 16")
 trap 'xcrun simctl delete "$UDID" >/dev/null 2>&1 || true' EXIT
@@ -39,4 +39,16 @@ shoot 03-workout light accessibility-extra-large
 # §10.8: 18c at AX3.
 shoot 18c-picker-rdl light accessibility-extra-large
 shoot 18c-picker-rdl dark accessibility-extra-large
+# Build 4 QA: short clips of bundled videos playing (old: bench-press; Round 18).
+record() { # frame appearance seconds
+  xcrun simctl ui "$UDID" appearance "$2"
+  xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
+  xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture "$1" >/dev/null
+  sleep 2
+  mkdir -p "$OUT/media-recordings"
+  xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$OUT/media-recordings/$1-$2.mp4" >/dev/null 2>&1 &
+  local pid=$!; sleep "$3"; kill -INT "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true
+}
+record 24a-media-video dark 8 || true
+record 24f-media-video-r18 light 8 || true
 ls "$OUT" | wc -l
