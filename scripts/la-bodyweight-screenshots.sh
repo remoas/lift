@@ -21,14 +21,14 @@ shoot() { # frame appearance
 }
 # Lock Screen: Resting, Rest over, Ready — loaded, Bodyweight, belt, assistance.
 for f in la-lock-resting-loaded la-lock-resting-bw la-lock-rest-over-loaded la-lock-rest-over-bw \
-         la-lock-ready-loaded la-lock-ready-bw la-lock-ready-belt la-lock-ready-assist; do
+         la-lock-ready-loaded la-lock-ready-bw la-lock-ready-bw-missed la-lock-ready-belt la-lock-ready-assist; do
   shoot "$f" light
   shoot "$f" dark
 done
 # Island is always dark tokens; shoot dark (and light wallpaper around compact).
 for f in la-island-compact-resting la-island-compact-ready la-island-compact-ready-belt \
          la-island-minimal-resting la-island-minimal-ready \
-         la-island-expanded-resting la-island-expanded-ready la-island-expanded-ready-bw; do
+         la-island-expanded-resting la-island-expanded-ready la-island-expanded-ready-bw la-island-expanded-ready-bw-missed; do
   shoot "$f" dark
 done
 # In-app surfaces.

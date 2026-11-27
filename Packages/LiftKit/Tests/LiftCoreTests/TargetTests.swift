@@ -67,6 +67,16 @@ final class TargetTests: XCTestCase {
         XCTAssertEqual(Target.prefill(justLogged: t(185, 9), target: target), t(185, 9))
     }
 
+    func testBodyweightFirstSetPrefillsTargetAndAMissStaysPut() {
+        let last = t(0, 12)
+        let target = Target.next(lastSets: [last], repGoal: 10, step: 5, bodyweight: true)
+        XCTAssertEqual(target, t(0, 13))
+        // Set 1: stepper is the target; Last: is last session (12).
+        XCTAssertEqual(Target.prefill(justLogged: nil, target: target, lastTime: last), t(0, 13))
+        // Later set after logging 10: stepper stays at 10, Beat stays 13.
+        XCTAssertEqual(Target.prefill(justLogged: t(0, 10), target: target, lastTime: last), t(0, 10))
+    }
+
     func testFirstTimeEverHasNoPrefill() {
         XCTAssertNil(Target.prefill(justLogged: nil, target: nil, lastTime: nil))
     }
