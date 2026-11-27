@@ -65,30 +65,6 @@ struct WatchRoot: View {
 }
 
 private struct DimmedKey: EnvironmentKey { static let defaultValue = false }
-/// The log page's overflow past its clipped area, with the ladder step it was measured at.
-struct FitPreference: PreferenceKey {
-    struct Value: Equatable { var overflow: CGFloat = 0; var level = -1; var generation = 0 }
-    static let defaultValue = Value()
-    static func reduce(value: inout Value, nextValue: () -> Value) { value = nextValue() }
-}
-/// Hides an entry while Done's edge would cut it (Finish, QA 3 item 2).
-struct WholeAtBottom: ViewModifier {
-    static let space = "finishScroll"
-    struct Key: PreferenceKey {
-        static let defaultValue: [Int: CGRect] = [:]
-        static func reduce(value: inout [Int: CGRect], nextValue: () -> [Int: CGRect]) { value.merge(nextValue()) { $1 } }
-    }
-    let id: Int
-    let hidden: Bool
-    func body(content: Content) -> some View {
-        content
-            .opacity(hidden ? 0 : 1)
-            .background(GeometryReader { g in
-                Color.clear.preference(key: Key.self, value: [id: g.frame(in: .named(Self.space))])
-            })
-    }
-}
-
 struct PageDotsInfo: Equatable { let count: Int; let current: Int }
 private struct PageDotsKey: EnvironmentKey { static let defaultValue: PageDotsInfo? = nil }
 
@@ -219,9 +195,7 @@ struct ExercisePage: View {
     @State private var active: Field?
     @State private var showingOptions = false
     @State private var idle: Task<Void, Never>?
-    /// Fit ladder step (see logView) and the tapped-open Last list.
-    @State private var fit = 0
-    @State private var fitGeneration = 0
+    /// The tapped-open Last list.
     @State private var showFullLast = false
 
     private var dimmed: Bool { aod || previewDimmed }
@@ -280,7 +254,8 @@ struct ExercisePage: View {
     //
     // CDO watch QA 3: the value being logged (and its Crown ring) is always on
     // screen without scrolling, and nothing scrolls under the pinned status line.
-    // The page measures itself and steps down a ladder until it fits:
+    // The page works out, from the fonts and the space it has, the first step
+    // of this ladder that fits (no layout feedback loop; WatchFit):
     //   0  roomy: titles wrap; Last in full on 45/49 mm with no status line,
     //      one line on 40/41 mm (always) or with a status line
     //   1  Last one line everywhere
@@ -291,23 +266,16 @@ struct ExercisePage: View {
     // Past 5 it scrolls, clipped above the pinned slot.
     private var logView: some View {
         GeometryReader { geo in
+            let width = geo.size.width - WatchTheme.inset - WatchTheme.trailingInset
+            let fit = fitLevel(height: geo.size.height, width: width)
             ScrollView {
-                logContent
+                logContent(fit: fit)
                     .padding(.leading, WatchTheme.inset)
                     .padding(.trailing, WatchTheme.trailingInset)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(GeometryReader { g in
-                        Color.clear.preference(key: FitPreference.self,
-                                               value: FitPreference.Value(overflow: g.size.height - geo.size.height, level: fit, generation: fitGeneration))
-                    })
-                    // Read inside the ScrollView: watchOS doesn't pass preferences out of it.
-                    .onPreferenceChange(FitPreference.self) { v in
-                        if v.overflow > 0.5 && fit < Self.maxFit { fit += 1 }
-                    }
             }
             .scrollDisabled(fit < Self.maxFit)
         }
-        .onChange(of: fitKey) { _, _ in fit = 0; fitGeneration += 1 }
         .pinnedBottom(pager: true) {
             VStack(alignment: .leading, spacing: 6) {
                 // Above Log set, never in its inset (QA 2, item 3 and P); the page
@@ -322,14 +290,42 @@ struct ExercisePage: View {
 
     static let maxFit = 5
     private var hasStatus: Bool { !store.phoneReachable || store.healthOff }
-    /// Anything that changes what the page holds starts the ladder again.
-    private var fitKey: String {
-        [exercise.id.uuidString, "\(exercise.last.count)", "\(exercise.target != nil)", "\(exercise.targetHit)",
-         "\(store.liveCount(for: exercise) != nil)", "\(hasStatus)", "\(store.healthOff)", "\(store.toast != nil)",
-         "\(showFullLast)", "\(weight <= 0)", "\(active == nil)"].joined(separator: "-")
+    /// The first ladder step whose estimated height fits (see logView).
+    private func fitLevel(height: CGFloat, width: CGFloat) -> Int {
+        for l in 0..<Self.maxFit where estimatedHeight(fit: l, width: width) <= height - 2 { return l }
+        return Self.maxFit
     }
 
-    @ViewBuilder private var logContent: some View {
+    /// logContent's height at a ladder step, from the same fonts and texts.
+    private func estimatedHeight(fit: Int, width: CGFloat) -> CGFloat {
+        let large = WatchTheme.isLarge
+        let counting = store.liveCount(for: exercise) != nil
+        var rows: [CGFloat] = []
+        rows.append(WatchFit.height(exercise.name, WatchFit.title, width: width,
+                                    lines: (fit >= 3 || (counting && !large)) ? 1 : 2))
+        if counting {
+            rows.append(WatchFit.line(WatchFit.caption2) + (large ? 54 : 40) + 7 + WatchFit.line(WatchFit.caption2))
+        } else {
+            if let full = BeatItText.last(exercise.last, date: exercise.lastDate), showFullLast || fit < 4 {
+                let wrapFull = showFullLast || (fit == 0 && large && !hasStatus)
+                rows.append(wrapFull ? WatchFit.height(full.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}"), WatchFit.caption2, width: width) : WatchFit.line(WatchFit.caption2))
+            }
+            if !exercise.countable || !store.motionAvailable { rows.append(WatchFit.height("Counting off.", WatchFit.caption2, width: width)) }
+            if exercise.target != nil {
+                rows.append(WatchFit.line(WatchFit.footnoteSemibold) + 7)
+                rows.append(WatchFit.line(WatchFit.hero(large ? 26 : 24)) + (large ? 2 : 0))
+            } else {
+                let cap = { (t: String) in fit >= 5 ? WatchFit.line(WatchFit.caption2) : WatchFit.height(t, WatchFit.caption2, width: width) }
+                rows.append(cap("First time. Log what you do."))
+                rows.append(WatchFit.line(WatchFit.hero(weight <= 0 && !exercise.bodyweight && active != .weight ? 22 : (large ? 26 : 24))))
+                rows.append(cap("\(Int(reps)) reps · Crown to set"))
+            }
+        }
+        if large && !counting && fit < 2 { rows.append(WatchFit.line(WatchFit.caption2)) }
+        return rows.reduce(0, +) + CGFloat(max(rows.count - 1, 0)) * (large ? 3 : 1)
+    }
+
+    @ViewBuilder private func logContent(fit: Int) -> some View {
         let counting = store.liveCount(for: exercise) != nil
         VStack(alignment: .leading, spacing: WatchTheme.isLarge ? 3 : 1) {
             // 40/41 mm counting: one line so the 56 pt count, its bar and
@@ -338,11 +334,11 @@ struct ExercisePage: View {
             if let count = store.liveCount(for: exercise) {
                 countingBody(count)
             } else {
-                lastLine
+                lastLine(fit: fit)
                 if !exercise.countable || !store.motionAvailable {
                     Text("Counting off.").watchCaption()
                 }
-                targetBlock
+                targetBlock(fit: fit)
             }
             if WatchTheme.isLarge && !counting && fit < 2 {
                 Text("Double tap to log.").watchCaption(WatchTheme.textTertiary)
@@ -352,7 +348,7 @@ struct ExercisePage: View {
 
     /// One line on 40/41 mm, "Last · Tue · 185×8, 7, 6" or "185×8, 175×7…" cut at
     /// a whole entry. Tap for every set in full; VoiceOver always reads them all.
-    @ViewBuilder private var lastLine: some View {
+    @ViewBuilder private func lastLine(fit: Int) -> some View {
         if let full = BeatItText.last(exercise.last, date: exercise.lastDate), showFullLast || fit < 4 {
             let wrapFull = showFullLast || (fit == 0 && WatchTheme.isLarge && !hasStatus)
             Button { showFullLast.toggle() } label: {
@@ -377,7 +373,7 @@ struct ExercisePage: View {
         Text(s.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}")).watchCaption()
     }
 
-    @ViewBuilder private var targetBlock: some View {
+    @ViewBuilder private func targetBlock(fit: Int) -> some View {
         if let target = exercise.target {
             // The target keeps the bar until a set beats it, after a miss too
             // (Ben 2:16pm; QA 2, item 7). Target hit is a quiet Ember "✓ Target hit"
@@ -399,7 +395,7 @@ struct ExercisePage: View {
                 .padding(.top, WatchTheme.isLarge ? 2 : 0)
         } else {
             // 3.5 First time: no Last, no bar; Crown sets the weight.
-            firstTimeCaption("First time. Log what you do.")
+            firstTimeCaption("First time. Log what you do.", fit: fit)
             if weight <= 0 && !exercise.bodyweight && active != .weight {
                 Button { take(.weight) } label: {
                     Text("Add weight").font(WatchTheme.hero(22)).foregroundStyle(WatchTheme.textPrimary)
@@ -408,11 +404,11 @@ struct ExercisePage: View {
             } else {
                 valueRow
             }
-            firstTimeCaption("\(Int(reps)) reps · Crown to set")
+            firstTimeCaption("\(Int(reps)) reps · Crown to set", fit: fit)
         }
     }
 
-    @ViewBuilder private func firstTimeCaption(_ s: String) -> some View {
+    @ViewBuilder private func firstTimeCaption(_ s: String, fit: Int) -> some View {
         if fit >= 5 {
             Text(s).watchCaption().lineLimit(1).minimumScaleFactor(0.85)
         } else {
@@ -790,14 +786,17 @@ struct FinishView: View {
     @Environment(WatchStore.self) private var store
     let onDone: () -> Void
     let onBack: () -> Void
-    /// Entries that would be cut by Done's edge right now.
-    @State private var cut: Set<Int> = []
+    /// The first entry at the top of the scroll; nil or 0 = at rest at the top.
+    @State private var topID: Int?
 
     var body: some View {
         let w = store.live
         let t = w.targetsBeaten
         let beaten = w.beaten
         GeometryReader { geo in
+        // Whole entries only at Done's edge (QA 3, item 2): at rest, an entry that
+        // would be cut there is held back until a scroll brings all of it up.
+        let cut: Set<Int> = (topID ?? 0) != 0 ? Set<Int>() : cutAtRest(height: geo.size.height, width: geo.size.width - 2 * WatchTheme.inset)
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
@@ -808,7 +807,7 @@ struct FinishView: View {
                         Text("\(t.beaten) of \(t.of) targets beaten.").watchTitle().monospacedDigit()
                     }
                 }
-                .modifier(WholeAtBottom(id: 0, hidden: cut.contains(0)))
+                .opacity(cut.contains(0) ? 0 : 1).id(0)
                 ForEach(Array(beaten.enumerated()), id: \.element.exercise.id) { i, b in
                     VStack(alignment: .leading, spacing: 0) {
                         Text(b.exercise.name).font(.footnote).foregroundStyle(WatchTheme.textPrimary)
@@ -817,40 +816,33 @@ struct FinishView: View {
                             .font(.footnote.weight(.semibold)).monospacedDigit().foregroundStyle(WatchTheme.textPrimary)
                             .theBar(i == 0)
                     }
-                    .modifier(WholeAtBottom(id: i + 1, hidden: cut.contains(i + 1)))
+                    .opacity(cut.contains(i + 1) ? 0 : 1).id(i + 1)
                 }
                 if let v = w.volumeComparison {
                     Text(volumeLine(v, unit: w.unit, lastDate: w.exercises.compactMap(\.lastDate).max())).watchCaption()
-                        .modifier(WholeAtBottom(id: 1000, hidden: cut.contains(1000)))
+                        .opacity(cut.contains(1000) ? 0 : 1).id(1000)
                 }
                 if w.unloggedCount > 0 {
                     let n = w.unloggedCount
                     Text("\(n) set\(n == 1 ? "" : "s") not logged, so \(n == 1 ? "it won’t" : "they won’t") be saved.").watchCaption()
-                        .modifier(WholeAtBottom(id: 1001, hidden: cut.contains(1001)))
+                        .opacity(cut.contains(1001) ? 0 : 1).id(1001)
                     Button("Back to workout", action: onBack)
                         .buttonStyle(.plain)
                         .font(.footnote.weight(.semibold)).foregroundStyle(WatchTheme.textPrimary)
                         .frame(minHeight: 44)
-                        .modifier(WholeAtBottom(id: 1002, hidden: cut.contains(1002)))
-                        .id("back")
+                        .opacity(cut.contains(1002) ? 0 : 1)
+                        .id(1002)
                 }
             }
+            .scrollTargetLayout()
             .padding(.horizontal, WatchTheme.inset)
             // The last line scrolls fully clear of Done.
             .padding(.bottom, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Whole entries only at Done's edge (QA 3, item 2): a lift or line that
-            // would be cut there waits, hidden, until a scroll brings all of it up.
-            // Read inside the ScrollView: watchOS doesn't pass preferences out of it.
-            .onPreferenceChange(WholeAtBottom.Key.self) { rects in
-                let h = geo.size.height
-                let next = Set(rects.filter { $0.value.maxY > h + 0.5 && $0.value.minY < h }.keys)
-                if next != cut { withAnimation(.easeOut(duration: 0.15)) { cut = next } }
-            }
         }
-        .coordinateSpace(name: WholeAtBottom.space)
+        .scrollPosition(id: $topID)
         // The w18 still shows the end of the list: sets-left copy and Back to workout (QA 2, item 2).
-        .onAppear { if store.isFixture && w.unloggedCount > 0 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo("back", anchor: .bottom) } } }
+        .onAppear { if store.isFixture && w.unloggedCount > 0 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo(1002, anchor: .bottom) } } }
         }
         }
         .pinnedBottom {
@@ -862,6 +854,37 @@ struct FinishView: View {
             }
             .buttonStyle(WatchPrimaryStyle())
         }
+    }
+
+    /// Entries (by id) that straddle the bottom edge with the list at the top,
+    /// from the same fonts and texts (WatchFit).
+    private func cutAtRest(height: CGFloat, width: CGFloat) -> Set<Int> {
+        let w = store.live
+        let t = w.targetsBeaten
+        var rows: [(Int, CGFloat)] = []
+        let title = t.of == 0 ? "First time on these. Next time, they’re your numbers to beat." : "\(t.beaten) of \(t.of) targets beaten."
+        rows.append((0, WatchFit.height(title, WatchFit.title, width: width, lines: 2)))
+        let footnote = UIFont.preferredFont(forTextStyle: .footnote)
+        for (i, b) in w.beaten.enumerated() {
+            rows.append((i + 1, WatchFit.height(b.exercise.name, footnote, width: width, lines: 2) + WatchFit.line(WatchFit.footnoteSemibold) + (i == 0 ? 7 : 0)))
+        }
+        if let v = w.volumeComparison {
+            rows.append((1000, WatchFit.height(volumeLine(v, unit: w.unit, lastDate: w.exercises.compactMap(\.lastDate).max()), WatchFit.caption2, width: width)))
+        }
+        if w.unloggedCount > 0 {
+            let n = w.unloggedCount
+            rows.append((1001, WatchFit.height("\(n) set\(n == 1 ? "" : "s") not logged, so \(n == 1 ? "it won’t" : "they won’t") be saved.", WatchFit.caption2, width: width)))
+            rows.append((1002, 44))
+        }
+        var y: CGFloat = 0
+        var out = Set<Int>()
+        for (id, h) in rows {
+            // A small allowance: an estimate a point or two tall shouldn't hide a line that fits.
+            if y < height && y + h > height + 1 { out.insert(id) }
+            if y >= height { out.insert(id) }
+            y += h + 6
+        }
+        return out
     }
 
     private func volumeLine(_ v: (today: Double, last: Double), unit: WeightUnit, lastDate: Date?) -> String {

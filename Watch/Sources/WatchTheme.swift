@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// DESIGN.md dark tokens on the watch (true black canvas; watch.md).
 enum WatchTheme {
@@ -135,5 +136,27 @@ extension View {
         }
         // Measured from the glass, not the system's bottom bar area.
         .ignoresSafeArea(.container, edges: .bottom)
+    }
+}
+
+/// Text metrics for laying out a page before it's drawn (QA 3): SwiftUI's
+/// caption2 / footnote / system fonts are the UIKit fonts of the same style.
+enum WatchFit {
+    static var caption2: UIFont { .preferredFont(forTextStyle: .caption2) }
+    static var footnoteSemibold: UIFont { .systemFont(ofSize: UIFont.preferredFont(forTextStyle: .footnote).pointSize, weight: .semibold) }
+    static var title: UIFont { .systemFont(ofSize: WatchTheme.isLarge ? 19 : 17, weight: .semibold) }
+    /// Matches WatchTheme.hero (rounded has the same line height as the system face).
+    static func hero(_ size: CGFloat) -> UIFont { .systemFont(ofSize: WatchTheme.isLarge ? size * 1.15 : size, weight: .semibold) }
+
+    static func line(_ f: UIFont) -> CGFloat { ceil(f.lineHeight) }
+
+    /// Wrapped height at `width`, at most `lines` lines; a little wider-set than
+    /// SwiftUI (monospaced digits) so the estimate errs tall.
+    static func height(_ s: String, _ f: UIFont, width: CGFloat, lines: Int? = nil) -> CGFloat {
+        let r = (s as NSString).boundingRect(with: CGSize(width: max(width - 2, 1), height: .greatestFiniteMagnitude),
+                                             options: [.usesLineFragmentOrigin, .usesFontLeading],
+                                             attributes: [.font: f], context: nil)
+        let n = max(1, Int((ceil(r.height) / f.lineHeight).rounded()))
+        return CGFloat(lines.map { min(n, $0) } ?? n) * line(f)
     }
 }
