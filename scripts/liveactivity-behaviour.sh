@@ -12,21 +12,22 @@ UDID=$(t 120 xcrun simctl create lift-la-beh "iPhone 16 Pro")
 trap 't 60 xcrun simctl delete "$UDID" >/dev/null 2>&1 || true' EXIT
 t 120 xcrun simctl boot "$UDID"
 t 240 xcrun simctl bootstatus "$UDID" -b
-t 60 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100
+t 60 xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 || true
 t 120 xcrun simctl install "$UDID" "$APP"
 t 30 xcrun simctl privacy "$UDID" grant notifications "$BUNDLE" 2>/dev/null || true
 t 30 xcrun simctl ui "$UDID" appearance dark
 xcrun simctl io "$UDID" recordVideo --codec h264 --force "$OUT/la-behaviour.mp4" &
 REC=$!
 sleep 2
-t 60 xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture 03-workout -LiftLiveActivityBehaviour >/dev/null
-DATA=$(t 30 xcrun simctl get_app_container "$UDID" "$BUNDLE" data)
+# simctl launch can block well past the app starting on a cold simulator: don't wait on it, wait on the log.
+( t 240 xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture 03-workout -LiftLiveActivityBehaviour >/dev/null || echo "launch call returned late or failed" ) &
+DATA=$(t 60 xcrun simctl get_app_container "$UDID" "$BUNDLE" data)
 LOG="$DATA/Documents/la-behaviour.log"
 until_log() { # pattern [timeout]
   for _ in $(seq 1 $(( ${2:-60} * 4 ))); do grep -q "$1" "$LOG" 2>/dev/null && return 0; sleep 0.25; done
   echo "timed out waiting for: $1"; return 0
 }
-until_log "14 rest 150s" 150
+until_log "14 rest 150s" 300
 t 30 xcrun simctl launch "$UDID" com.apple.Preferences >/dev/null || true   # Lift to the background: the system Island
 sleep 4; t 30 xcrun simctl io "$UDID" screenshot "$OUT/island-system-running.png" >/dev/null || true
 t 30 xcrun simctl launch "$UDID" "$BUNDLE" >/dev/null || true                 # back to Lift (no relaunch while it runs)
