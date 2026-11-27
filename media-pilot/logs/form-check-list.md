@@ -374,3 +374,12 @@ All four unique PASS. Unique CDO-final count is now 118. Aliases `cable-upright-
 - **one-arm-lat-pulldown:** slight 3/4 camera; the handle stops at the chin rather than lower at the shoulder or chest; the second peak holds a brief pause.
 - **reverse-grip-lat-pulldown:** the grip is visibly supinated; the bar stays a little in front of the upper chest rather than lightly touching it; the second peak holds a longer pause.
 
+
+## CDO QA Round 17 part 1 official Shoulds (about 5:58am Atlantic/Bermuda, 27 Nov 2026)
+
+Three unique PASS, one FAIL. Unique CDO-final count is now 121. Alias `standing-dumbbell-upright-row` → `dumbbell-upright-row` was verified. `smith-single-leg-split-squat` FAIL (loop jump is a Must): the last frame ended deeper than the start (hips lower, front knee more bent, rear knee lower), so the loop hops at viewing size; official moved to `rejected/video/smith-single-leg-split-squat.r17-fail.mp4` and will be regenerated with the same movement, returning fully to the start height. Parked `kneeling-squat`, `dumbbell-hip-thrust`, `machine-row` and `shotgun-row` were not reviewed and stay out of the unique-done and vendoring counts. Out-of-scope pending `kettlebell-row` (with the `one-arm-kettlebell-row` alias) was listed, not QAd.
+
+- **rope-straight-arm-pulldown:** fairly upright torso with only a slight hip hinge; elbows softly bent at the finishes rather than fully straight; hands end a little in front of the thighs.
+- **dumbbell-one-arm-upright-row:** the DB sits a little in front of the torso; the elbow is about level with the DB rather than clearly above it.
+- **dumbbell-upright-row:** slight 3/4 camera; elbows about level with the DBs rather than clearly leading; DBs a little high at the upper chest; far elbow a little more tucked; mid-path the far DB runs a little ahead of the near one.
+
