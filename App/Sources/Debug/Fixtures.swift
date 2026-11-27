@@ -13,7 +13,7 @@ enum Fixtures {
         "10-history", "11-settings", "12-history-empty", "13-first-workout", "14-health-error", "15-restoring",
         "16-exercise-empty", "18a-picker-empty", "18a2-picker-empty-scrolled", "18a3-picker-empty-all", "18b-picker-bench", "18c-picker-rdl", "18d-picker-zzqx", "18e-picker-press",
         "18f-picker-squat", "18g-picker-deadlift", "18h-picker-pull-up", "18i-picker-db-incline", "18j-picker-benhc", "18k-picker-pull-ups", "19-reorder",
-        "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none",
+        "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none",
         "25-finish-sets-left", "26-discard-toast",
     ]
 
@@ -121,7 +121,7 @@ enum Fixtures {
             case "26-discard-toast":
                 // After Discard: a fresh Log with the Undo toast.
                 break
-            case "24a-media-video", "24c-media-reduce-motion":
+            case "24a-media-video", "24a-media-video-scrolled", "24c-media-reduce-motion":
                 // Reduce Motion matters for video: End still, "▶ Play" pill, no autoplay.
                 // bench-press has a bundled looping clip (barbell-shoulder-press is also a video).
                 exercise = b.exercise("bench-press")
@@ -292,7 +292,7 @@ struct FixtureRoot: View {
             if let w = Fixtures.workout { RootView(workout: w) }
         case "07-finish", "25-finish-sets-left":
             if let w = Fixtures.workout { FinishView(workout: w, onDone: {}) }
-        case "08-exercise", "16-exercise-empty", "24a-media-video", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none":
+        case "08-exercise", "16-exercise-empty", "24a-media-video", "24a-media-video-scrolled", "24b-media-stills", "24c-media-reduce-motion", "24d-media-loading", "24e-media-none":
             // On a push stack, so Back shows as in the real flow (QA 14).
             if let ex = Fixtures.exercise {
                 // Initial path: the detail is already on top, with no push

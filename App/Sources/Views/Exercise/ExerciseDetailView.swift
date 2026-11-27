@@ -56,6 +56,7 @@ struct ExerciseDetailView: View {
     private var workoutCount: Int { Set(logged.map(\.snapshot.workoutID)).count }
 
     var body: some View {
+        ScrollViewReader { proxy in
         List {
             Section {
                 if let media {
@@ -108,8 +109,9 @@ struct ExerciseDetailView: View {
         .listSectionSpacing(.compact)
         .scrollContentBackground(.hidden)
         .background(Theme.Colors.bgCanvas)
-        // Safe-area inset plus 16 pt so the last Bests row sits above the
-        // home indicator (CDO Round 13 24a Should).
+        // Safe-area inset plus 16 pt so the last Settings row clears the
+        // home indicator by that amount when the list is scrolled to the
+        // bottom (CDO: Heaviest may stay a mid-list row at scroll-top).
         .safeAreaPadding(.bottom, Theme.Spacing.s4)
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
@@ -125,6 +127,18 @@ struct ExerciseDetailView: View {
         }
         .toolbar(.hidden, for: .tabBar)
         .onDisappear { _ = LiftStore.save(context) }
+        #if DEBUG
+        .onAppear {
+            // 24a scrolled: last Settings row at the bottom, so CDO can
+            // measure the home-indicator clearance (safe area + 16 pt).
+            if Fixtures.requested == "24a-media-video-scrolled" {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    proxy.scrollTo("exercise-detail-settings-end", anchor: .bottom)
+                }
+            }
+        }
+        #endif
+        }
     }
 
     // MARK: Lede
@@ -284,6 +298,7 @@ struct ExerciseDetailView: View {
             Text("Use default (\(settings.unit.symbol))").tag(WeightUnit?.none)
             ForEach(WeightUnit.allCases) { Text($0.symbol).tag(WeightUnit?.some($0)) }
         }
+        .id("exercise-detail-settings-end")
     }
 }
 
