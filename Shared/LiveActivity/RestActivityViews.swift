@@ -406,7 +406,8 @@ struct RestCompactTrailing: View {
                 .foregroundStyle(RestTokens.islandPrimary)
                 .monospacedDigit()
                 .lineLimit(1)
-                .frame(maxWidth: 64)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: 88)
         }
     }
 }

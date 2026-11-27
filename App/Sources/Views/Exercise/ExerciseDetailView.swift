@@ -154,6 +154,9 @@ struct ExerciseDetailView: View {
             Text("Not logged yet.")
         } else if workoutCount == 1 {
             Text("You've logged this once. Next time, you'll have a number to beat.")
+        } else if exercise.loadKind != .loaded {
+            // No estimated 1RM on bodyweight / band / assisted lifts (AC 119).
+            Text("Logged \(workoutCount) times.")
         } else if let latest = sessions.last ?? History.e1RMSeries(for: exercise.id, in: logged).last {
             let all = History.e1RMSeries(for: exercise.id, in: logged)
             let latestText = weight(latest.e1RMKg)
