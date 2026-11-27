@@ -789,6 +789,8 @@ struct FinishView: View {
     let onBack: () -> Void
     /// The first entry at the top of the scroll; nil or 0 = at rest at the top.
     @State private var topID: Int?
+    /// Moved off the top by code (the w18 fixture's scrollTo), which scrollPosition doesn't report.
+    @State private var scrolledByCode = false
 
     var body: some View {
         let w = store.live
@@ -797,7 +799,7 @@ struct FinishView: View {
         GeometryReader { geo in
         // Whole entries only at Done's edge (QA 3, item 2): at rest, an entry that
         // would be cut there is held back until a scroll brings all of it up.
-        let cut: Set<Int> = (topID ?? 0) != 0 ? Set<Int>() : cutAtRest(height: geo.size.height, width: geo.size.width - 2 * WatchTheme.inset)
+        let cut: Set<Int> = (scrolledByCode || (topID ?? 0) != 0) ? Set<Int>() : cutAtRest(height: geo.size.height, width: geo.size.width - 2 * WatchTheme.inset)
         ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: 6) {
@@ -843,7 +845,7 @@ struct FinishView: View {
         }
         .scrollPosition(id: $topID)
         // The w18 still shows the end of the list: sets-left copy and Back to workout (QA 2, item 2).
-        .onAppear { if store.isFixture && w.unloggedCount > 0 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo(1002, anchor: .bottom) } } }
+        .onAppear { if store.isFixture && w.unloggedCount > 0 { DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { scrolledByCode = true; proxy.scrollTo(1002, anchor: .bottom) } } }
         }
         }
         .pinnedBottom {
