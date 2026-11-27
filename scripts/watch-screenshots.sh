@@ -14,7 +14,11 @@ mkdir -p "$OUT"
 AVAIL=$(xcrun simctl list devices available | grep -E "Apple Watch" || true)
 echo "$AVAIL"
 pick() { echo "$AVAIL" | grep -E "$1" | tail -1 | sed -E 's/^ *//; s/ \(([0-9A-F-]{36})\).*/|\1/'; }
-SMALL=$(pick "\((40|41|42)mm\)")
+SMALL=$(pick "\((40|41)mm\)")
+# The 41 and 45 mm classes (CDO QA 3): Series 7–9 sims if installed, else Series 10/11
+# at 42 and 46 mm, which take the same layout branch (WatchTheme.isLarge = width ≥ 198).
+MID_S=$(pick "\(41mm\)" | grep -v "^$SMALL$" || true); [ -n "$MID_S" ] || MID_S=$(pick "Series (10|11) \(42mm\)")
+MID_L=$(pick "\(45mm\)"); [ -n "$MID_L" ] || MID_L=$(pick "Series (10|11) \(46mm\)")
 LARGE=$(pick "Ultra.*\(49mm\)"); [ -n "$LARGE" ] || LARGE=$(pick "\((45|46)mm\)")
 shoot_on() { # "name|udid" suffix
   local UDID="${1##*|}"
@@ -25,13 +29,15 @@ shoot_on() { # "name|udid" suffix
   for f in "${FRAMES[@]}"; do
     xcrun simctl terminate "$UDID" "$BUNDLE" >/dev/null 2>&1 || true
     xcrun simctl launch "$UDID" "$BUNDLE" -LiftFixture "$f" >/dev/null
-    if [ "$f" = w09-add ]; then sleep 15; else sleep 3; fi
+    # Add loads the whole library; a slow small simulator can still show the launch screen at 15 s.
+    if [ "$f" = w09-add ]; then sleep 30; else sleep 3; fi
     xcrun simctl io "$UDID" screenshot "$OUT/$f-$2.png" >/dev/null
   done
   xcrun simctl shutdown "$UDID" >/dev/null 2>&1 || true
 }
-echo "small: $SMALL · large: $LARGE"
-[ -n "$SMALL" ] && shoot_on "$SMALL" "$(echo "$SMALL" | grep -oE '[0-9]+mm')"
-[ -n "$LARGE" ] && shoot_on "$LARGE" "$(echo "$LARGE" | grep -oE '[0-9]+mm')"
+echo "small: $SMALL · 41-class: $MID_S · 45-class: $MID_L · large: $LARGE"
+for D in "$SMALL" "$MID_S" "$MID_L" "$LARGE"; do
+  if [ -n "$D" ]; then shoot_on "$D" "$(echo "${D%%|*}" | grep -oE '[0-9]+mm' | tail -1)"; fi
+done
 mkdir -p "$OUT/../watch-logs"; cp ~/Library/Logs/DiagnosticReports/LiftWatch* "$OUT/../watch-logs/" 2>/dev/null || true
 ls "$OUT"

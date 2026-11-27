@@ -98,10 +98,12 @@ struct CrownFocusRing: ViewModifier {
 
 /// Titles: two lines, then scale to 90 %, and only then truncate (CDO).
 extension Text {
-    func watchTitle() -> some View {
+    /// `lines: 1` (40/41 mm counting, tight pages) scales to 80 % before truncating.
+    /// The limit is set here, not after: an outer .lineLimit can't override this one.
+    func watchTitle(lines: Int = 2) -> some View {
         self.font(.system(size: WatchTheme.isLarge ? 19 : 17, weight: .semibold))
             .foregroundStyle(WatchTheme.textPrimary)
-            .lineLimit(2).minimumScaleFactor(0.9)
+            .lineLimit(lines).minimumScaleFactor(lines == 1 ? 0.8 : 0.9)
             .fixedSize(horizontal: false, vertical: true)
     }
 
