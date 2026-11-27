@@ -301,6 +301,10 @@ The earlier internal Shoulds on kneeling-squat ("sit-back is modest, not a full 
 
 - one-arm-lat-pulldown: two complete stretch-to-chin-to-stretch one-arm lat pulldowns, stays seated, thighs stay under the pad, exactly one D-handle stays on the high cable, free hand stays empty on the hip, house gym locked. Official encode 438,591 bytes, MAE 2.55. Shoulds: slight three-quarter camera; the handle stops around head/chin height rather than lower at the shoulder or chest; the second peak holds a brief pause before raising into the last frame.
 
+- reverse-grip-lat-pulldown: two complete stretch-to-upper-chest-to-stretch reverse-grip lat pulldowns, stays seated, thighs stay under the pad, a straight bar stays on one high cable with a supinated underhand grip, house gym locked. Official encode 491,110 bytes, MAE 2.94. Shoulds: the bar stays a little in front of the upper chest rather than lightly touching it; the second peak holds a longer pause before raising into the last frame.
+
+- underhand-cable-pulldowns: reuse of reverse-grip-lat-pulldown. Underhand Cable Pulldowns is the same seated straight-bar lat pulldown with a supinated underhand grip. Shares video/reverse-grip-lat-pulldown.mp4. No new generation.
+
 
 ## CDO QA Round 12 official Shoulds (about 12:00am Atlantic/Bermuda, 27 Nov 2026)
 

@@ -220,9 +220,9 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 219,close-grip-front-lat-pulldown,Close-Grip Front Lat Pulldown,cable,lats,none,,,3,A,vertical-pull,,"Skip: campaign skips close-grip / full-range lat-pulldown variants (same-motion family, not a clearly distinct unique)."
 220,full-range-of-motion-lat-pulldown,Full Range-Of-Motion Lat Pulldown,cable,lats,none,,,3,A,vertical-pull,,"Skip: campaign skips close-grip / full-range lat-pulldown variants (same-motion family, not a clearly distinct unique)."
 221,one-arm-lat-pulldown,One Arm Lat Pulldown,cable,lats,video,video:one-arm-lat-pulldown,,3,A,vertical-pull,,"pass-pending-cdo-qa; official a1, 438591 bytes, MAE 2.55"
-222,reverse-grip-lat-pulldown,Reverse-Grip Lat Pulldown,cable,lats|rhomboids,still,still:reverse-grip-lat-pulldown,,3,A,vertical-pull,,
+222,reverse-grip-lat-pulldown,Reverse-Grip Lat Pulldown,cable,lats|rhomboids,video,video:reverse-grip-lat-pulldown,,3,A,vertical-pull,,"pass-pending-cdo-qa; official a1, 491110 bytes, MAE 2.94"
 223,rope-straight-arm-pulldown,Rope Straight-Arm Pulldown,cable,lats,none,,,3,A,vertical-pull,,
-224,underhand-cable-pulldowns,Underhand Cable Pulldowns,cable,lats,none,,,3,A,vertical-pull,,
+224,underhand-cable-pulldowns,Underhand Cable Pulldowns,cable,lats,video,video:reverse-grip-lat-pulldown,,3,A,vertical-pull,reverse-grip-lat-pulldown,reuse of reverse-grip-lat-pulldown
 225,v-bar-pulldown,V-Bar Pulldown,cable,lats,still,still:v-bar-pulldown,,3,A,vertical-pull,,
 226,dumbbell-one-arm-upright-row,Dumbbell One-Arm Upright Row,dumbbell,side_delts,none,,,3,A,shoulder-iso,,
 227,dumbbell-upright-row,Dumbbell Upright Row,dumbbell,side_delts|traps,still,still:dumbbell-upright-row,,3,A,shoulder-iso,,
