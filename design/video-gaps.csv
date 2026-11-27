@@ -238,7 +238,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 237,two-arm-kettlebell-row,Two-Arm Kettlebell Row,kettlebell,rhomboids,video,video:two-arm-kettlebell-row,,3,A,horizontal-pull,,"CDO-final R17p2; official a1, 491701 bytes, MAE 2.65"
 238,barbell-lunge,Barbell Lunge,barbell,quads,video,video:barbell-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 482013 bytes, CRF 26, MAE 2.58"
 239,barbell-reverse-lunge,Barbell Reverse Lunge,barbell,quads,video,video:barbell-reverse-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 492033 bytes, CRF 26, MAE 2.64"
-240,barbell-step-ups,Barbell Step Ups,barbell,quads,none,,,3,A,lunge,,"in progress: start v1 accepted (box in front, bar on traps); mid v1–v3 all drifted the box under the original stance; v4 and video left unspent"
+240,barbell-step-ups,Barbell Step Ups,barbell,quads,none,,,3,A,lunge,,parked: start v1 accepted; mid v1–v3 all drifted the box under the original stance; v4 and video left unspent
 241,barbell-step-up,Barbell Step-Up,barbell,quads|glutes,still,still:barbell-step-up,,3,A,lunge,,
 242,barbell-walking-lunge,Barbell Walking Lunge,barbell,quads,none,,,3,A,lunge,,
 243,cable-upright-row,Cable Upright Row,cable,side_delts|traps,video,video:upright-cable-row,,3,A,shoulder-iso,upright-cable-row,reuse of upright-cable-row
@@ -260,7 +260,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 259,dumbbell-step-up,Dumbbell Step Up,dumbbell,quads|glutes,still,still:dumbbell-step-up,,3,A,lunge,,
 260,dumbbell-step-ups,Dumbbell Step Ups,dumbbell,quads,none,,,3,A,lunge,,
 261,arnold-dumbbell-press,Arnold Dumbbell Press,dumbbell,front_delts,none,,,3,A,horizontal-push,,
-262,close-grip-dumbbell-press,Close-Grip Dumbbell Press,dumbbell,triceps,none,,,3,A,horizontal-push,,
+262,close-grip-dumbbell-press,Close-Grip Dumbbell Press,dumbbell,triceps,video,video:close-grip-dumbbell-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 511707 bytes, CRF 26, MAE 2.73"
 263,dumbbell-decline-press,Dumbbell Decline Press,dumbbell,lower_chest|triceps,still,still:dumbbell-decline-press,,3,A,horizontal-push,,
 264,dumbbell-floor-press,Dumbbell Floor Press,dumbbell,triceps,video,video:dumbbell-floor-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 467771 bytes, CRF 26, MAE 2.55"
 265,dumbbell-squeeze-press,Dumbbell Squeeze Press,dumbbell,mid_chest,video,video:dumbbell-squeeze-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 531997 bytes, CRF 26, MAE 2.65"
