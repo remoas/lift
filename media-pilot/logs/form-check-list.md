@@ -305,6 +305,8 @@ The earlier internal Shoulds on kneeling-squat ("sit-back is modest, not a full 
 
 - underhand-cable-pulldowns: reuse of reverse-grip-lat-pulldown. Underhand Cable Pulldowns is the same seated straight-bar lat pulldown with a supinated underhand grip. Shares video/reverse-grip-lat-pulldown.mp4. No new generation.
 
+- rope-straight-arm-pulldown: two complete stretch-to-thigh-to-stretch rope straight-arm pulldowns, stays standing, arms stay nearly straight, a two-end triceps rope stays on one high cable, house gym locked. Official encode 479,255 bytes, MAE 2.73. Shoulds: the torso is fairly upright, with only a slight hip hinge; the elbows stay softly bent at the finishes rather than fully straight; the hands finish a little in front of the thighs rather than fully at the sides.
+
 
 ## CDO QA Round 12 official Shoulds (about 12:00am Atlantic/Bermuda, 27 Nov 2026)
 
