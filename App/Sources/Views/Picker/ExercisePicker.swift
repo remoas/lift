@@ -424,10 +424,9 @@ struct ExercisePicker: View {
                             Text(item.name).font(.body).foregroundStyle(Theme.Colors.textPrimary)
                                 .lineLimit(2)
                             // One line, truncating (§10.5).
-                            Text(detailParts(item).joined(separator: " · "))
+                            // One line (§10.5), ending between words, never mid-word.
+                            DetailOneLine(parts: detailParts(item))
                                 .font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
                         }
                         Spacer(minLength: 0)
                         if isMulti {
@@ -626,16 +625,33 @@ private struct DetailAtWords: View {
         .frame(maxWidth: .infinity, maxHeight: line * 2 + 4, alignment: .topLeading)
     }
 
+    /// A no-break space before each dot, so a wrapped line never starts with "·".
+    static let sep = "\u{00A0}· "
+
     static func candidates(_ parts: [String]) -> [String] {
-        var out = [parts.joined(separator: " · ")]
+        let sep = Self.sep
+        var out = [parts.joined(separator: sep)]
         var p = parts
         while p.count > 1 {
             let last = p.removeLast()
             // "Barbell, Hamstrings" → "Barbell…" before the whole piece goes.
             let words = last.components(separatedBy: ", ")
-            if words.count > 1 { out.append((p + [words.dropLast().joined(separator: ", ")]).joined(separator: " · ") + "…") }
-            out.append(p.joined(separator: " · ") + "…")
+            if words.count > 1 { out.append((p + [words.dropLast().joined(separator: ", ")]).joined(separator: sep) + "…") }
+            out.append(p.joined(separator: sep) + "…")
         }
         return out
+    }
+}
+
+/// The default-size detail line: the longest word-boundary candidate that fits on one line.
+private struct DetailOneLine: View {
+    let parts: [String]
+    var body: some View {
+        let c = DetailAtWords.candidates(parts)
+        ViewThatFits(in: .horizontal) {
+            ForEach(c, id: \.self) { Text($0).lineLimit(1) }
+            Text(c.last ?? "").lineLimit(1).truncationMode(.tail)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
