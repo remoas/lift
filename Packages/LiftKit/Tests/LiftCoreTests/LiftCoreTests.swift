@@ -184,14 +184,14 @@ final class LibraryTests: XCTestCase {
 
     func testSeedMediaIsVendoredKeysOnly() {
         let withMedia = lib.exercises.filter { $0.mediaRef != nil }
-        XCTAssertEqual(withMedia.count, 501)
+        XCTAssertEqual(withMedia.count, 505)
         // Every key parses to local files; nothing points at the network.
         for e in withMedia {
             XCTAssertNotNil(e.media, e.id)
             XCTAssertFalse(e.mediaRef!.contains("http"), e.id)
         }
         let videos = withMedia.filter { if case .video = $0.media { return true } else { return false } }
-        XCTAssertEqual(videos.count, 171)
+        XCTAssertEqual(videos.count, 180)
         XCTAssertNil(ExerciseMedia(key: "still:../../etc"))
         XCTAssertNil(ExerciseMedia(key: "https://example.com/x.gif"))
         XCTAssertEqual(ExerciseMedia(key: "still:bench-press")?.files, ["stills/bench-press-start.webp", "stills/bench-press-end.webp"])
