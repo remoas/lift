@@ -362,3 +362,12 @@ All ten unique PASS. Unique CDO-final count is now 114. Alias `machine-high-row`
 - **lying-t-bar-row:** the head looks down; plates overlap the left machine at the peaks (occluded, not interpenetrating); the second peak holds a brief pause.
 - **barbell-rear-delt-row:** slight 3/4 camera; torso short of parallel; the head looks down; the bar stops at the lower chest rather than the upper chest; the elbows are not fully flared into a T.
 
+## CDO QA Round 16 official Shoulds (about 5:23am Atlantic/Bermuda, 27 Nov 2026)
+
+All four unique PASS. Unique CDO-final count is now 118. Aliases `cable-upright-row` → `upright-cable-row` and `underhand-cable-pulldowns` → `reverse-grip-lat-pulldown` were verified. Parked `kneeling-squat`, `dumbbell-hip-thrust`, `machine-row` and `shotgun-row` were not reviewed and stay out of the unique-done and vendoring counts. Out-of-scope pending `rope-straight-arm-pulldown` was listed, not QAd.
+
+- **single-arm-cable-row:** the peak is short of the hip, with the handle a little in front of the waist rather than fully tucked; the second peak holds a brief pause.
+- **upright-cable-row:** true side-on, so at mid-path the bar is partly end-on and reads shorter; the second peak holds a brief pause.
+- **one-arm-lat-pulldown:** slight 3/4 camera; the handle stops at the chin rather than lower at the shoulder or chest; the second peak holds a brief pause.
+- **reverse-grip-lat-pulldown:** the grip is visibly supinated; the bar stays a little in front of the upper chest rather than lightly touching it; the second peak holds a longer pause.
+
