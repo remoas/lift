@@ -342,21 +342,44 @@ public enum RepCountable {
 // MARK: Text shared by the phone and the watch
 
 public enum BeatItText {
-    /// "Last · Mon · 185×8, 185×7"
+    /// "Last · Mon · 185×8, 185×7, 185×6", every set in full (45/49 mm, VoiceOver, the tap-to-expand list).
     /// Weekday within the last 6 days, else the date ("19 Nov") so an old week isn't misread.
-    /// `compact` (small watches): one weight shared by every set is written
-    /// once, "185×8, 7, 6", so the line fits without cutting a number.
+    /// `compact`: one weight shared by every set is written once, "185×8, 7, 6".
     public static func last(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current, compact: Bool = false) -> String? {
         guard !sets.isEmpty else { return nil }
-        let day = date.map { d in
+        return line(entries(sets, compact: compact), day: day(date, now: now, calendar: calendar))
+    }
+
+    /// The one-line Last for 40/41 mm (CDO watch QA 3, decision 1), longest first:
+    /// "Last · Tue · 185×8, 7, 6" when every set shares a weight, else
+    /// "Last · Tue · 185×8, 175×7, 175×6", then cut at whole entries,
+    /// "Last · Tue · 185×8, 175×7…", never mid-number. The view shows the first that fits.
+    public static func lastOneLine(_ sets: [SetTarget], date: Date?, now: Date = Date(), calendar: Calendar = .current) -> [String] {
+        guard !sets.isEmpty else { return [] }
+        let e = entries(sets, compact: true)
+        let d = day(date, now: now, calendar: calendar)
+        var out = [line(e, day: d)]
+        for n in stride(from: e.count - 1, through: 1, by: -1) { out.append(line(Array(e.prefix(n)), day: d) + "…") }
+        return out
+    }
+
+    static func entries(_ sets: [SetTarget], compact: Bool) -> [String] {
+        let shared = compact && sets.count > 1 && Set(sets.map(\.weight)).count == 1
+        return sets.enumerated().map { i, s in
+            shared && i > 0 ? "\(s.reps)" : "\(UnitMath.format(s.weight))×\(s.reps)"
+        }
+    }
+
+    static func day(_ date: Date?, now: Date, calendar: Calendar) -> String? {
+        date.map { d in
             now.timeIntervalSince(d) > 6 * 86_400
                 ? d.formatted(Date.FormatStyle(calendar: calendar).day().month(.abbreviated))
                 : d.formatted(Date.FormatStyle(calendar: calendar).weekday(.abbreviated))
         }
-        // Every set keeps its weight (CDO watch QA 2, N); compact drops the day
-        // so a 40 mm line still fits one row.
-        let list = sets.map { "\(UnitMath.format($0.weight))×\($0.reps)" }.joined(separator: ", ")
-        return (["Last", compact ? nil : day].compactMap { $0 } + [list]).joined(separator: " · ")
+    }
+
+    static func line(_ entries: [String], day: String?) -> String {
+        (["Last", day].compactMap { $0 } + [entries.joined(separator: ", ")]).joined(separator: " · ")
     }
 
     /// "185 × 9", or "12 reps" for bodyweight with no load.
