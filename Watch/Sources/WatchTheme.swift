@@ -19,6 +19,7 @@ enum WatchTheme {
     /// Pager pages: the primary sits above the bottom page dots (watch mock .dots).
     static var pagerGap: CGFloat { isLarge ? 22 : 15 }
     static var dotsBottom: CGFloat { isLarge ? 8 : 5 }
+    static var dotSize: CGFloat { isLarge ? 5 : 4 }
     /// 44 pt everywhere (AC 72, 75; QA 1, item 13).
     static let primaryHeight: CGFloat = 44
     static let buttonRadius: CGFloat = 14
@@ -121,7 +122,14 @@ extension View {
                 .clipped()
             bottom()
                 .padding(.horizontal, WatchTheme.inset)
-                .padding(.bottom, pager ? WatchTheme.pagerGap : WatchTheme.bottomGap)
+                .padding(.bottom, pager ? 0 : WatchTheme.bottomGap)
+            if pager {
+                // Dots in the bottom gap, under the button (QA 2, item 4):
+                // button → dots → glass adds up to pagerGap.
+                PageDotsSlot()
+                    .padding(.top, WatchTheme.pagerGap - WatchTheme.dotsBottom - WatchTheme.dotSize - 6)
+                    .padding(.bottom, WatchTheme.dotsBottom)
+            }
         }
         // Measured from the glass, not the system's bottom bar area.
         .ignoresSafeArea(.container, edges: .bottom)

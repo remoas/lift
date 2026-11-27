@@ -33,14 +33,9 @@ struct WatchRoot: View {
                     }
                     .tabViewStyle(.verticalPage)
                     // Our own short dots at the bottom replace the trailing system indicator (QA 2, item 4).
+                    // Each page draws them under its pinned button, in the bottom gap (pinnedBottom).
                     .scrollIndicators(.hidden)
-                    .overlay(alignment: .bottom) {
-                        if store.toast == nil {
-                            PageDots(count: exercises.count + 1, current: page)
-                                .padding(.bottom, WatchTheme.dotsBottom)
-                                .ignoresSafeArea(edges: .bottom)
-                        }
-                    }
+                    .environment(\.watchPageDots, store.toast == nil ? PageDotsInfo(count: exercises.count + 1, current: page) : nil)
                 }
             }
             .navigationDestination(isPresented: $adding) {
@@ -70,11 +65,30 @@ struct WatchRoot: View {
 }
 
 private struct DimmedKey: EnvironmentKey { static let defaultValue = false }
+struct PageDotsInfo: Equatable { let count: Int; let current: Int }
+private struct PageDotsKey: EnvironmentKey { static let defaultValue: PageDotsInfo? = nil }
+
 extension EnvironmentValues {
+    var watchPageDots: PageDotsInfo? {
+        get { self[PageDotsKey.self] }
+        set { self[PageDotsKey.self] = newValue }
+    }
     /// Always-On (or its w11 preview).
     var watchDimmed: Bool {
         get { self[DimmedKey.self] }
         set { self[DimmedKey.self] = newValue }
+    }
+}
+
+/// The slot under a pager page's button; keeps its height while a toast hides the dots.
+struct PageDotsSlot: View {
+    @Environment(\.watchPageDots) private var dots
+    var body: some View {
+        ZStack {
+            if let dots { PageDots(count: dots.count, current: dots.current) }
+        }
+        .frame(maxWidth: .infinity)
+        .frame(height: WatchTheme.dotSize)
     }
 }
 
@@ -89,7 +103,7 @@ struct PageDots: View {
             ForEach(0..<count, id: \.self) { i in
                 Circle()
                     .fill(i == current ? WatchTheme.textPrimary : WatchTheme.textTertiary.opacity(0.55))
-                    .frame(width: WatchTheme.isLarge ? 5 : 4, height: WatchTheme.isLarge ? 5 : 4)
+                    .frame(width: WatchTheme.dotSize, height: WatchTheme.dotSize)
             }
         }
         .opacity(aod || previewDimmed ? 0.45 : 1)
@@ -247,11 +261,15 @@ struct ExercisePage: View {
                 if let count = store.liveCount(for: exercise) {
                     countingBody(count)
                 } else {
-                    if let last = lastLine {
-                        // Wraps at set boundaries, never mid-number (§3.2).
-                        Text(last.text.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}")).watchCaption()
-                            .lineLimit(last.oneLine ? 1 : nil)
-                            .minimumScaleFactor(last.oneLine ? 0.8 : 1)
+                    if let full = BeatItText.last(exercise.last, date: exercise.lastDate) {
+                        // Every weight, always (QA 2, N). One line when it fits, else
+                        // without the day, else it wraps at set boundaries, never mid-number.
+                        let short = BeatItText.last(exercise.last, date: exercise.lastDate, compact: true) ?? full
+                        ViewThatFits(in: .horizontal) {
+                            lastText(full).lineLimit(1)
+                            lastText(short).lineLimit(1)
+                            lastText(full)
+                        }
                     }
                     if !exercise.countable || !store.motionAvailable {
                         Text("Counting off.").watchCaption()
@@ -277,17 +295,9 @@ struct ExercisePage: View {
         }
     }
 
-    /// 49 mm writes Last in full and wraps. 40 mm keeps every weight (QA 2, N) on
-    /// one line when it fits at ≥ 80 %, dropping the day first; else it wraps.
-    private var lastLine: (text: String, oneLine: Bool)? {
-        guard let full = BeatItText.last(exercise.last, date: exercise.lastDate) else { return nil }
-        guard !WatchTheme.isLarge else { return (full, false) }
-        let width = WKInterfaceDeviceWidth.value - WatchTheme.inset - WatchTheme.trailingInset
-        let font = UIFont.preferredFont(forTextStyle: .caption2)
-        func fits(_ s: String) -> Bool { (s as NSString).size(withAttributes: [.font: font]).width * 0.8 <= width }
-        if fits(full) { return (full, true) }
-        if let short = BeatItText.last(exercise.last, date: exercise.lastDate, compact: true), fits(short) { return (short, true) }
-        return (full, false)
+    /// Word joiners keep "185×8" together when Last wraps.
+    private func lastText(_ s: String) -> some View {
+        Text(s.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}")).watchCaption()
     }
 
     @ViewBuilder private var targetBlock: some View {
