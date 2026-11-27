@@ -258,8 +258,8 @@ struct ExercisePage: View {
     // of this ladder that fits (no layout feedback loop; WatchFit):
     //   0  roomy: titles wrap; Last in full on 45/49 mm with no status line,
     //      one line on 40/41 mm (always) or with a status line
-    //   1  Last one line everywhere
-    //   2  no "Double tap to log." hint
+    //   1  no "Double tap to log." hint (45/49 mm keep full weights longer)
+    //   2  Last one line everywhere
     //   3  title on one line (scales to 80 %)
     //   4  no Last line (the full list is on tap and in VoiceOver)
     //   5  first-time captions on one line
@@ -307,7 +307,7 @@ struct ExercisePage: View {
             rows.append(WatchFit.line(WatchFit.caption2) + (large ? 54 : 40) + 7 + WatchFit.line(WatchFit.caption2))
         } else {
             if let full = BeatItText.last(exercise.last, date: exercise.lastDate), showFullLast || fit < 4 {
-                let wrapFull = showFullLast || (fit == 0 && large && !hasStatus)
+                let wrapFull = showFullLast || (fit <= 1 && large && !hasStatus)
                 rows.append(wrapFull ? WatchFit.height(full.replacingOccurrences(of: "×", with: "\u{2060}×\u{2060}"), WatchFit.caption2, width: width) : WatchFit.line(WatchFit.caption2))
             }
             if !exercise.countable || !store.motionAvailable { rows.append(WatchFit.height("Counting off.", WatchFit.caption2, width: width)) }
@@ -321,7 +321,7 @@ struct ExercisePage: View {
                 rows.append(cap("\(Int(reps)) reps · Crown to set"))
             }
         }
-        if large && !counting && fit < 2 { rows.append(WatchFit.line(WatchFit.caption2)) }
+        if large && !counting && fit < 1 { rows.append(WatchFit.line(WatchFit.caption2)) }
         return rows.reduce(0, +) + CGFloat(max(rows.count - 1, 0)) * (large ? 3 : 1)
     }
 
@@ -340,7 +340,7 @@ struct ExercisePage: View {
                 }
                 targetBlock(fit: fit)
             }
-            if WatchTheme.isLarge && !counting && fit < 2 {
+            if WatchTheme.isLarge && !counting && fit < 1 {
                 Text("Double tap to log.").watchCaption(WatchTheme.textTertiary)
             }
         }
@@ -350,7 +350,7 @@ struct ExercisePage: View {
     /// a whole entry. Tap for every set in full; VoiceOver always reads them all.
     @ViewBuilder private func lastLine(fit: Int) -> some View {
         if let full = BeatItText.last(exercise.last, date: exercise.lastDate), showFullLast || fit < 4 {
-            let wrapFull = showFullLast || (fit == 0 && WatchTheme.isLarge && !hasStatus)
+            let wrapFull = showFullLast || (fit <= 1 && WatchTheme.isLarge && !hasStatus)
             Button { showFullLast.toggle() } label: {
                 if wrapFull {
                     lastText(full)
