@@ -250,6 +250,7 @@ struct ExercisePage: View {
 
     // The log state: name, Last, Beat it with the bar, the prefill, Log set.
     private var logView: some View {
+        ScrollViewReader { proxy in
         ScrollView {
             VStack(alignment: .leading, spacing: WatchTheme.isLarge ? 3 : 1) {
                 if store.liveCount(for: exercise) != nil && !WatchTheme.isLarge {
@@ -283,6 +284,17 @@ struct ExercisePage: View {
             .padding(.leading, WatchTheme.inset)
             .padding(.trailing, WatchTheme.trailingInset)
             .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        // 40 mm: the prefill can sit below the fold once Last wraps. The value the
+        // Crown is changing always scrolls into view.
+        .onChange(of: active) { _, a in
+            guard a != nil else { return }
+            withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo("prefill", anchor: .bottom) }
+        }
+        .onAppear {
+            guard active != nil else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { proxy.scrollTo("prefill", anchor: .bottom) }
+        }
         }
         .pinnedBottom(pager: true) {
             VStack(alignment: .leading, spacing: 6) {
@@ -358,6 +370,7 @@ struct ExercisePage: View {
         }
         .font(WatchTheme.hero(WatchTheme.isLarge ? 26 : 24))
         .foregroundStyle(WatchTheme.textPrimary)
+        .id("prefill")
         .accessibilityElement(children: .combine)
         .accessibilityLabel("This set, \(UnitMath.format(weight)) \(exercise.unit.symbol) times \(Int(reps))")
         .accessibilityHint("Tap the weight or the reps, then turn the Digital Crown")
