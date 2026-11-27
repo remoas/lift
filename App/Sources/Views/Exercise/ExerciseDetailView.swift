@@ -327,7 +327,7 @@ private struct NavigationBarTint: UIViewRepresentable {
 
     func updateUIView(_ view: UIView, context: Context) {
         context.coordinator.restore = restore
-        let apply = { view.liftNavigationBar()?.tintColor = color }
+        let apply: () -> Void = { _ = view.liftNavigationBar().map { $0.tintColor = color } }
         DispatchQueue.main.async(execute: apply)
         // List scrolling can reset the system bar to the app accent
         // (the 24a scrolled fixture showed Friday in Ember after scrollTo).
