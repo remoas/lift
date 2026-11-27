@@ -408,3 +408,15 @@ Four unique PASS. Unique CDO-final count is now 125. Alias `one-arm-kettlebell-r
 - **dumbbell-floor-press:** two DB floor presses, upper arms rest on the floor at the bottoms, house gym locked to official floor-press. Official encode 467,771 bytes, CRF 26, MAE 2.55. Start v1; mid v1. Attempt 1 of 3.
 - **dumbbell-squeeze-press:** two DB squeeze presses, hex DBs stay squeezed together, house gym locked to official bench-press. Official encode 531,997 bytes, CRF 26, MAE 2.65. Shoulds: bottoms sit a little toward the upper chest. Start v1; mid v3 only. Attempt 1 of 3.
 - **close-grip-dumbbell-press:** two close-grip DB presses, hex DBs stay close with a small gap and do not touch, house gym locked to official bench-press. Official encode 511,707 bytes, CRF 26, MAE 2.73. Shoulds: the grip is only moderately close; bottoms sit a little short of the chest. Start is v2 only. Attempt 1 of 3.
+
+
+## CDO QA Round 18 official Shoulds (about 7:36am Atlantic/Bermuda, 27 Nov 2026)
+
+Six unique PASS, two FAIL. Unique CDO-final count is now 131. Alias `dumbbell-rear-lunge` → `dumbbell-reverse-lunge` was verified. `elevated-back-lunge` FAIL (a Must): it is a rear-foot-elevated split squat; the front foot needs to be on a low platform; official moved to `rejected/video/elevated-back-lunge.r18-fail.mp4` and is parked for a later regen. `close-grip-dumbbell-press` FAIL (a Must): the dumbbells stay about shoulder-width and need to be visibly close; official moved to `rejected/video/close-grip-dumbbell-press.r18-fail.mp4` and is parked for a later regen.
+
+- **barbell-lunge:** none.
+- **barbell-reverse-lunge:** none.
+- **board-press:** the far plate turns edge-on, but there is no visible hop.
+- **dumbbell-reverse-lunge:** the mid-stand does not fully close the stance.
+- **dumbbell-floor-press:** none.
+- **dumbbell-squeeze-press:** none.

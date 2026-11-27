@@ -236,15 +236,15 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 235,one-arm-kettlebell-row,One-Arm Kettlebell Row,kettlebell,rhomboids,video,video:kettlebell-row,,3,A,horizontal-pull,kettlebell-row,reuse of kettlebell-row; CDO-verified R17p2
 236,smith-machine-bent-over-row,Smith Machine Bent Over Row,smith_machine,rhomboids,video,video:smith-machine-bent-over-row,,3,A,horizontal-pull,,"CDO-final R17p2; official a1, 448467 bytes, CRF 28, MAE 3.24"
 237,two-arm-kettlebell-row,Two-Arm Kettlebell Row,kettlebell,rhomboids,video,video:two-arm-kettlebell-row,,3,A,horizontal-pull,,"CDO-final R17p2; official a1, 491701 bytes, MAE 2.65"
-238,barbell-lunge,Barbell Lunge,barbell,quads,video,video:barbell-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 482013 bytes, CRF 26, MAE 2.58"
-239,barbell-reverse-lunge,Barbell Reverse Lunge,barbell,quads,video,video:barbell-reverse-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 492033 bytes, CRF 26, MAE 2.64"
+238,barbell-lunge,Barbell Lunge,barbell,quads,video,video:barbell-lunge,,3,A,lunge,,"CDO-final R18; official a1, 482013 bytes, CRF 26, MAE 2.58"
+239,barbell-reverse-lunge,Barbell Reverse Lunge,barbell,quads,video,video:barbell-reverse-lunge,,3,A,lunge,,"CDO-final R18; official a1, 492033 bytes, CRF 26, MAE 2.64"
 240,barbell-step-ups,Barbell Step Ups,barbell,quads,none,,,3,A,lunge,,parked: start v1 accepted; mid v1–v3 all drifted the box under the original stance; v4 and video left unspent
 241,barbell-step-up,Barbell Step-Up,barbell,quads|glutes,still,still:barbell-step-up,,3,A,lunge,,
 242,barbell-walking-lunge,Barbell Walking Lunge,barbell,quads,none,,,3,A,lunge,,
 243,cable-upright-row,Cable Upright Row,cable,side_delts|traps,video,video:upright-cable-row,,3,A,shoulder-iso,upright-cable-row,reuse of upright-cable-row
-244,elevated-back-lunge,Elevated Back Lunge,barbell,quads,video,video:elevated-back-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 516999 bytes, CRF 26, MAE 2.67"
+244,elevated-back-lunge,Elevated Back Lunge,barbell,quads,none,,,3,A,lunge,,CDO R18 FAIL parked for later regen; official moved to rejected/video/elevated-back-lunge.r18-fail.mp4; front foot was on the floor (rear-foot-elevated split squat) and needs a low platform
 245,barbell-floor-press,Barbell Floor Press,barbell,mid_chest|triceps,still,still:barbell-floor-press,,3,A,horizontal-push,,
-246,board-press,Board Press,barbell,triceps,video,video:board-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a2, 493382 bytes, CRF 26, MAE 3.35"
+246,board-press,Board Press,barbell,triceps,video,video:board-press,,3,A,horizontal-push,,"CDO-final R18; official a2, 493382 bytes, CRF 26, MAE 3.35"
 247,floor-press,Floor Press,barbell,triceps,none,,,3,A,horizontal-push,,
 248,floor-press-with-chains,Floor Press with Chains,barbell,triceps,none,,,3,A,horizontal-push,,
 249,hip-thrust-machine,Hip Thrust Machine,machine,glutes,still,still:hip-thrust-machine,,3,A,hinge,,
@@ -255,15 +255,15 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 254,superman-pulldown,Superman Pulldown,bodyweight,lats|rhomboids,still,still:superman-pulldown,,3,A,vertical-pull,,
 255,dumbbell-lunge,Dumbbell Lunge,dumbbell,quads|glutes,still,still:dumbbell-lunge,,3,A,lunge,,
 256,dumbbell-lunges,Dumbbell Lunges,dumbbell,quads,none,,,3,A,lunge,,
-257,dumbbell-rear-lunge,Dumbbell Rear Lunge,dumbbell,quads,video,video:dumbbell-reverse-lunge,,3,A,lunge,dumbbell-reverse-lunge,reuse of dumbbell-reverse-lunge
-258,dumbbell-reverse-lunge,Dumbbell Reverse Lunge,dumbbell,quads|glutes,video,video:dumbbell-reverse-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 482063 bytes, CRF 26, MAE 2.61"
+257,dumbbell-rear-lunge,Dumbbell Rear Lunge,dumbbell,quads,video,video:dumbbell-reverse-lunge,,3,A,lunge,dumbbell-reverse-lunge,reuse of dumbbell-reverse-lunge; CDO-verified R18
+258,dumbbell-reverse-lunge,Dumbbell Reverse Lunge,dumbbell,quads|glutes,video,video:dumbbell-reverse-lunge,,3,A,lunge,,"CDO-final R18; official a1, 482063 bytes, CRF 26, MAE 2.61"
 259,dumbbell-step-up,Dumbbell Step Up,dumbbell,quads|glutes,still,still:dumbbell-step-up,,3,A,lunge,,
 260,dumbbell-step-ups,Dumbbell Step Ups,dumbbell,quads,none,,,3,A,lunge,,
 261,arnold-dumbbell-press,Arnold Dumbbell Press,dumbbell,front_delts,none,,,3,A,horizontal-push,,
-262,close-grip-dumbbell-press,Close-Grip Dumbbell Press,dumbbell,triceps,video,video:close-grip-dumbbell-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 511707 bytes, CRF 26, MAE 2.73"
+262,close-grip-dumbbell-press,Close-Grip Dumbbell Press,dumbbell,triceps,none,,,3,A,horizontal-push,,CDO R18 FAIL parked for later regen; official moved to rejected/video/close-grip-dumbbell-press.r18-fail.mp4; dumbbells were shoulder-width and need to be visibly close
 263,dumbbell-decline-press,Dumbbell Decline Press,dumbbell,lower_chest|triceps,still,still:dumbbell-decline-press,,3,A,horizontal-push,,
-264,dumbbell-floor-press,Dumbbell Floor Press,dumbbell,triceps,video,video:dumbbell-floor-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 467771 bytes, CRF 26, MAE 2.55"
-265,dumbbell-squeeze-press,Dumbbell Squeeze Press,dumbbell,mid_chest,video,video:dumbbell-squeeze-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 531997 bytes, CRF 26, MAE 2.65"
+264,dumbbell-floor-press,Dumbbell Floor Press,dumbbell,triceps,video,video:dumbbell-floor-press,,3,A,horizontal-push,,"CDO-final R18; official a1, 467771 bytes, CRF 26, MAE 2.55"
+265,dumbbell-squeeze-press,Dumbbell Squeeze Press,dumbbell,mid_chest,video,video:dumbbell-squeeze-press,,3,A,horizontal-push,,"CDO-final R18; official a1, 531997 bytes, CRF 26, MAE 2.65"
 266,smith-machine-one-arm-upright-row,Smith Machine One-Arm Upright Row,smith_machine,side_delts,none,,,3,A,shoulder-iso,,
 267,smith-machine-upright-row,Smith Machine Upright Row,smith_machine,traps,none,,,3,A,shoulder-iso,,
 268,bodyweight-hip-thrust,Bodyweight Hip Thrust,bodyweight,glutes,still,still:bodyweight-hip-thrust,,3,A,hinge,,
