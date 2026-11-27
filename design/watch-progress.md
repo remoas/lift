@@ -68,3 +68,5 @@ Updated 27 Nov 2026, 2:40am Bermuda time.
 - ab4e4aa (watch-fixes-4): 40/41 mm "Double tap to log." once on first use. @AppStorage("watch.doubleTapHintSeen"); claimed by the first current first-time page and marked seen at once, so it shows for that view only and goes on the first logged set. Ladder tries with the hint first, then without. Fixtures read but never write the flag.
 - build-4 = origin/main acdb179 + watch-fixes-4 (ab4e4aa) + media-vendor @ 37f1a3a. Both merges clean (no overlapping files). Seed version 7 (was 3). 161 clips in ExerciseMedia/video (104 new from media-vendor + 57 earlier); manifest 133 rows (104 pass, 29 reuse); every video:key resolves.
 - NO main, NO testflight.yml: build 4 needs Ben's own yes.
+- 4:55am: CI 45956468072 (21ce838) green but w05-40mm had no hint (42/46/49 had it). 463bff4: no margin → CI 45961005506 green (after one rerun of a flaky 50 ms search-timing test) but still no hint on 40 mm. 01cf288: 6 pt slack → CI 45966976594 running. Shots: screenshots-review/watch-qa5/.
+- media-vendor moved to fd1da9b (Settings 24a fixture, no clips) after the merge; build-4 has 37f1a3a.
