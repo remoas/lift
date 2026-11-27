@@ -1,0 +1,8 @@
+# Working media stays on the box; this branch tracks logs and the pilot manifest only.
+raw/
+rejected/
+qa/
+posters/
+starts/
+refs/
+video/
