@@ -268,7 +268,7 @@ struct RestLockScreenView: View {
                     ExerciseName(name: model.state.exercise)
                         .font(.body.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
                     BeatLine(model: model, color: RestTokens.secondary(scheme))
-                    Text(model.state.needsWeight ? "Add weight in Lift" : model.state.load)
+                    Text(model.state.needsWeight ? "Add weight in Lift" : (model.state.lastLine ?? model.state.load))
                         .font(.subheadline).foregroundStyle(RestTokens.secondary(scheme))
                         .monospacedDigit().lineLimit(1)
                 }
@@ -302,7 +302,7 @@ struct RestLockScreenView: View {
             Text(RestActivityText.restOver(setNumber: model.state.setNumber))
                 .font(.subheadline.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
                 .lineLimit(1)
-        } else if model.isReady, let n = model.state.setNumber {
+        } else if let n = model.state.setNumber {
             Text("Set \(n)")
                 .font(.subheadline.weight(.semibold)).foregroundStyle(RestTokens.primary(scheme))
                 .lineLimit(1)
@@ -322,22 +322,24 @@ struct RestExpandedLeading: View {
             if model.over {
                 Text(RestActivityText.restOver(setNumber: model.state.setNumber))
                     .font(.footnote.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary).lineLimit(1)
-            } else if model.isReady, let n = model.state.setNumber {
-                Text("Set \(n) · \(model.state.load)")
+            } else if let n = model.state.setNumber {
+                Text("Set \(n)")
                     .font(.footnote.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary)
-                    .lineLimit(1).monospacedDigit()
+                    .lineLimit(1)
             }
             ExerciseName(name: model.state.exercise)
                 .font(.body.weight(.semibold)).foregroundStyle(RestTokens.islandPrimary)
             BeatLine(model: model, color: RestTokens.islandSecondary, font: .footnote)
-            if !model.isReady {
+            if model.state.needsWeight {
+                Text("Add weight in Lift").font(.footnote).foregroundStyle(RestTokens.islandSecondary)
+            } else if let last = model.state.lastLine {
+                Text(last).font(.footnote).foregroundStyle(RestTokens.islandSecondary).monospacedDigit().lineLimit(1)
+            } else if !model.isReady {
                 Group {
-                    if model.over { Text(model.state.needsWeight ? "Add weight in Lift" : model.state.load).monospacedDigit().lineLimit(1) }
+                    if model.over { Text(model.state.load).monospacedDigit().lineLimit(1) }
                     else { NextLine(model: model) }
                 }
                 .font(.footnote).foregroundStyle(RestTokens.islandSecondary)
-            } else if model.state.needsWeight {
-                Text("Add weight in Lift").font(.footnote).foregroundStyle(RestTokens.islandSecondary)
             } else {
                 Text(model.state.load).font(.footnote).foregroundStyle(RestTokens.islandSecondary).monospacedDigit().lineLimit(1)
             }

@@ -180,18 +180,13 @@ struct WorkoutDetailView: View {
         let bests = LiftStore.bestSetIDs(in: workout)
         List {
             ForEach(workout.groups, id: \.exercise.id) { g in
-                Section(g.exercise.name) {
-                    ForEach(Array(g.sets.enumerated()), id: \.element.id) { i, s in
-                        Button { editing = s } label: {
-                            HStack {
-                                Text("\(i + 1)").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textTertiary).frame(width: 24, alignment: .leading)
-                                Text(LoadText.pair(weight: s.weight, unit: s.unit, reps: s.reps, kind: s.exercise?.loadKind ?? .loaded)).font(Theme.Fonts.setValue).foregroundStyle(Theme.Colors.textPrimary).monospacedDigit()
-                                if s.kind != .working { Text(s.kind.label).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary) }
-                                Spacer()
-                                if bests.contains(s.id) { Text("Best").font(.footnote.weight(.semibold)).foregroundStyle(Theme.Colors.accent) }
-                            }
-                            .frame(minHeight: Theme.Size.groupedRow)
-                        }
+                // A single-exercise workout already uses the exercise as the
+                // navigation title; don't repeat it as an uppercase section header.
+                if workout.groups.count == 1 {
+                    Section { setRows(g.sets, bests: bests) }
+                } else {
+                    Section { setRows(g.sets, bests: bests) } header: {
+                        Text(g.exercise.name).textCase(nil)
                     }
                 }
             }
@@ -200,6 +195,20 @@ struct WorkoutDetailView: View {
         .navigationTitle(HistoryView.title(workout))
         .sheet(item: $editing) { s in
             SetEditorSheet(entry: s, title: s.exercise?.name ?? "", lastTime: nil, noLastText: nil) { _ = LiftStore.save(context) }
+        }
+    }
+    private func setRows(_ sets: [SetEntry], bests: Set<UUID>) -> some View {
+        ForEach(Array(sets.enumerated()), id: \.element.id) { i, s in
+            Button { editing = s } label: {
+                HStack {
+                    Text("\(i + 1)").font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textTertiary).frame(width: 24, alignment: .leading)
+                    Text(LoadText.pair(weight: s.weight, unit: s.unit, reps: s.reps, kind: s.exercise?.loadKind ?? .loaded)).font(Theme.Fonts.setValue).foregroundStyle(Theme.Colors.textPrimary).monospacedDigit()
+                    if s.kind != .working { Text(s.kind.label).font(Theme.Fonts.secondary).foregroundStyle(Theme.Colors.textSecondary) }
+                    Spacer()
+                    if bests.contains(s.id) { Text("Best").font(.footnote.weight(.semibold)).foregroundStyle(Theme.Colors.accent) }
+                }
+                .frame(minHeight: Theme.Size.groupedRow)
+            }
         }
     }
 }

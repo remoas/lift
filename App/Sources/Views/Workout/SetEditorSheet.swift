@@ -29,6 +29,7 @@ struct SetEditorSheet: View {
     private var isBodyweightLike: Bool { loadKind != .loaded }
     private var showWeightField: Bool { !isBodyweightLike || addingWeight || entry.weight > 0 }
     private var addWeightLabel: String { loadKind == .assisted ? "+ Add assistance" : "+ Add weight" }
+    private var weightFieldLabel: String { loadKind == .bodyweight && showWeightField ? "Added weight" : "Weight" }
 
 
     var body: some View {
@@ -45,7 +46,7 @@ struct SetEditorSheet: View {
             }
 
             HStack(spacing: Theme.Spacing.s3) {
-                Text("Weight").sectionLabel()
+                Text(weightFieldLabel).sectionLabel()
                 Spacer()
                 Menu {
                     Picker("Set type", selection: $entry.kindRaw) {

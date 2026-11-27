@@ -50,6 +50,9 @@ public enum RestActivityText {
         return out
     }
 
+    /// One muted line on the Lock Screen and expanded Island: "Last: Bodyweight × 12".
+    public static func last(_ load: String) -> String { "Last: \(load)" }
+
     /// "Rest over · Set 3".
     public static func restOver(setNumber: Int?) -> String {
         setNumber.map { "Rest over · Set \($0)" } ?? "Rest over"

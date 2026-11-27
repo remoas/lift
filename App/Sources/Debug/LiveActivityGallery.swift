@@ -23,7 +23,8 @@ struct LiveActivityGallery: View {
                        kind: LoadKind = .loaded, over: Bool = false, highlight: Bool = false,
                        phase: RestActivityPhase = .resting,
                        targetWeight: Double? = 185, targetReps: Int? = 9,
-                       needsWeight: Bool = false) -> RestActivityAttributes.ContentState {
+                       needsWeight: Bool = false,
+                       lastWeight: Double? = nil, lastReps: Int? = nil) -> RestActivityAttributes.ContentState {
         let now = Date()
         let end: Date
         switch phase {
@@ -35,13 +36,14 @@ struct LiveActivityGallery: View {
                      bodyweight: kind == .bodyweight, kind: kind,
                      start: now.addingTimeInterval(-48), end: end,
                      over: over || phase == .restOver, highlight: highlight, phase: phase,
-                     targetWeight: targetWeight, targetReps: targetReps, needsWeight: needsWeight)
+                     targetWeight: targetWeight, targetReps: targetReps, needsWeight: needsWeight,
+                     lastWeight: lastWeight ?? weight, lastReps: lastReps ?? reps)
     }
 
     private var model: RestActivityModel {
         switch frame {
         case "la-lock-after-miss":
-            return .init(state: state(reps: 7, targetWeight: 185, targetReps: 9), isStale: false)
+            return .init(state: state(reps: 9, targetWeight: 185, targetReps: 9, lastReps: 7), isStale: false)
         case "la-lock-long-name":
             return .init(state: state(name: "Single-Arm Dumbbell Incline Bench Press (Neutral Grip)", set: 12, weight: 102.5, targetWeight: 102.5, targetReps: 8), isStale: false)
         case "la-lock-rest-over-highlight":
@@ -51,17 +53,17 @@ struct LiveActivityGallery: View {
         case "la-lock-resting-loaded", "la-island-compact-resting", "la-island-minimal-resting", "la-island-expanded-resting":
             return .init(state: state(), isStale: false)
         case "la-lock-resting-bw":
-            return .init(state: state(name: "Pull-Up", weight: 0, reps: 12, kind: .bodyweight, targetWeight: 0, targetReps: 13), isStale: false)
+            return .init(state: state(name: "Pull-Up", weight: 0, reps: 12, kind: .bodyweight, targetWeight: 0, targetReps: 13, lastReps: 12), isStale: false)
         case "la-lock-rest-over-bw":
-            return .init(state: state(name: "Pull-Up", weight: 0, reps: 12, kind: .bodyweight, over: true, phase: .restOver, targetWeight: 0, targetReps: 13), isStale: false)
+            return .init(state: state(name: "Pull-Up", weight: 0, reps: 13, kind: .bodyweight, over: true, phase: .restOver, targetWeight: 0, targetReps: 13, lastReps: 12), isStale: false)
         case "la-lock-ready-loaded", "la-island-compact-ready", "la-island-minimal-ready", "la-island-expanded-ready":
             return .init(state: state(phase: .ready), isStale: false)
         case "la-lock-ready-bw", "la-island-expanded-ready-bw":
-            return .init(state: state(name: "Pull-Up", weight: 0, reps: 12, kind: .bodyweight, phase: .ready, targetWeight: 0, targetReps: 13), isStale: false)
+            return .init(state: state(name: "Pull-Up", weight: 0, reps: 13, kind: .bodyweight, phase: .ready, targetWeight: 0, targetReps: 13, lastReps: 12), isStale: false)
         case "la-lock-ready-belt", "la-island-compact-ready-belt":
-            return .init(state: state(name: "Pull-Up", weight: 25, reps: 8, kind: .bodyweight, phase: .ready, targetWeight: 25, targetReps: 9), isStale: false)
+            return .init(state: state(name: "Pull-Up", weight: 25, reps: 9, kind: .bodyweight, phase: .ready, targetWeight: 25, targetReps: 9, lastReps: 8), isStale: false)
         case "la-lock-ready-assist":
-            return .init(state: state(name: "Assisted Pull-Up", weight: 40, reps: 8, kind: .assisted, phase: .ready, targetWeight: 40, targetReps: 9), isStale: false)
+            return .init(state: state(name: "Assisted Pull-Up", weight: 40, reps: 9, kind: .assisted, phase: .ready, targetWeight: 40, targetReps: 9, lastReps: 8), isStale: false)
         default:
             return .init(state: state(), isStale: false)
         }

@@ -259,11 +259,29 @@ final class RestActivityController {
         let shown = due ?? working.last
         let kind = ex.loadKind
         let beat = LiftStore.beatIt(for: ex, excluding: open, unit: shown?.unit ?? ex.unit(global: .lb))
-        var reps = shown?.reps ?? ex.repGoal
+        // Stepper prefills to the target (CDO, 27 Nov). Last: is the set just
+        // logged, or last session's top set when this is the first set.
+        var reps = beat.target?.reps ?? shown?.reps ?? ex.repGoal
         // Keep a stepper value the user already chose if this is the same due set.
         if let live, live.content.state.setNumber == due.flatMap({ d in working.firstIndex { $0 === d } }).map({ $0 + 1 }),
            phase != .resting, live.content.state.exercise == name {
             reps = live.content.state.reps
+        }
+        let previous = working.last(where: { $0.isDone })
+        let lastWeight: Double?
+        let lastReps: Int?
+        if let p = previous {
+            lastWeight = p.weight
+            lastReps = p.reps
+        } else if let i = beat.topIndex, beat.last.indices.contains(i) {
+            lastWeight = beat.last[i].weight
+            lastReps = beat.last[i].reps
+        } else if let l = beat.last.first {
+            lastWeight = l.weight
+            lastReps = l.reps
+        } else {
+            lastWeight = nil
+            lastReps = nil
         }
         return RestActivityAttributes.ContentState(
             exercise: name,
@@ -279,7 +297,9 @@ final class RestActivityController {
             phase: phase,
             targetWeight: beat.target?.weight,
             targetReps: beat.target?.reps,
-            needsWeight: shown?.needsWeight ?? false)
+            needsWeight: shown?.needsWeight ?? false,
+            lastWeight: lastWeight,
+            lastReps: lastReps)
     }
 }
 

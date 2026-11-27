@@ -150,27 +150,25 @@ struct ExerciseDetailView: View {
     // MARK: Lede
 
     @ViewBuilder private var lede: some View {
-        if workoutCount == 0 {
-            Text("Not logged yet.")
-        } else if workoutCount == 1 {
-            Text("You've logged this once. Next time, you'll have a number to beat.")
-        } else if exercise.loadKind != .loaded {
-            // No estimated 1RM on bodyweight / band / assisted lifts (AC 119).
-            Text("Logged \(workoutCount) times.")
-        } else if let latest = sessions.last ?? History.e1RMSeries(for: exercise.id, in: logged).last {
-            let all = History.e1RMSeries(for: exercise.id, in: logged)
-            let latestText = weight(latest.e1RMKg)
-            let recent = all.suffix(3).map(\.e1RMKg)
-            if all.count >= 3, let mx = recent.max(), let mn = recent.min(), mx - mn < 0.5 {
-                Text("Holding at \(latestText) for 3 sessions.")
-            } else if let first = sessions.first, first.workoutID != latest.workoutID {
-                let delta = Int(UnitMath.convert(latest.e1RMKg - first.e1RMKg, from: .kg, to: unit).rounded())
-                Text("Your estimated max is ") + Text(latestText).fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary)
-                    + Text(", \(delta >= 0 ? "up" : "down") \(abs(delta)) since \(first.date.formatted(.dateTime.month(.wide))).")
-            } else {
-                Text("Your estimated max is ") + Text(latestText).fontWeight(.semibold).foregroundColor(Theme.Colors.textPrimary) + Text(".")
-            }
+        if let copy = ledeCopy { Text(copy) }
+    }
+
+    private var ledeCopy: String? {
+        let all = History.e1RMSeries(for: exercise.id, in: logged)
+        let latest = sessions.last ?? all.last
+        let latestText = latest.map { weight($0.e1RMKg) }
+        let recent = all.suffix(3).map(\.e1RMKg)
+        let spread = (recent.max() ?? 0) - (recent.min() ?? 0)
+        let holding = all.count >= 3 && spread < 0.5
+        var delta: Int?
+        var since: String?
+        if let latest, let first = sessions.first, first.workoutID != latest.workoutID {
+            delta = Int(UnitMath.convert(latest.e1RMKg - first.e1RMKg, from: .kg, to: unit).rounded())
+            since = first.date.formatted(.dateTime.month(.wide))
         }
+        return ExerciseDetailLede.text(workoutCount: workoutCount, loadKind: exercise.loadKind,
+                                       latestText: latestText, holdingForThree: holding,
+                                       delta: holding ? nil : delta, since: holding ? nil : since)
     }
 
     // MARK: Chart

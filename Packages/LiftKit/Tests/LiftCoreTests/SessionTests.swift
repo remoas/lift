@@ -160,6 +160,30 @@ final class PresentationTests: XCTestCase {
         let m = SetRowModel(id: UUID(), number: 3, kind: .working, lastTime: "185 × 7", weightText: "185", unit: .lb, reps: 7, secondary: nil, state: .current)
         XCTAssertEqual(m.accessibilityLabel, "Set 3, last time 185 by 7, today 185 pounds by 7. Not done.")
     }
+
+    func testExerciseDetailLedeNamesEstimatedMax() {
+        XCTAssertEqual(ExerciseDetailLede.text(workoutCount: 0, loadKind: .loaded), "Not logged yet.")
+        XCTAssertEqual(ExerciseDetailLede.text(workoutCount: 1, loadKind: .loaded),
+                       "You've logged this once. Next time, you'll have a number to beat.")
+        XCTAssertEqual(ExerciseDetailLede.text(workoutCount: 4, loadKind: .bodyweight), "Logged 4 times.")
+        XCTAssertEqual(ExerciseDetailLede.text(workoutCount: 4, loadKind: .loaded, latestText: "240 lb", holdingForThree: true),
+                       "Estimated max holding at 240 lb for 3 sessions.")
+        XCTAssertEqual(ExerciseDetailLede.text(workoutCount: 4, loadKind: .loaded, latestText: "228 lb", delta: 13, since: "November"),
+                       "Your estimated max is 228 lb, up 13 since November.")
+        XCTAssertEqual(ExerciseDetailLede.text(workoutCount: 4, loadKind: .loaded, latestText: "210 lb", delta: -8, since: "September"),
+                       "Your estimated max is 210 lb, down 8 since September.")
+        XCTAssertEqual(ExerciseDetailLede.text(workoutCount: 2, loadKind: .loaded, latestText: "228 lb"),
+                       "Your estimated max is 228 lb.")
+        for copy in [
+            ExerciseDetailLede.text(workoutCount: 4, loadKind: .loaded, latestText: "240 lb", holdingForThree: true),
+            ExerciseDetailLede.text(workoutCount: 4, loadKind: .loaded, latestText: "228 lb", delta: 13, since: "November"),
+            ExerciseDetailLede.text(workoutCount: 4, loadKind: .loaded, latestText: "210 lb", delta: -8, since: "September"),
+            ExerciseDetailLede.text(workoutCount: 2, loadKind: .loaded, latestText: "228 lb"),
+        ] {
+            XCTAssertTrue(copy?.localizedCaseInsensitiveContains("estimated max") == true, copy ?? "nil")
+        }
+    }
+
 }
 
 final class ExerciseKeyedTests: XCTestCase {

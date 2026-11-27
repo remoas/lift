@@ -32,6 +32,12 @@ final class RestActivityTests: XCTestCase {
                        ["185 lb × 7", "185×7"])
     }
 
+    func testLastLinePrefixesTheLoad() {
+        XCTAssertEqual(RestActivityText.last("Bodyweight × 12"), "Last: Bodyweight × 12")
+        XCTAssertEqual(RestActivityText.last("BW + 25 lb × 8"), "Last: BW + 25 lb × 8")
+        XCTAssertEqual(RestActivityText.last("185 lb × 9"), "Last: 185 lb × 9")
+    }
+
     func testRestOverAndFallbackCopy() {
         XCTAssertEqual(RestActivityText.restOver(setNumber: 3), "Rest over · Set 3")
         XCTAssertEqual(RestActivityText.notificationBody(exercise: "Barbell Bench Press", next: "185 lb × 9"),

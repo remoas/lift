@@ -31,11 +31,15 @@ struct RestActivityAttributes: ActivityAttributes {
         var targetReps: Int? = nil
         /// A first-time loaded lift that still needs a weight in the app.
         var needsWeight: Bool = false
+        /// Last logged set for the muted "Last:" line (may differ from the stepper / target).
+        var lastWeight: Double? = nil
+        var lastReps: Int? = nil
 
         init(exercise: String, setNumber: Int? = nil, weight: Double, unit: WeightUnit, reps: Int,
              bodyweight: Bool = false, kind: LoadKind = .loaded, start: Date, end: Date,
              over: Bool = false, highlight: Bool = false, phase: RestActivityPhase = .resting,
-             targetWeight: Double? = nil, targetReps: Int? = nil, needsWeight: Bool = false) {
+             targetWeight: Double? = nil, targetReps: Int? = nil, needsWeight: Bool = false,
+             lastWeight: Double? = nil, lastReps: Int? = nil) {
             self.exercise = exercise
             self.setNumber = setNumber
             self.weight = weight
@@ -51,6 +55,8 @@ struct RestActivityAttributes: ActivityAttributes {
             self.targetWeight = targetWeight
             self.targetReps = targetReps
             self.needsWeight = needsWeight
+            self.lastWeight = lastWeight
+            self.lastReps = lastReps
         }
 
         var loadKind: LoadKind { kind }
@@ -64,6 +70,11 @@ struct RestActivityAttributes: ActivityAttributes {
         }
         var compactTrailing: String {
             LoadText.compactTrailing(weight: weight, unit: unit, reps: reps, kind: kind)
+        }
+        /// "Last: Bodyweight × 12", or nil when there is no prior set.
+        var lastLine: String? {
+            guard let lr = lastReps else { return nil }
+            return RestActivityText.last(RestActivityText.load(weight: lastWeight ?? weight, unit: unit, reps: lr, kind: kind))
         }
     }
 

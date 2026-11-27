@@ -167,3 +167,22 @@ public enum Week {
         return n >= 1 && n <= words.count ? words[n - 1] : "\(n)th"
     }
 }
+
+/// Exercise-detail lede. Every variant that uses e1RM names "estimated max".
+public enum ExerciseDetailLede {
+    public static func text(workoutCount: Int, loadKind: LoadKind,
+                            latestText: String? = nil, holdingForThree: Bool = false,
+                            delta: Int? = nil, since: String? = nil) -> String? {
+        if workoutCount == 0 { return "Not logged yet." }
+        if workoutCount == 1 { return "You've logged this once. Next time, you'll have a number to beat." }
+        if loadKind != .loaded { return "Logged \(workoutCount) times." }
+        guard let latestText else { return nil }
+        if holdingForThree { return "Estimated max holding at \(latestText) for 3 sessions." }
+        if let delta, let since {
+            let direction = delta >= 0 ? "up" : "down"
+            return "Your estimated max is \(latestText), \(direction) \(abs(delta)) since \(since)."
+        }
+        return "Your estimated max is \(latestText)."
+    }
+}
+
