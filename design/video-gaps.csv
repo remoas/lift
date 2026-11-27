@@ -242,7 +242,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 241,barbell-step-up,Barbell Step-Up,barbell,quads|glutes,still,still:barbell-step-up,,3,A,lunge,,
 242,barbell-walking-lunge,Barbell Walking Lunge,barbell,quads,none,,,3,A,lunge,,
 243,cable-upright-row,Cable Upright Row,cable,side_delts|traps,video,video:upright-cable-row,,3,A,shoulder-iso,upright-cable-row,reuse of upright-cable-row
-244,elevated-back-lunge,Elevated Back Lunge,barbell,quads,none,,,3,A,lunge,,
+244,elevated-back-lunge,Elevated Back Lunge,barbell,quads,video,video:elevated-back-lunge,,3,A,lunge,,"pass-pending-cdo-qa; official a1, 516999 bytes, CRF 26, MAE 2.67"
 245,barbell-floor-press,Barbell Floor Press,barbell,mid_chest|triceps,still,still:barbell-floor-press,,3,A,horizontal-push,,
 246,board-press,Board Press,barbell,triceps,none,,,3,A,horizontal-push,,
 247,floor-press,Floor Press,barbell,triceps,none,,,3,A,horizontal-push,,
