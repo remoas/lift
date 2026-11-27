@@ -263,7 +263,7 @@ rank,id,name,equipment,primaryMuscles,media_kind,mediaRef,ppl_common,cdo_priorit
 262,close-grip-dumbbell-press,Close-Grip Dumbbell Press,dumbbell,triceps,none,,,3,A,horizontal-push,,
 263,dumbbell-decline-press,Dumbbell Decline Press,dumbbell,lower_chest|triceps,still,still:dumbbell-decline-press,,3,A,horizontal-push,,
 264,dumbbell-floor-press,Dumbbell Floor Press,dumbbell,triceps,video,video:dumbbell-floor-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 467771 bytes, CRF 26, MAE 2.55"
-265,dumbbell-squeeze-press,Dumbbell Squeeze Press,dumbbell,mid_chest,still,still:dumbbell-squeeze-press,,3,A,horizontal-push,,
+265,dumbbell-squeeze-press,Dumbbell Squeeze Press,dumbbell,mid_chest,video,video:dumbbell-squeeze-press,,3,A,horizontal-push,,"pass-pending-cdo-qa; official a1, 531997 bytes, CRF 26, MAE 2.65"
 266,smith-machine-one-arm-upright-row,Smith Machine One-Arm Upright Row,smith_machine,side_delts,none,,,3,A,shoulder-iso,,
 267,smith-machine-upright-row,Smith Machine Upright Row,smith_machine,traps,none,,,3,A,shoulder-iso,,
 268,bodyweight-hip-thrust,Bodyweight Hip Thrust,bodyweight,glutes,still,still:bodyweight-hip-thrust,,3,A,hinge,,
